@@ -1,0 +1,27 @@
+{
+    "name": "personal-finance-scenario-modeler",
+    "version": "1.0.0",
+    "description": "A comprehensive personal finance scenario modeling application",
+    "main": "server/index.js",
+    "scripts": {
+        "dev": "concurrently \"npm run server\" \"npm run client\"",
+        "server": "cd server && npm run dev",
+        "client": "cd client && npm start",
+        "build": "cd client && npm run build",
+        "start": "cd server && npm start",
+        "docker:build": "docker-compose build",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down"
+    },
+    "keywords": [
+        "personal-finance",
+        "scenario-modeling",
+        "react",
+        "nodejs"
+    ],
+    "author": "Peter Schofen",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
