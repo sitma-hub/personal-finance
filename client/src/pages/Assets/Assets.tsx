@@ -112,7 +112,10 @@ const Assets: React.FC = () => {
         { value: 'other_asset', label: 'Other Asset' },
     ];
 
-    const totalValue = assets.reduce((sum, asset) => sum + asset.current_value, 0);
+    const totalValue = assets.reduce((sum, asset) => {
+        const value = typeof asset.current_value === 'string' ? parseFloat(asset.current_value) : asset.current_value;
+        return sum + (isNaN(value) ? 0 : value);
+    }, 0);
 
     if (loading) {
         return (
@@ -153,7 +156,7 @@ const Assets: React.FC = () => {
                                         Total Assets
                                     </Typography>
                                     <Typography variant="h5">
-                                        ${totalValue.toLocaleString()}
+                                        ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -215,10 +218,10 @@ const Assets: React.FC = () => {
                                     />
                                 </TableCell>
                                 <TableCell align="right">
-                                    ${asset.current_value.toLocaleString()}
+                                    ${(typeof asset.current_value === 'string' ? parseFloat(asset.current_value) : asset.current_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </TableCell>
                                 <TableCell align="right">
-                                    ${asset.monthly_contribution.toLocaleString()}
+                                    ${(typeof asset.monthly_contribution === 'string' ? parseFloat(asset.monthly_contribution) : asset.monthly_contribution).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </TableCell>
                                 <TableCell align="right">
                                     {asset.annual_return_rate ? `${(asset.annual_return_rate * 100).toFixed(2)}%` : 'N/A'}

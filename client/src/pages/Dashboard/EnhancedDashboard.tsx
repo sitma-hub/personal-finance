@@ -35,10 +35,6 @@ import {
     Timeline,
     PlayArrow,
     Refresh,
-    TrendingDown,
-    Warning,
-    CheckCircle,
-    Error,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { fetchAssets } from '../../store/slices/assetsSlice';
@@ -58,7 +54,6 @@ import {
     BarChart,
     Bar,
     Tooltip as RechartsTooltip,
-    LineChart,
     Line,
 } from 'recharts';
 
@@ -76,7 +71,6 @@ const EnhancedDashboard: React.FC = () => {
         expenseBreakdown,
         netWorthTrend,
         goalsProgress,
-        recentActivity,
         loading: dashboardLoading,
         error: dashboardError
     } = useAppSelector((state) => state.dashboard);
@@ -124,17 +118,19 @@ const EnhancedDashboard: React.FC = () => {
     const monthlySavings = monthlyIncome - monthlyExpenses;
     const savingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0;
 
-    // Asset breakdown by type
-    const assetsByType = assets.reduce((acc, asset) => {
-        acc[asset.type] = (acc[asset.type] || 0) + parseFloat(asset.current_value.toString());
-        return acc;
-    }, {} as Record<string, number>);
-
-    // Chart data preparation
-    const assetBreakdownData = Object.entries(assetsByType).map(([type, value]) => ({
-        name: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        value,
-    }));
+    // Asset breakdown by type - use dashboard data if available, otherwise calculate from assets
+    const assetBreakdownData = assetAllocation.length > 0
+        ? assetAllocation.map(item => ({
+            name: item.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            value: item.value,
+        }))
+        : Object.entries(assets.reduce((acc, asset) => {
+            acc[asset.type] = (acc[asset.type] || 0) + parseFloat(asset.current_value.toString());
+            return acc;
+        }, {} as Record<string, number>)).map(([type, value]) => ({
+            name: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            value,
+        }));
 
     // Use dashboard data if available, otherwise use calculated data
     const chartData = netWorthTrend.length > 0 ? netWorthTrend : [
@@ -365,7 +361,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Net Worth Trend Chart */}
                 <Grid item xs={12} md={8}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Net Worth Trend
                         </Typography>
                         <ResponsiveContainer width="100%" height={350}>
@@ -386,7 +382,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Asset Allocation */}
                 <Grid item xs={12} md={4}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Asset Allocation
                         </Typography>
                         {assetBreakdownData.length > 0 ? (
@@ -410,8 +406,16 @@ const EnhancedDashboard: React.FC = () => {
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <Box display="flex" justifyContent="center" alignItems="center" height={350}>
-                                <Typography color="text.secondary">No assets data available</Typography>
+                            <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={350}>
+                                <Typography color="text.secondary" gutterBottom>
+                                    No assets data available
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" textAlign="center">
+                                    {assets.length === 0
+                                        ? "Add some assets to see your allocation breakdown"
+                                        : "Asset allocation data is being calculated..."
+                                    }
+                                </Typography>
                             </Box>
                         )}
                     </Paper>
@@ -420,7 +424,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Expense Breakdown */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Monthly Expenses by Category
                         </Typography>
                         {expenseData.length > 0 ? (
@@ -444,7 +448,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Goals Progress */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Financial Goals Progress
                         </Typography>
                         {goalsProgress.length > 0 ? (
@@ -481,7 +485,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Recent Activity */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Recent Assets
                         </Typography>
                         {assets.length > 0 ? (
@@ -518,7 +522,7 @@ const EnhancedDashboard: React.FC = () => {
                 {/* Quick Actions */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom component="div">
                             Quick Actions
                         </Typography>
                         <List>
@@ -573,7 +577,7 @@ const EnhancedDashboard: React.FC = () => {
                 <DialogTitle>
                     Monte Carlo Simulation
                     {selectedScenario && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" component="span">
                             Scenario: {selectedScenario.name}
                         </Typography>
                     )}
