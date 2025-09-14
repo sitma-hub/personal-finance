@@ -7,6 +7,7 @@ import expensesReducer from './slices/expensesSlice';
 import scenariosReducer from './slices/scenariosSlice';
 import goalsReducer from './slices/goalsSlice';
 import uiReducer from './slices/uiSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
     reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
         scenarios: scenariosReducer,
         goals: goalsReducer,
         ui: uiReducer,
+        dashboard: dashboardReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

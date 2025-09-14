@@ -108,6 +108,17 @@ export class GoalService {
         return result.rows[0] || null;
     }
 
+    async resetGoalAchievement(id: string): Promise<Goal | null> {
+        const query = `
+      UPDATE goals 
+      SET is_achieved = false, achieved_date = NULL, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND user_id = (SELECT id FROM users WHERE email = $2)
+      RETURNING *
+    `;
+        const result = await pool.query(query, [id, this.userId]);
+        return result.rows[0] || null;
+    }
+
     async getAchievedGoals(): Promise<Goal[]> {
         const query = `
       SELECT * FROM goals 

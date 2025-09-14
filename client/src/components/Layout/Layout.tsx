@@ -12,7 +12,7 @@ import {
     ListItemText,
     Toolbar,
     Typography,
-    useTheme,
+    useTheme as useMuiTheme,
     useMediaQuery,
 } from '@mui/material';
 import {
@@ -25,8 +25,11 @@ import {
     Timeline as ScenariosIcon,
     Flag as GoalsIcon,
     Upload as ImportIcon,
+    Brightness4 as DarkModeIcon,
+    Brightness7 as LightModeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const drawerWidth = 240;
 
@@ -46,8 +49,9 @@ const menuItems = [
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const muiTheme = useMuiTheme();
+    const { darkMode, toggleDarkMode } = useTheme();
+    const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -78,10 +82,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             onClick={() => handleNavigation(item.path)}
                             sx={{
                                 '&.Mui-selected': {
-                                    backgroundColor: theme.palette.primary.main,
+                                    backgroundColor: muiTheme.palette.primary.main,
                                     color: 'white',
                                     '&:hover': {
-                                        backgroundColor: theme.palette.primary.dark,
+                                        backgroundColor: muiTheme.palette.primary.dark,
                                     },
                                     '& .MuiListItemIcon-root': {
                                         color: 'white',
@@ -118,9 +122,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div">
+                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                         Scenario Modeler
                     </Typography>
+                    <IconButton color="inherit" onClick={toggleDarkMode}>
+                        {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
                 </Toolbar>
             </AppBar>
             <Box

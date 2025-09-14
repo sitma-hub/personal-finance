@@ -15,6 +15,7 @@ import expenseRoutes from './routes/expenses';
 import scenarioRoutes from './routes/scenarios';
 import goalRoutes from './routes/goals';
 import importRoutes from './routes/import';
+import dashboardRoutes from './routes/dashboard';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -77,6 +78,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/scenarios', scenarioRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // API info endpoint
 app.get('/api', (_req, res) => {
@@ -91,7 +93,8 @@ app.get('/api', (_req, res) => {
             expenses: '/api/expenses',
             scenarios: '/api/scenarios',
             goals: '/api/goals',
-            import: '/api/import'
+            import: '/api/import',
+            dashboard: '/api/dashboard'
         }
     });
 });

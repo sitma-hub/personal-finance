@@ -141,7 +141,10 @@ export class ScenarioService {
         let currentAssets = this.calculateTotalAssets(assets);
         let currentLiabilities = this.calculateTotalLiabilities(liabilities);
         let currentMonthlyIncome = this.calculateTotalMonthlyIncome(incomeStreams);
-        let currentMonthlyExpenses = this.calculateTotalMonthlyExpenses(expenses);
+        let currentMonthlyExpenses = this.calculateTotalMonthlyExpenses(expenses, liabilities);
+
+        // Maximum reasonable value to prevent overflow (DECIMAL(20,2) max is ~99,999,999,999,999,999.99)
+        const MAX_VALUE = 99999999999999999; // 99 quadrillion
 
         for (let month = 1; month <= totalMonths; month++) {
             const year = Math.floor((month - 1) / 12) + 1;
@@ -157,33 +160,42 @@ export class ScenarioService {
             const monthlySavings = adjustedIncome - adjustedExpenses;
 
             // Update assets with savings and growth
-            const newAssets = adjustedAssets + monthlySavings;
+            let newAssets = adjustedAssets + monthlySavings;
+
+            // Cap values to prevent database overflow
+            newAssets = Math.min(newAssets, MAX_VALUE);
+            const cappedLiabilities = Math.min(adjustedLiabilities, MAX_VALUE);
+            const cappedIncome = Math.min(adjustedIncome, MAX_VALUE);
+            const cappedExpenses = Math.min(adjustedExpenses, MAX_VALUE);
+            const cappedSavings = Math.min(monthlySavings, MAX_VALUE);
 
             // Calculate net worth
-            const netWorth = newAssets - adjustedLiabilities;
+            const netWorth = Math.min(newAssets - cappedLiabilities, MAX_VALUE);
 
             // Asset breakdown
             const assetBreakdown = this.calculateAssetBreakdown(assets, parameters, year);
             const liabilityBreakdown = this.calculateLiabilityBreakdown(liabilities, parameters, year);
+            const expenseBreakdown = this.calculateExpenseBreakdown(expenses, liabilities, parameters, year);
 
             projections.push({
                 year,
                 month: monthInYear,
                 total_assets: newAssets,
-                total_liabilities: adjustedLiabilities,
+                total_liabilities: cappedLiabilities,
                 net_worth: netWorth,
-                monthly_income: adjustedIncome,
-                monthly_expenses: adjustedExpenses,
-                monthly_savings: monthlySavings,
+                monthly_income: cappedIncome,
+                monthly_expenses: cappedExpenses,
+                monthly_savings: cappedSavings,
                 asset_breakdown: assetBreakdown,
-                liability_breakdown: liabilityBreakdown
+                liability_breakdown: liabilityBreakdown,
+                expense_breakdown: expenseBreakdown
             });
 
             // Update for next iteration
             currentAssets = newAssets;
-            currentLiabilities = adjustedLiabilities;
-            currentMonthlyIncome = adjustedIncome;
-            currentMonthlyExpenses = adjustedExpenses;
+            currentLiabilities = cappedLiabilities;
+            currentMonthlyIncome = cappedIncome;
+            currentMonthlyExpenses = cappedExpenses;
         }
 
         return projections;
@@ -215,8 +227,19 @@ export class ScenarioService {
         }, 0);
     }
 
-    private calculateTotalMonthlyExpenses(expenses: any[]): number {
-        return expenses.reduce((total, expense) => total + parseFloat(expense.monthly_amount || 0), 0);
+    private calculateTotalMonthlyExpenses(expenses: any[], liabilities: any[]): number {
+        // Calculate regular expenses
+        const regularExpenses = expenses.reduce((total, expense) => total + parseFloat(expense.monthly_amount || 0), 0);
+
+        // Calculate liability payments (these are also expenses)
+        const liabilityPayments = liabilities.reduce((total, liability) => {
+            const monthlyPayment = parseFloat(liability.monthly_payment || 0);
+            const minimumPayment = parseFloat(liability.minimum_payment || 0);
+            // Use monthly_payment if available, otherwise fall back to minimum_payment
+            return total + (monthlyPayment || minimumPayment);
+        }, 0);
+
+        return regularExpenses + liabilityPayments;
     }
 
     private applyIncomeGrowth(currentIncome: number, parameters: any, year: number): number {
@@ -304,6 +327,28 @@ export class ScenarioService {
         });
 
         return breakdown;
+    }
+
+    private calculateExpenseBreakdown(expenses: any[], liabilities: any[], parameters: any, year: number): any {
+        // Calculate regular expenses with inflation
+        const inflationRate = parameters.expense_inflation_rate || parameters.inflation_rate || 0.025;
+        const regularExpenses = expenses.reduce((total, expense) => {
+            const monthlyAmount = parseFloat(expense.monthly_amount || 0);
+            return total + (monthlyAmount * Math.pow(1 + inflationRate, year - 1));
+        }, 0);
+
+        // Calculate liability payments
+        const liabilityPayments = liabilities.reduce((total, liability) => {
+            const monthlyPayment = parseFloat(liability.monthly_payment || 0);
+            const minimumPayment = parseFloat(liability.minimum_payment || 0);
+            // Use monthly_payment if available, otherwise fall back to minimum_payment
+            return total + (monthlyPayment || minimumPayment);
+        }, 0);
+
+        return {
+            regular_expenses: regularExpenses,
+            liability_payments: liabilityPayments
+        };
     }
 
     async storeScenarioResults(scenarioId: string, projections: FinancialProjection[]): Promise<void> {
@@ -427,12 +472,20 @@ export class ScenarioService {
         let currentNetWorth = 100000; // Starting value
         const annualReturn = parameters.market_return_rate || 0.07;
 
+        // Maximum reasonable value to prevent overflow (DECIMAL(20,2) max is ~99,999,999,999,999,999.99)
+        const MAX_VALUE = 99999999999999999; // 99 quadrillion
+
         for (let month = 1; month <= totalMonths; month++) {
             const year = Math.floor((month - 1) / 12) + 1;
             const monthInYear = ((month - 1) % 12) + 1;
 
-            // Simple compound growth
+            // Simple compound growth with overflow protection
             currentNetWorth *= Math.pow(1 + annualReturn / 12, 1);
+
+            // Cap the value to prevent database overflow
+            if (currentNetWorth > MAX_VALUE) {
+                currentNetWorth = MAX_VALUE;
+            }
 
             projections.push({
                 year,
@@ -444,7 +497,8 @@ export class ScenarioService {
                 monthly_expenses: 3000,
                 monthly_savings: 2000,
                 asset_breakdown: { savings: 0, investments: currentNetWorth, real_estate: 0, other: 0 },
-                liability_breakdown: { mortgages: 0, loans: 0, credit_cards: 0, other: 0 }
+                liability_breakdown: { mortgages: 0, loans: 0, credit_cards: 0, other: 0 },
+                expense_breakdown: { regular_expenses: 3000, liability_payments: 0 }
             });
         }
 

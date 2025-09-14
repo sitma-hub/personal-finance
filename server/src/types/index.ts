@@ -111,6 +111,13 @@ export interface Liability {
     minimum_payment?: number;
     due_date?: Date;
     notes?: string;
+    // Special repayment fields
+    special_repayment_enabled?: boolean;
+    special_repayment_amount?: number;
+    special_repayment_frequency?: 'monthly' | 'quarterly' | 'annual';
+    max_annual_prepayment_percentage?: number;
+    prepayment_penalty?: boolean;
+    prepayment_penalty_rate?: number;
     created_at: Date;
     updated_at: Date;
 }
@@ -251,6 +258,10 @@ export interface FinancialProjection {
         credit_cards: number;
         other: number;
     };
+    expense_breakdown: {
+        regular_expenses: number;
+        liability_payments: number;
+    };
 }
 
 export interface MonteCarloResult {
@@ -278,4 +289,51 @@ export interface ImportData {
 export interface ExportData extends ImportData {
     scenarios?: Scenario[];
     goals?: Goal[];
+}
+
+// Dashboard types
+export interface DashboardSummary {
+    totalAssets: number;
+    totalLiabilities: number;
+    netWorth: number;
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    monthlySavings: number;
+    savingsRate: number;
+    assetCount: number;
+    liabilityCount: number;
+    incomeStreamCount: number;
+    expenseCount: number;
+    activeGoalsCount: number;
+    achievedGoalsCount: number;
+    activeScenariosCount: number;
+    totalScenariosCount: number;
+}
+
+export interface AssetAllocation {
+    type: string;
+    value: number;
+    percentage: number;
+}
+
+export interface ExpenseBreakdown {
+    category: string;
+    amount: number;
+    percentage: number;
+}
+
+export interface NetWorthTrend {
+    month: string;
+    netWorth: number;
+    assets: number;
+    liabilities: number;
+}
+
+export interface GoalProgress {
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentProgress: number;
+    progressPercentage: number;
+    targetDate: string;
 }

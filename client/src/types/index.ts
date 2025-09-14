@@ -60,6 +60,13 @@ export interface Liability {
     minimum_payment?: number;
     due_date?: string;
     notes?: string;
+    // Special repayment fields
+    special_repayment_enabled?: boolean;
+    special_repayment_amount?: number;
+    special_repayment_frequency?: 'monthly' | 'quarterly' | 'annual';
+    max_annual_prepayment_percentage?: number;
+    prepayment_penalty?: boolean;
+    prepayment_penalty_rate?: number;
     created_at: string;
     updated_at: string;
 }
@@ -166,6 +173,10 @@ export interface FinancialProjection {
         credit_cards: number;
         other: number;
     };
+    expense_breakdown: {
+        regular_expenses: number;
+        liability_payments: number;
+    };
 }
 
 export interface ApiResponse<T> {
@@ -202,6 +213,13 @@ export interface LiabilityFormData {
     minimum_payment?: number;
     due_date?: string;
     notes?: string;
+    // Special repayment fields
+    special_repayment_enabled?: boolean;
+    special_repayment_amount?: number;
+    special_repayment_frequency?: 'monthly' | 'quarterly' | 'annual';
+    max_annual_prepayment_percentage?: number;
+    prepayment_penalty?: boolean;
+    prepayment_penalty_rate?: number;
 }
 
 export interface IncomeFormData {

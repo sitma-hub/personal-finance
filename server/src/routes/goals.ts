@@ -123,4 +123,28 @@ router.patch('/:id/achieve', asyncHandler(async (req: Request, res: Response) =>
     });
 }));
 
+// Reset goal achievement status
+router.patch('/:id/reset', asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            error: { message: 'ID is required' }
+        });
+    }
+    const goal = await goalService.resetGoalAchievement(id);
+
+    if (!goal) {
+        return res.status(404).json({
+            success: false,
+            error: { message: 'Goal not found' }
+        });
+    }
+
+    return res.json({
+        success: true,
+        data: goal
+    });
+}));
+
 export default router;

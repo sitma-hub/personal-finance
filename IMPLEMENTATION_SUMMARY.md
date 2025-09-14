@@ -101,8 +101,8 @@ personal-finance-scenario-modeler/
 │   │   ├── routes/       # API routes
 │   │   └── types/        # TypeScript types
 │   └── database/         # SQL schema
-├── docker-compose.yml    # Development setup
-├── docker-compose.prod.yml # Production setup
+├── docker compose.yml    # Development setup
+├── docker compose.prod.yml # Production setup
 └── setup.sh             # Automated setup script
 ```
 
@@ -132,7 +132,7 @@ cd ../client && npm install
 cp server/env.example server/.env
 
 # 3. Start with Docker
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 🎯 **Key Features in Action**

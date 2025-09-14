@@ -10,23 +10,26 @@ import Expenses from './pages/Expenses/Expenses';
 import Scenarios from './pages/Scenarios/Scenarios';
 import Goals from './pages/Goals/Goals';
 import Import from './pages/Import/Import';
+import { CustomThemeProvider } from './contexts/ThemeContext';
 
 function App() {
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-            <Layout>
-                <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/assets" element={<Assets />} />
-                    <Route path="/liabilities" element={<Liabilities />} />
-                    <Route path="/income" element={<Income />} />
-                    <Route path="/expenses" element={<Expenses />} />
-                    <Route path="/scenarios" element={<Scenarios />} />
-                    <Route path="/goals" element={<Goals />} />
-                    <Route path="/import" element={<Import />} />
-                </Routes>
-            </Layout>
-        </Box>
+        <CustomThemeProvider>
+            <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                <Layout>
+                    <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/assets" element={<Assets />} />
+                        <Route path="/liabilities" element={<Liabilities />} />
+                        <Route path="/income" element={<Income />} />
+                        <Route path="/expenses" element={<Expenses />} />
+                        <Route path="/scenarios" element={<Scenarios />} />
+                        <Route path="/goals" element={<Goals />} />
+                        <Route path="/import" element={<Import />} />
+                    </Routes>
+                </Layout>
+            </Box>
+        </CustomThemeProvider>
     );
 }
 

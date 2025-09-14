@@ -9,9 +9,9 @@
         "client": "cd client && npm start",
         "build": "cd client && npm run build",
         "start": "cd server && npm start",
-        "docker:build": "docker-compose build",
-        "docker:up": "docker-compose up -d",
-        "docker:down": "docker-compose down"
+        "docker:build": "docker compose build",
+        "docker:up": "docker compose up -d",
+        "docker:down": "docker compose down"
     },
     "keywords": [
         "personal-finance",

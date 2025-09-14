@@ -78,7 +78,7 @@ personal-finance-scenario-modeler/
 │   │   ├── routes/        # API routes
 │   │   ├── services/      # Business logic
 │   │   └── utils/         # Utility functions
-├── docker-compose.yml     # Docker configuration
+├── docker compose.yml     # Docker configuration
 └── tasks/                 # Project documentation
     └── prd-personal-finance-scenario-modeler.md
 ```

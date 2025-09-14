@@ -64,11 +64,11 @@ CREATE TABLE assets (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type asset_type NOT NULL,
-    current_value DECIMAL(15,2) NOT NULL DEFAULT 0,
+    current_value DECIMAL(20,2) NOT NULL DEFAULT 0,
     purchase_date DATE,
-    purchase_price DECIMAL(15,2),
+    purchase_price DECIMAL(20,2),
     annual_return_rate DECIMAL(5,4), -- e.g., 0.07 for 7%
-    monthly_contribution DECIMAL(15,2) DEFAULT 0,
+    monthly_contribution DECIMAL(20,2) DEFAULT 0,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -84,7 +84,7 @@ CREATE TABLE investment_holdings (
     purchase_price DECIMAL(10,4) NOT NULL,
     purchase_date DATE NOT NULL,
     current_price DECIMAL(10,4),
-    current_value DECIMAL(15,2) GENERATED ALWAYS AS (shares * COALESCE(current_price, purchase_price)) STORED,
+    current_value DECIMAL(20,2) GENERATED ALWAYS AS (shares * COALESCE(current_price, purchase_price)) STORED,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -96,13 +96,13 @@ CREATE TABLE real_estate_properties (
     property_type VARCHAR(50) NOT NULL, -- 'primary_residence', 'rental', 'vacation_home', etc.
     address TEXT,
     purchase_date DATE NOT NULL,
-    purchase_price DECIMAL(15,2) NOT NULL,
-    current_value DECIMAL(15,2) NOT NULL,
-    monthly_rental_income DECIMAL(15,2) DEFAULT 0,
+    purchase_price DECIMAL(20,2) NOT NULL,
+    current_value DECIMAL(20,2) NOT NULL,
+    monthly_rental_income DECIMAL(20,2) DEFAULT 0,
     annual_appreciation_rate DECIMAL(5,4) DEFAULT 0.03, -- Default 3%
-    property_taxes_annual DECIMAL(15,2) DEFAULT 0,
-    insurance_annual DECIMAL(15,2) DEFAULT 0,
-    maintenance_annual DECIMAL(15,2) DEFAULT 0,
+    property_taxes_annual DECIMAL(20,2) DEFAULT 0,
+    insurance_annual DECIMAL(20,2) DEFAULT 0,
+    maintenance_annual DECIMAL(20,2) DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -111,9 +111,9 @@ CREATE TABLE real_estate_properties (
 CREATE TABLE mortgages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     property_id UUID NOT NULL REFERENCES real_estate_properties(id) ON DELETE CASCADE,
-    principal_remaining DECIMAL(15,2) NOT NULL,
+    principal_remaining DECIMAL(20,2) NOT NULL,
     interest_rate DECIMAL(5,4) NOT NULL,
-    monthly_payment DECIMAL(15,2) NOT NULL,
+    monthly_payment DECIMAL(20,2) NOT NULL,
     loan_term_months INTEGER NOT NULL,
     start_date DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -126,12 +126,19 @@ CREATE TABLE liabilities (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type liability_type NOT NULL,
-    current_balance DECIMAL(15,2) NOT NULL,
+    current_balance DECIMAL(20,2) NOT NULL,
     interest_rate DECIMAL(5,4),
-    monthly_payment DECIMAL(15,2),
-    minimum_payment DECIMAL(15,2),
+    monthly_payment DECIMAL(20,2),
+    minimum_payment DECIMAL(20,2),
     due_date DATE,
     notes TEXT,
+    -- Special repayment fields
+    special_repayment_enabled BOOLEAN DEFAULT false,
+    special_repayment_amount DECIMAL(20,2),
+    special_repayment_frequency VARCHAR(20), -- 'monthly', 'quarterly', 'annual'
+    max_annual_prepayment_percentage DECIMAL(5,4),
+    prepayment_penalty BOOLEAN DEFAULT false,
+    prepayment_penalty_rate DECIMAL(5,4),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -142,7 +149,7 @@ CREATE TABLE income_streams (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type income_type NOT NULL,
-    current_amount DECIMAL(15,2) NOT NULL,
+    current_amount DECIMAL(20,2) NOT NULL,
     frequency VARCHAR(20) NOT NULL, -- 'monthly', 'annual', 'hourly'
     annual_growth_rate DECIMAL(5,4) DEFAULT 0.03, -- Default 3%
     start_date DATE,
@@ -158,7 +165,7 @@ CREATE TABLE expenses (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     category VARCHAR(100) NOT NULL,
-    monthly_amount DECIMAL(15,2) NOT NULL,
+    monthly_amount DECIMAL(20,2) NOT NULL,
     annual_inflation_rate DECIMAL(5,4) DEFAULT 0.025, -- Default 2.5%
     is_discretionary BOOLEAN DEFAULT false,
     notes TEXT,
@@ -186,12 +193,12 @@ CREATE TABLE scenario_results (
     scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
     year INTEGER NOT NULL,
     month INTEGER NOT NULL,
-    total_assets DECIMAL(15,2) NOT NULL,
-    total_liabilities DECIMAL(15,2) NOT NULL,
-    net_worth DECIMAL(15,2) NOT NULL,
-    monthly_income DECIMAL(15,2) NOT NULL,
-    monthly_expenses DECIMAL(15,2) NOT NULL,
-    monthly_savings DECIMAL(15,2) NOT NULL,
+    total_assets DECIMAL(20,2) NOT NULL,
+    total_liabilities DECIMAL(20,2) NOT NULL,
+    net_worth DECIMAL(20,2) NOT NULL,
+    monthly_income DECIMAL(20,2) NOT NULL,
+    monthly_expenses DECIMAL(20,2) NOT NULL,
+    monthly_savings DECIMAL(20,2) NOT NULL,
     asset_breakdown JSONB, -- Detailed breakdown by asset type
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(scenario_id, year, month)
@@ -203,9 +210,9 @@ CREATE TABLE goals (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    target_amount DECIMAL(15,2) NOT NULL,
+    target_amount DECIMAL(20,2) NOT NULL,
     target_date DATE NOT NULL,
-    current_progress DECIMAL(15,2) DEFAULT 0,
+    current_progress DECIMAL(20,2) DEFAULT 0,
     priority INTEGER DEFAULT 1, -- 1-5 scale
     is_achieved BOOLEAN DEFAULT false,
     achieved_date DATE,
