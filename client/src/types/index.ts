@@ -59,6 +59,8 @@ export interface Liability {
     monthly_payment?: number;
     minimum_payment?: number;
     due_date?: string;
+    // Month the reported balance applies to (YYYY-MM)
+    as_of_month?: string;
     notes?: string;
     // Special repayment fields
     special_repayment_enabled?: boolean;
@@ -212,6 +214,7 @@ export interface LiabilityFormData {
     monthly_payment?: number;
     minimum_payment?: number;
     due_date?: string;
+    as_of_month?: string;
     notes?: string;
     // Special repayment fields
     special_repayment_enabled?: boolean;

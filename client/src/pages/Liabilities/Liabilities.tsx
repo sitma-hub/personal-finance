@@ -56,6 +56,7 @@ const Liabilities: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
+    const [projectionMonths, setProjectionMonths] = useState<number>(0);
     const [formData, setFormData] = useState<LiabilityFormData>({
         name: '',
         type: 'credit_card',
@@ -64,6 +65,7 @@ const Liabilities: React.FC = () => {
         monthly_payment: 0,
         minimum_payment: 0,
         due_date: '',
+        as_of_month: '',
         notes: '',
         // Special repayment fields
         special_repayment_enabled: false,
@@ -150,6 +152,7 @@ const Liabilities: React.FC = () => {
             monthly_payment: liability.monthly_payment || 0,
             minimum_payment: liability.minimum_payment || 0,
             due_date: liability.due_date || '',
+            as_of_month: liability.as_of_month || '',
             notes: liability.notes || '',
             // Special repayment fields
             special_repayment_enabled: liability.special_repayment_enabled || false,
@@ -160,6 +163,28 @@ const Liabilities: React.FC = () => {
             prepayment_penalty_rate: liability.prepayment_penalty_rate || 0,
         });
         setOpenDialog(true);
+    };
+
+    const monthsBetween = (from: Date, to: Date): number => {
+        return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+    };
+
+    const projectLiabilityBalance = (liability: Liability, monthsFromAsOf: number): number => {
+        let balance = Number(liability.current_balance) || 0;
+        const annualRate = Number(liability.interest_rate || 0) / 100;
+        const monthlyRate = annualRate / 12;
+        for (let i = 0; i < Math.max(0, monthsFromAsOf); i++) {
+            const interest = balance * monthlyRate;
+            let payment = Number(liability.monthly_payment || 0);
+            if (!payment || payment <= 0) {
+                // fallback: cover interest plus small principal
+                payment = interest + Math.max(balance * 0.01, 10);
+            }
+            const principal = Math.max(0, payment - interest);
+            balance = Math.max(0, balance - principal);
+            if (balance <= 0) break;
+        }
+        return balance;
     };
 
     const handleDelete = async (id: string) => {
@@ -193,6 +218,7 @@ const Liabilities: React.FC = () => {
             monthly_payment: 0,
             minimum_payment: 0,
             due_date: '',
+            as_of_month: '',
             notes: '',
             // Special repayment fields
             special_repayment_enabled: false,
@@ -250,6 +276,17 @@ const Liabilities: React.FC = () => {
                 >
                     Add Liability
                 </Button>
+            </Box>
+
+            <Box display="flex" alignItems="center" gap={2} mb={2}>
+                <TextField
+                    label="Project +N months"
+                    type="number"
+                    value={projectionMonths}
+                    onChange={(e) => setProjectionMonths(Math.max(0, Number(e.target.value)))}
+                    inputProps={{ min: 0 }}
+                    size="small"
+                />
             </Box>
 
             {error && (
@@ -467,6 +504,10 @@ const Liabilities: React.FC = () => {
                                             <TableCell align="right">Monthly Payment</TableCell>
                                             <TableCell align="right">Special Repayment</TableCell>
                                             <TableCell align="right">Due Date</TableCell>
+                                            <TableCell align="right">As of Month</TableCell>
+                                            <TableCell align="right">Staleness</TableCell>
+                                            <TableCell align="right">Balance Today</TableCell>
+                                            <TableCell align="right">Projected (+N mo)</TableCell>
                                             <TableCell align="center">Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -512,7 +553,40 @@ const Liabilities: React.FC = () => {
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {liability.due_date || 'N/A'}
+                                                    {liability.due_date ? new Date(liability.due_date).toLocaleDateString() : 'N/A'}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {liability.as_of_month ? new Date(liability.as_of_month).toLocaleDateString() : 'N/A'}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {(() => {
+                                                        if (!liability.as_of_month) return 'N/A';
+                                                        const now = new Date();
+                                                        const asOf = new Date(liability.as_of_month);
+                                                        const months = (now.getFullYear() - asOf.getFullYear()) * 12 + (now.getMonth() - asOf.getMonth());
+                                                        if (months <= 1) return 'Current';
+                                                        return `${months} mo old`;
+                                                    })()}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {(() => {
+                                                        if (!liability.as_of_month) return 'N/A';
+                                                        const now = new Date();
+                                                        const asOf = new Date(liability.as_of_month);
+                                                        const months = monthsBetween(asOf, now);
+                                                        const projected = projectLiabilityBalance(liability, months);
+                                                        return `$${Math.round(projected).toLocaleString()}`;
+                                                    })()}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {(() => {
+                                                        if (!liability.as_of_month) return 'N/A';
+                                                        const now = new Date();
+                                                        const asOf = new Date(liability.as_of_month);
+                                                        const months = monthsBetween(asOf, now) + Number(projectionMonths || 0);
+                                                        const projected = projectLiabilityBalance(liability, months);
+                                                        return `$${Math.round(projected).toLocaleString()}`;
+                                                    })()}
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <IconButton
@@ -617,6 +691,17 @@ const Liabilities: React.FC = () => {
                                 value={formData.due_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                                 InputLabelProps={{ shrink: true }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="As of Month"
+                                type="month"
+                                value={formData.as_of_month || ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, as_of_month: e.target.value }))}
+                                InputLabelProps={{ shrink: true }}
+                                helperText="Month this balance applies to"
                             />
                         </Grid>
                         <Grid item xs={12}>

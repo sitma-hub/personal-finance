@@ -953,6 +953,16 @@ const EnhancedMonteCarloSimulation: React.FC = () => {
         data.p5 !== 0 || data.p25 !== 0 || data.p50 !== 0 || data.p75 !== 0 || data.p95 !== 0
     ) || [];
 
+    // High-resolution monthly forecast chart data (Month 1..N)
+    const monthlyForecastData = simulationResults?.monthlyData.map((d, idx) => ({
+        x: `M${idx + 1}`,
+        p5: Number(d.p5) || 0,
+        p25: Number(d.p25) || 0,
+        p50: Number(d.p50) || 0,
+        p75: Number(d.p75) || 0,
+        p95: Number(d.p95) || 0,
+    })) || [];
+
     // Log projections chart data for Scenario Modeling
     console.log('🔍 Chart data processing - simulationResults exists:', !!simulationResults);
     console.log('🔍 Chart data processing - monthlyData exists:', !!simulationResults?.monthlyData);
@@ -1217,6 +1227,28 @@ const EnhancedMonteCarloSimulation: React.FC = () => {
                                             fillOpacity={0.1}
                                             name="5th Percentile (Worst Case)"
                                         />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </Paper>
+
+                            {/* Monthly Forecast Chart */}
+                            <Paper sx={{ p: 3, mb: 3 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Monthly Forecast (Median and Bands)
+                                </Typography>
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <AreaChart data={monthlyForecastData}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="x" tickFormatter={(v) => v} />
+                                        <YAxis tickFormatter={(value) => `$${(Number(value) / 1000).toFixed(0)}K`} />
+                                        <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Net Worth']} />
+                                        <Legend />
+
+                                        <Area type="monotone" dataKey="p95" stroke="#4caf50" fill="#4caf50" fillOpacity={0.08} name="95th" />
+                                        <Area type="monotone" dataKey="p75" stroke="#2196f3" fill="#2196f3" fillOpacity={0.15} name="75th" />
+                                        <Area type="monotone" dataKey="p50" stroke="#ff9800" fill="#ff9800" fillOpacity={0.25} name="Median (p50)" />
+                                        <Area type="monotone" dataKey="p25" stroke="#2196f3" fill="#2196f3" fillOpacity={0.15} name="25th" />
+                                        <Area type="monotone" dataKey="p5" stroke="#f44336" fill="#f44336" fillOpacity={0.08} name="5th" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </Paper>
