@@ -1,4 +1,33 @@
+# Dependencies
 node_modules/
-*/node_modules/
-.env
 
+# Environment (use env.example as the template)
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Logs and runtime data
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# User uploads and local backups
+uploads/
+
+# Test coverage
+coverage/
+
+# Tooling caches
+.eslintcache
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
