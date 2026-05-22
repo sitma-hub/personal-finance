@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -51,12 +51,14 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Expense, ExpenseFormData } from '../../types';
-import { expenseService } from '../../services/expenseService';
+import { useFinancial } from '../../contexts/FinancialContext';
+import { getLiabilityMonthlyPayment } from '../../utils/liabilityCashFlow';
+import { Link as RouterLink } from 'react-router-dom';
+import { Link } from '@mui/material';
 
 const Expenses: React.FC = () => {
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { state, createExpense, updateExpense, deleteExpense } = useFinancial();
+    const { expenses, liabilities, loading, error } = state;
     const [openDialog, setOpenDialog] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [formData, setFormData] = useState<ExpenseFormData>({
@@ -113,55 +115,27 @@ const Expenses: React.FC = () => {
         'Other': '#82C0CC',
     };
 
-    useEffect(() => {
-        fetchExpenses();
-    }, []);
-
-    const fetchExpenses = async () => {
-        setLoading(true);
-        try {
-            const response = await expenseService.getAllExpenses();
-            if (response.success && response.data) {
-                setExpenses(response.data);
-            } else {
-                setError('Failed to fetch expenses');
-            }
-        } catch (err) {
-            setError('Failed to fetch expenses');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [formError, setFormError] = useState<string | null>(null);
 
     const handleSubmit = async () => {
         if (!formData.name.trim()) {
-            setError('Please enter an expense name');
+            setFormError('Please enter an expense name');
             return;
         }
         if (!formData.category.trim()) {
-            setError('Please select a category');
+            setFormError('Please select a category');
             return;
         }
-
-        setLoading(true);
+        setFormError(null);
         try {
-            let response;
             if (editingExpense) {
-                response = await expenseService.updateExpense(editingExpense.id, formData);
+                await updateExpense(editingExpense.id, formData);
             } else {
-                response = await expenseService.createExpense(formData);
+                await createExpense(formData);
             }
-
-            if (response.success) {
-                await fetchExpenses();
-                handleCloseDialog();
-            } else {
-                setError(response.error?.message || 'Failed to save expense');
-            }
-        } catch (err) {
-            setError('Failed to save expense');
-        } finally {
-            setLoading(false);
+            handleCloseDialog();
+        } catch {
+            /* context error */
         }
     };
 
@@ -182,20 +156,7 @@ const Expenses: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this expense?')) {
             return;
         }
-
-        setLoading(true);
-        try {
-            const response = await expenseService.deleteExpense(id);
-            if (response.success) {
-                await fetchExpenses();
-            } else {
-                setError(response.error?.message || 'Failed to delete expense');
-            }
-        } catch (err) {
-            setError('Failed to delete expense');
-        } finally {
-            setLoading(false);
-        }
+        await deleteExpense(id);
     };
 
     const handleCloseDialog = () => {
@@ -209,30 +170,44 @@ const Expenses: React.FC = () => {
             is_discretionary: false,
             notes: '',
         });
-        setError(null);
+        setFormError(null);
     };
 
-    // Calculate totals
-    const totalMonthlyExpenses = expenses.reduce((sum, expense) => sum + Number(expense.monthly_amount), 0);
-    const totalAnnualExpenses = totalMonthlyExpenses * 12;
+    const livingExpenses = expenses.reduce((sum, expense) => sum + Number(expense.monthly_amount), 0);
+    const debtPayments = liabilities.reduce((sum, l) => sum + getLiabilityMonthlyPayment(l), 0);
+    const totalMonthlyOutflow = livingExpenses + debtPayments;
+    const totalAnnualOutflow = totalMonthlyOutflow * 12;
     const discretionaryExpenses = expenses.filter(e => e.is_discretionary).reduce((sum, expense) => sum + Number(expense.monthly_amount), 0);
-    const essentialExpenses = totalMonthlyExpenses - discretionaryExpenses;
+    const essentialLiving = livingExpenses - discretionaryExpenses;
 
-    // Chart data
-    const categoryData = Object.entries(
-        expenses.reduce((acc, expense) => {
-            acc[expense.category] = (acc[expense.category] || 0) + Number(expense.monthly_amount);
-            return acc;
-        }, {} as Record<string, number>)
-    ).map(([category, amount]) => ({
-        name: category,
-        value: amount,
-        color: categoryColors[category] || '#8884d8',
-    }));
+    const debtPaymentRows = liabilities
+        .map((l) => ({ liability: l, monthly: getLiabilityMonthlyPayment(l) }))
+        .filter((row) => row.monthly > 0)
+        .sort((a, b) => b.monthly - a.monthly);
 
-    const discretionaryData = [
-        { name: 'Essential', value: essentialExpenses, color: '#4caf50' },
-        { name: 'Discretionary', value: discretionaryExpenses, color: '#ff9800' },
+    // Chart data: living expenses by category + each debt line
+    const categoryData = [
+        ...Object.entries(
+            expenses.reduce((acc, expense) => {
+                acc[expense.category] = (acc[expense.category] || 0) + Number(expense.monthly_amount);
+                return acc;
+            }, {} as Record<string, number>)
+        ).map(([category, amount]) => ({
+            name: category,
+            value: amount,
+            color: categoryColors[category] || '#8884d8',
+        })),
+        ...debtPaymentRows.map((row) => ({
+            name: `Debt: ${row.liability.name}`,
+            value: row.monthly,
+            color: '#c62828',
+        })),
+    ];
+
+    const outflowSplitData = [
+        { name: 'Living (essential)', value: essentialLiving, color: '#4caf50' },
+        { name: 'Living (discretionary)', value: discretionaryExpenses, color: '#ff9800' },
+        ...(debtPayments > 0 ? [{ name: 'Debt payments', value: debtPayments, color: '#c62828' }] : []),
     ];
 
     return (
@@ -250,37 +225,46 @@ const Expenses: React.FC = () => {
                 </Button>
             </Box>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                    {error}
+            {(error || formError) && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
+                    {formError || error}
                 </Alert>
             )}
 
+            <Alert severity="info" sx={{ mb: 3 }}>
+                Mortgages and other loans are tracked under{' '}
+                <Link component={RouterLink} to="/liabilities">Liabilities</Link>
+                {' '}(balance + monthly payment). Their payments are included in totals below automatically — do not add the same payment again as an expense.
+            </Alert>
+
             <Grid container spacing={3}>
                 {/* Summary Cards */}
-                <Grid item xs={12} md={3}>
+                <Grid item xs={12} sm={6} md={3}>
                     <Card>
                         <CardContent>
                             <Box display="flex" alignItems="center" mb={2}>
                                 <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Monthly Expenses</Typography>
+                                <Typography variant="h6">Total monthly outflow</Typography>
                             </Box>
                             <Typography variant="h4" color="error.main">
-                                ${totalMonthlyExpenses.toLocaleString()}
+                                ${totalMonthlyOutflow.toLocaleString()}
+                            </Typography>
+                            <Typography variant="caption" color="textSecondary">
+                                Living ${livingExpenses.toLocaleString()} + debt ${debtPayments.toLocaleString()}
                             </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} md={3}>
+                <Grid item xs={12} sm={6} md={3}>
                     <Card>
                         <CardContent>
                             <Box display="flex" alignItems="center" mb={2}>
                                 <MoneyIcon color="warning" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Annual Expenses</Typography>
+                                <Typography variant="h6">Annual outflow</Typography>
                             </Box>
                             <Typography variant="h4" color="warning.main">
-                                ${totalAnnualExpenses.toLocaleString()}
+                                ${totalAnnualOutflow.toLocaleString()}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -294,7 +278,7 @@ const Expenses: React.FC = () => {
                                 <Typography variant="h6">Essential</Typography>
                             </Box>
                             <Typography variant="h4" color="success.main">
-                                ${essentialExpenses.toLocaleString()}
+                                ${essentialLiving.toLocaleString()}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -345,12 +329,12 @@ const Expenses: React.FC = () => {
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            Essential vs Discretionary
+                            Living vs debt payments
                         </Typography>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
-                                    data={discretionaryData}
+                                    data={outflowSplitData}
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
@@ -359,7 +343,7 @@ const Expenses: React.FC = () => {
                                     fill="#8884d8"
                                     dataKey="value"
                                 >
-                                    {discretionaryData.map((entry, index) => (
+                                    {outflowSplitData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
@@ -369,11 +353,55 @@ const Expenses: React.FC = () => {
                     </Paper>
                 </Grid>
 
-                {/* Expenses Table */}
+                {/* Debt payments from liabilities */}
                 <Grid item xs={12}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            All Expenses
+                            Debt payments (from Liabilities)
+                        </Typography>
+                        {debtPaymentRows.length === 0 ? (
+                            <Typography variant="body2" color="textSecondary">
+                                No liability payments configured. Add a mortgage or loan on the{' '}
+                                <Link component={RouterLink} to="/liabilities">Liabilities</Link> page.
+                            </Typography>
+                        ) : (
+                            <TableContainer>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Name</TableCell>
+                                            <TableCell>Type</TableCell>
+                                            <TableCell align="right">Monthly payment</TableCell>
+                                            <TableCell>Special repayment</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {debtPaymentRows.map(({ liability, monthly }) => (
+                                            <TableRow key={liability.id}>
+                                                <TableCell>{liability.name}</TableCell>
+                                                <TableCell>
+                                                    <Chip label={liability.type.replace(/_/g, ' ')} size="small" variant="outlined" />
+                                                </TableCell>
+                                                <TableCell align="right">${monthly.toLocaleString()}</TableCell>
+                                                <TableCell>
+                                                    {liability.special_repayment_enabled
+                                                        ? `${Number(liability.special_repayment_amount || 0).toLocaleString()} / ${liability.special_repayment_frequency || 'monthly'}`
+                                                        : '—'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+                    </Paper>
+                </Grid>
+
+                {/* Living expenses table */}
+                <Grid item xs={12}>
+                    <Paper sx={{ p: 3 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Living expenses
                         </Typography>
                         {loading ? (
                             <Box display="flex" justifyContent="center" p={3}>

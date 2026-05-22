@@ -22,9 +22,8 @@ import {
     CreditCard as LiabilitiesIcon,
     TrendingUp as IncomeIcon,
     Receipt as ExpensesIcon,
-    Timeline as ScenariosIcon,
-    Flag as GoalsIcon,
-    Upload as ImportIcon,
+    ShowChart as InvestmentsIcon,
+    Backup as BackupIcon,
     Brightness4 as DarkModeIcon,
     Brightness7 as LightModeIcon,
 } from '@mui/icons-material';
@@ -43,9 +42,8 @@ const menuItems = [
     { text: 'Liabilities', icon: <LiabilitiesIcon />, path: '/liabilities' },
     { text: 'Income', icon: <IncomeIcon />, path: '/income' },
     { text: 'Expenses', icon: <ExpensesIcon />, path: '/expenses' },
-    { text: 'Scenarios', icon: <ScenariosIcon />, path: '/scenarios' },
-    { text: 'Goals', icon: <GoalsIcon />, path: '/goals' },
-    { text: 'Import Data', icon: <ImportIcon />, path: '/import' },
+    { text: 'Investments', icon: <InvestmentsIcon />, path: '/investments' },
+    { text: 'Backup', icon: <BackupIcon />, path: '/backup' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -56,22 +54,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
+    const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
     const handleNavigation = (path: string) => {
         navigate(path);
-        if (isMobile) {
-            setMobileOpen(false);
-        }
+        if (isMobile) setMobileOpen(false);
     };
 
     const drawer = (
         <Box>
             <Toolbar>
                 <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-                    Personal Finance
+                    Net Worth Tracker
                 </Typography>
             </Toolbar>
             <List>
@@ -84,12 +78,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 '&.Mui-selected': {
                                     backgroundColor: muiTheme.palette.primary.main,
                                     color: 'white',
-                                    '&:hover': {
-                                        backgroundColor: muiTheme.palette.primary.dark,
-                                    },
-                                    '& .MuiListItemIcon-root': {
-                                        color: 'white',
-                                    },
+                                    '&:hover': { backgroundColor: muiTheme.palette.primary.dark },
+                                    '& .MuiListItemIcon-root': { color: 'white' },
                                 },
                             }}
                         >
@@ -123,30 +113,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Scenario Modeler
+                        Personal Net Worth
                     </Typography>
                     <IconButton color="inherit" onClick={toggleDarkMode}>
                         {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
                     </IconButton>
                 </Toolbar>
             </AppBar>
-            <Box
-                component="nav"
-                sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-            >
+            <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
                 <Drawer
                     variant="temporary"
                     open={mobileOpen}
                     onClose={handleDrawerToggle}
-                    ModalProps={{
-                        keepMounted: true,
-                    }}
+                    ModalProps={{ keepMounted: true }}
                     sx={{
                         display: { xs: 'block', md: 'none' },
-                        '& .MuiDrawer-paper': {
-                            boxSizing: 'border-box',
-                            width: drawerWidth,
-                        },
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
                     }}
                 >
                     {drawer}
@@ -155,10 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     variant="permanent"
                     sx={{
                         display: { xs: 'none', md: 'block' },
-                        '& .MuiDrawer-paper': {
-                            boxSizing: 'border-box',
-                            width: drawerWidth,
-                        },
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
                     }}
                     open
                 >
@@ -169,9 +148,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    p: 3,
-                    width: { md: `calc(100% - ${drawerWidth}px)` },
+                    minWidth: 0,
+                    p: { xs: 2, sm: 3 },
+                    width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+                    maxWidth: '100%',
                     mt: 8,
+                    boxSizing: 'border-box',
                 }}
             >
                 {children}

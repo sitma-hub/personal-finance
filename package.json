@@ -1,21 +1,18 @@
 {
-    "name": "personal-finance-scenario-modeler",
-    "version": "1.0.0",
-    "description": "A comprehensive personal finance scenario modeling application",
-    "main": "server/index.js",
+    "name": "personal-net-worth-tracker",
+    "version": "2.0.0",
+    "description": "Local personal net worth tracker",
     "scripts": {
         "dev": "concurrently \"npm run server\" \"npm run client\"",
         "server": "cd server && npm run dev",
         "client": "cd client && npm start",
-        "build": "cd client && npm run build",
-        "start": "cd server && npm start",
-        "docker:build": "docker compose build",
         "docker:up": "docker compose up -d",
-        "docker:down": "docker compose down"
+        "docker:down": "docker compose down",
+        "docker:reset": "docker compose down -v && docker compose up -d"
     },
     "keywords": [
         "personal-finance",
-        "scenario-modeling",
+        "net-worth",
         "react",
         "nodejs"
     ],

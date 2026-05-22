@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -50,12 +50,12 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { IncomeStream, IncomeFormData, IncomeType } from '../../types';
-import { incomeService } from '../../services/incomeService';
+import { useFinancial } from '../../contexts/FinancialContext';
+import { toDateInputValue } from '../../utils/dateInput';
 
 const Income: React.FC = () => {
-    const [incomeStreams, setIncomeStreams] = useState<IncomeStream[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { state, createIncome, updateIncome, deleteIncome } = useFinancial();
+    const { incomeStreams, loading, error } = state;
     const [openDialog, setOpenDialog] = useState(false);
     const [editingIncome, setEditingIncome] = useState<IncomeStream | null>(null);
     const [formData, setFormData] = useState<IncomeFormData>({
@@ -97,51 +97,23 @@ const Income: React.FC = () => {
         hourly: 'Hourly',
     };
 
-    useEffect(() => {
-        fetchIncomeStreams();
-    }, []);
-
-    const fetchIncomeStreams = async () => {
-        setLoading(true);
-        try {
-            const response = await incomeService.getAllIncomeStreams();
-            if (response.success && response.data) {
-                setIncomeStreams(response.data);
-            } else {
-                setError('Failed to fetch income streams');
-            }
-        } catch (err) {
-            setError('Failed to fetch income streams');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [formError, setFormError] = useState<string | null>(null);
 
     const handleSubmit = async () => {
         if (!formData.name.trim()) {
-            setError('Please enter an income stream name');
+            setFormError('Please enter an income stream name');
             return;
         }
-
-        setLoading(true);
+        setFormError(null);
         try {
-            let response;
             if (editingIncome) {
-                response = await incomeService.updateIncomeStream(editingIncome.id, formData);
+                await updateIncome(editingIncome.id, formData);
             } else {
-                response = await incomeService.createIncomeStream(formData);
+                await createIncome(formData);
             }
-
-            if (response.success) {
-                await fetchIncomeStreams();
-                handleCloseDialog();
-            } else {
-                setError(response.error?.message || 'Failed to save income stream');
-            }
-        } catch (err) {
-            setError('Failed to save income stream');
-        } finally {
-            setLoading(false);
+            handleCloseDialog();
+        } catch {
+            /* context error */
         }
     };
 
@@ -153,8 +125,8 @@ const Income: React.FC = () => {
             current_amount: income.current_amount,
             frequency: income.frequency,
             annual_growth_rate: income.annual_growth_rate,
-            start_date: income.start_date || '',
-            end_date: income.end_date || '',
+            start_date: toDateInputValue(income.start_date),
+            end_date: toDateInputValue(income.end_date),
             notes: income.notes || '',
         });
         setOpenDialog(true);
@@ -164,20 +136,7 @@ const Income: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this income stream?')) {
             return;
         }
-
-        setLoading(true);
-        try {
-            const response = await incomeService.deleteIncomeStream(id);
-            if (response.success) {
-                await fetchIncomeStreams();
-            } else {
-                setError(response.error?.message || 'Failed to delete income stream');
-            }
-        } catch (err) {
-            setError('Failed to delete income stream');
-        } finally {
-            setLoading(false);
-        }
+        await deleteIncome(id);
     };
 
     const handleCloseDialog = () => {
@@ -193,7 +152,7 @@ const Income: React.FC = () => {
             end_date: '',
             notes: '',
         });
-        setError(null);
+        setFormError(null);
     };
 
     // Calculate totals
@@ -243,9 +202,9 @@ const Income: React.FC = () => {
                 </Button>
             </Box>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                    {error}
+            {(error || formError) && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
+                    {formError || error}
                 </Alert>
             )}
 

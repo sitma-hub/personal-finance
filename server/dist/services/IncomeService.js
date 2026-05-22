@@ -80,7 +80,7 @@ class IncomeService {
       WHERE id = $1 AND user_id = (SELECT id FROM users WHERE email = $2)
     `;
         const result = await database_1.default.query(query, [id, this.userId]);
-        return result.rowCount > 0;
+        return (result.rowCount ?? 0) > 0;
     }
     async getTotalMonthlyIncome() {
         const query = `

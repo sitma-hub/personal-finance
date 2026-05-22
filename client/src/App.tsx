@@ -7,9 +7,8 @@ import Assets from './pages/Assets/Assets';
 import Liabilities from './pages/Liabilities/Liabilities';
 import Income from './pages/Income/Income';
 import Expenses from './pages/Expenses/Expenses';
-import Scenarios from './pages/Scenarios/Scenarios';
-import Goals from './pages/Goals/Goals';
-import Import from './pages/Import/Import';
+import Backup from './pages/Backup/Backup';
+import Investments from './pages/Investments/Investments';
 import { CustomThemeProvider } from './contexts/ThemeContext';
 import { FinancialProvider } from './contexts/FinancialContext';
 
@@ -25,9 +24,8 @@ function App() {
                             <Route path="/liabilities" element={<Liabilities />} />
                             <Route path="/income" element={<Income />} />
                             <Route path="/expenses" element={<Expenses />} />
-                            <Route path="/scenarios" element={<Scenarios />} />
-                            <Route path="/goals" element={<Goals />} />
-                            <Route path="/import" element={<Import />} />
+                            <Route path="/investments" element={<Investments />} />
+                            <Route path="/backup" element={<Backup />} />
                         </Routes>
                     </Layout>
                 </Box>

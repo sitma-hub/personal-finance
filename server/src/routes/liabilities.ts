@@ -14,6 +14,13 @@ router.get('/', asyncHandler(async (_req: Request, res: Response) => {
     });
 }));
 
+router.get('/:id/history', asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params['id'];
+    if (!id) return res.status(400).json({ success: false, error: { message: 'ID required' } });
+    const history = await liabilityService.getBalanceHistory(id);
+    return res.json({ success: true, data: history });
+}));
+
 // Get a specific liability by ID
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;

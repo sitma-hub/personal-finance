@@ -31,7 +31,7 @@ const errorHandler = (err, _req, res, _next) => {
     });
 };
 exports.errorHandler = errorHandler;
-const notFound = (req, res, next) => {
+const notFound = (req, _res, next) => {
     const error = new Error(`Not Found - ${req.originalUrl}`);
     error.statusCode = 404;
     next(error);

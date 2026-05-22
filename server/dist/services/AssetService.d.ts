@@ -1,4 +1,4 @@
-import { Asset, InvestmentHolding, RealEstateProperty, CreateAssetRequest, UpdateAssetRequest } from '../types';
+import { Asset, AssetValueHistory, CreateAssetRequest, UpdateAssetRequest } from '../types';
 export declare class AssetService {
     private readonly userId;
     getAllAssets(): Promise<Asset[]>;
@@ -6,10 +6,7 @@ export declare class AssetService {
     createAsset(assetData: CreateAssetRequest): Promise<Asset>;
     updateAsset(id: string, updateData: UpdateAssetRequest): Promise<Asset | null>;
     deleteAsset(id: string): Promise<boolean>;
-    getInvestmentHoldings(assetId: string): Promise<InvestmentHolding[]>;
-    addInvestmentHolding(assetId: string, holdingData: Partial<InvestmentHolding>): Promise<InvestmentHolding>;
-    getRealEstateProperties(assetId: string): Promise<RealEstateProperty[]>;
-    addRealEstateProperty(assetId: string, propertyData: Partial<RealEstateProperty>): Promise<RealEstateProperty>;
+    getValueHistory(assetId: string): Promise<AssetValueHistory[]>;
     getTotalAssetsValue(): Promise<number>;
     getAssetsByType(): Promise<Record<string, number>>;
 }

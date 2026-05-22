@@ -1,5 +1,3 @@
-// Type definitions for the frontend
-
 export type AssetType =
     | 'savings_account'
     | 'checking_account'
@@ -27,12 +25,11 @@ export type IncomeType =
     | 'social_security'
     | 'other_income';
 
-export type ScenarioType =
-    | 'market_conditions'
-    | 'inflation'
-    | 'income_growth'
-    | 'life_events'
-    | 'custom';
+export const INVESTABLE_ASSET_TYPES: AssetType[] = [
+    'investment_account',
+    'retirement_account',
+    'savings_account',
+];
 
 export interface Asset {
     id: string;
@@ -40,10 +37,14 @@ export interface Asset {
     name: string;
     type: AssetType;
     current_value: number;
+    as_of_date?: string;
     purchase_date?: string;
     purchase_price?: number;
-    annual_return_rate?: number;
-    monthly_contribution: number;
+    monthly_contribution?: number;
+    expected_annual_return?: number;
+    pessimistic_annual_return?: number;
+    optimistic_annual_return?: number;
+    include_in_projection?: boolean;
     notes?: string;
     created_at: string;
     updated_at: string;
@@ -55,14 +56,12 @@ export interface Liability {
     name: string;
     type: LiabilityType;
     current_balance: number;
+    as_of_month?: string;
     interest_rate?: number;
     monthly_payment?: number;
     minimum_payment?: number;
     due_date?: string;
-    // Month the reported balance applies to (YYYY-MM)
-    as_of_month?: string;
     notes?: string;
-    // Special repayment fields
     special_repayment_enabled?: boolean;
     special_repayment_amount?: number;
     special_repayment_frequency?: 'monthly' | 'quarterly' | 'annual';
@@ -101,128 +100,147 @@ export interface Expense {
     updated_at: string;
 }
 
-export interface Scenario {
+export interface NetWorthSnapshot {
     id: string;
-    user_id: string;
-    name: string;
-    description?: string;
-    type: ScenarioType;
-    parameters: Record<string, any>;
-    time_horizon_years: number;
-    is_active: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface ScenarioResult {
-    id: string;
-    scenario_id: string;
-    year: number;
-    month: number;
+    snapshot_month: string;
     total_assets: number;
     total_liabilities: number;
     net_worth: number;
-    monthly_income: number;
-    monthly_expenses: number;
-    monthly_savings: number;
-    asset_breakdown?: Record<string, any>;
+    asset_breakdown: SnapshotBreakdownItem[];
+    liability_breakdown: SnapshotBreakdownItem[];
+    notes?: string;
     created_at: string;
 }
 
-export interface Goal {
+export interface SnapshotBreakdownItem {
     id: string;
-    user_id: string;
     name: string;
-    description?: string;
-    target_amount: number;
-    target_date: string;
-    current_progress: number;
-    priority: number;
-    is_achieved: boolean;
-    achieved_date?: string;
-    created_at: string;
-    updated_at: string;
+    type: string;
+    amount: number;
 }
 
-export interface MonteCarloSimulation {
+export interface AssetValueHistory {
     id: string;
-    scenario_id: string;
-    simulation_name: string;
-    iterations: number;
-    confidence_levels: Record<string, number>;
-    results: Record<string, any>;
+    asset_id: string;
+    value: number;
+    as_of_date: string;
+    notes?: string;
     created_at: string;
 }
 
-export interface FinancialProjection {
-    year: number;
-    month: number;
-    total_assets: number;
-    total_liabilities: number;
-    net_worth: number;
-    monthly_income: number;
-    monthly_expenses: number;
-    monthly_savings: number;
-    asset_breakdown: {
-        savings: number;
-        investments: number;
-        real_estate: number;
-        other: number;
-    };
-    liability_breakdown: {
-        mortgages: number;
-        loans: number;
-        credit_cards: number;
-        other: number;
-    };
-    expense_breakdown: {
-        regular_expenses: number;
-        liability_payments: number;
-    };
+export interface LiabilityBalanceHistory {
+    id: string;
+    liability_id: string;
+    balance: number;
+    as_of_date: string;
+    notes?: string;
+    created_at: string;
+}
+
+export interface DashboardSummary {
+    totalAssets: number;
+    totalLiabilities: number;
+    netWorth: number;
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    monthlySavings: number;
+    savingsRate: number;
+    assetCount: number;
+    liabilityCount: number;
+    incomeStreamCount: number;
+    expenseCount: number;
+    snapshotCount: number;
+}
+
+export interface AssetAllocation {
+    type: string;
+    value: number;
+    percentage: number;
+}
+
+export interface NetWorthTrend {
+    month: string;
+    netWorth: number;
+    assets: number;
+    liabilities: number;
+}
+
+export interface RecentValueUpdate {
+    id: string;
+    entityType: 'asset' | 'liability';
+    entityId: string;
+    entityName: string;
+    amount: number;
+    asOfDate: string;
+    createdAt: string;
 }
 
 export interface ApiResponse<T> {
     success: boolean;
-    data?: T;
-    error?: {
-        message: string;
-    };
+    data: T;
+    error?: { message: string };
 }
 
-export interface ImportResult {
-    imported: number;
-    errors: string[];
-}
-
-// Form types
 export interface AssetFormData {
     name: string;
     type: AssetType;
     current_value: number;
+    as_of_date?: string;
     purchase_date?: string;
     purchase_price?: number;
-    annual_return_rate?: number;
-    monthly_contribution: number;
+    monthly_contribution?: number;
+    expected_annual_return?: number;
+    pessimistic_annual_return?: number;
+    optimistic_annual_return?: number;
+    include_in_projection?: boolean;
     notes?: string;
 }
 
-export interface LiabilityFormData {
+export interface ProjectionPoint {
+    month: string;
+    pessimistic: number;
+    expected: number;
+    optimistic: number;
+}
+
+export interface AssetProjectionSummary {
+    id: string;
     name: string;
-    type: LiabilityType;
-    current_balance: number;
-    interest_rate?: number;
-    monthly_payment?: number;
-    minimum_payment?: number;
-    due_date?: string;
-    as_of_month?: string;
-    notes?: string;
-    // Special repayment fields
-    special_repayment_enabled?: boolean;
-    special_repayment_amount?: number;
-    special_repayment_frequency?: 'monthly' | 'quarterly' | 'annual';
-    max_annual_prepayment_percentage?: number;
-    prepayment_penalty?: boolean;
-    prepayment_penalty_rate?: number;
+    type: AssetType;
+    currentValue: number;
+    monthlyContribution: number;
+    expectedAnnualReturn: number;
+    pessimisticAnnualReturn: number;
+    optimisticAnnualReturn: number;
+    projectedAt5y: { pessimistic: number; expected: number; optimistic: number };
+    projectedAt10y: { pessimistic: number; expected: number; optimistic: number };
+    projectedAt20y: { pessimistic: number; expected: number; optimistic: number };
+    series: ProjectionPoint[];
+}
+
+export interface InvestmentProjectionsResponse {
+    years: number;
+    totalCurrentValue: number;
+    totalMonthlyContribution: number;
+    totalsSeries: ProjectionPoint[];
+    assets: AssetProjectionSummary[];
+}
+
+export interface NetWorthProjectionPoint {
+    month: string;
+    assetsPessimistic: number;
+    assetsExpected: number;
+    assetsOptimistic: number;
+    liabilities: number;
+    netWorthPessimistic: number;
+    netWorthExpected: number;
+    netWorthOptimistic: number;
+}
+
+export interface NetWorthProjectionsResponse {
+    years: number;
+    series: NetWorthProjectionPoint[];
+    plannedMonthlyContributions: number;
 }
 
 export interface IncomeFormData {
@@ -243,21 +261,4 @@ export interface ExpenseFormData {
     annual_inflation_rate: number;
     is_discretionary: boolean;
     notes?: string;
-}
-
-export interface ScenarioFormData {
-    name: string;
-    description?: string;
-    type: ScenarioType;
-    parameters: Record<string, any>;
-    time_horizon_years: number;
-}
-
-export interface GoalFormData {
-    name: string;
-    description?: string;
-    target_amount: number;
-    target_date: string;
-    current_progress: number;
-    priority: number;
 }

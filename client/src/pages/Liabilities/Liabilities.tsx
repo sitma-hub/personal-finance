@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -47,13 +47,20 @@ import {
     AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { Liability, LiabilityFormData, LiabilityType } from '../../types';
+import { Liability, LiabilityType } from '../../types';
+import { useFinancial } from '../../contexts/FinancialContext';
+import { toDateInputValue, toMonthInputValue } from '../../utils/dateInput';
 import { liabilityService } from '../../services/liabilityService';
+import { LiabilityBalanceHistory } from '../../types';
+
+type LiabilityFormData = Partial<Liability>;
 
 const Liabilities: React.FC = () => {
-    const [liabilities, setLiabilities] = useState<Liability[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { state, createLiability, updateLiability, deleteLiability } = useFinancial();
+    const { liabilities, loading, error } = state;
+    const [formError, setFormError] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [history, setHistory] = useState<Record<string, LiabilityBalanceHistory[]>>({});
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
     const [projectionMonths, setProjectionMonths] = useState<number>(0);
@@ -94,51 +101,21 @@ const Liabilities: React.FC = () => {
         other_debt: <BankIcon />,
     };
 
-    useEffect(() => {
-        fetchLiabilities();
-    }, []);
-
-    const fetchLiabilities = async () => {
-        setLoading(true);
-        try {
-            const response = await liabilityService.getAllLiabilities();
-            if (response.success && response.data) {
-                setLiabilities(response.data);
-            } else {
-                setError('Failed to fetch liabilities');
-            }
-        } catch (err) {
-            setError('Failed to fetch liabilities');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleSubmit = async () => {
-        if (!formData.name.trim()) {
-            setError('Please enter a liability name');
+        if (!formData.name?.trim()) {
+            setFormError('Please enter a liability name');
             return;
         }
-
-        setLoading(true);
+        setFormError(null);
         try {
-            let response;
             if (editingLiability) {
-                response = await liabilityService.updateLiability(editingLiability.id, formData);
+                await updateLiability(editingLiability.id, formData);
             } else {
-                response = await liabilityService.createLiability(formData);
+                await createLiability(formData);
             }
-
-            if (response.success) {
-                await fetchLiabilities();
-                handleCloseDialog();
-            } else {
-                setError(response.error?.message || 'Failed to save liability');
-            }
-        } catch (err) {
-            setError('Failed to save liability');
-        } finally {
-            setLoading(false);
+            handleCloseDialog();
+        } catch {
+            /* context error */
         }
     };
 
@@ -151,8 +128,8 @@ const Liabilities: React.FC = () => {
             interest_rate: liability.interest_rate || 0,
             monthly_payment: liability.monthly_payment || 0,
             minimum_payment: liability.minimum_payment || 0,
-            due_date: liability.due_date || '',
-            as_of_month: liability.as_of_month || '',
+            due_date: toDateInputValue(liability.due_date),
+            as_of_month: toMonthInputValue(liability.as_of_month),
             notes: liability.notes || '',
             // Special repayment fields
             special_repayment_enabled: liability.special_repayment_enabled || false,
@@ -191,19 +168,18 @@ const Liabilities: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this liability?')) {
             return;
         }
+        await deleteLiability(id);
+    };
 
-        setLoading(true);
-        try {
-            const response = await liabilityService.deleteLiability(id);
-            if (response.success) {
-                await fetchLiabilities();
-            } else {
-                setError(response.error?.message || 'Failed to delete liability');
-            }
-        } catch (err) {
-            setError('Failed to delete liability');
-        } finally {
-            setLoading(false);
+    const toggleHistory = async (id: string) => {
+        if (expandedId === id) {
+            setExpandedId(null);
+            return;
+        }
+        setExpandedId(id);
+        if (!history[id]) {
+            const res = await liabilityService.getBalanceHistory(id);
+            setHistory((prev) => ({ ...prev, [id]: res.data || [] }));
         }
     };
 
@@ -228,7 +204,7 @@ const Liabilities: React.FC = () => {
             prepayment_penalty: false,
             prepayment_penalty_rate: 0,
         });
-        setError(null);
+        setFormError(null);
     };
 
     const totalBalance = liabilities.reduce((sum, liability) => sum + Number(liability.current_balance), 0);
@@ -289,9 +265,9 @@ const Liabilities: React.FC = () => {
                 />
             </Box>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                    {error}
+            {(error || formError) && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
+                    {formError || error}
                 </Alert>
             )}
 
