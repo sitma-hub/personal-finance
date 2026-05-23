@@ -1,7 +1,74 @@
 import pool from '../config/database';
-import { BackupData } from '../types';
+import { BackupData, BackupIncludes } from '../types';
 
-const BACKUP_VERSION = 1;
+/** Current backup format (v2 adds explicit `includes` metadata; v1 still importable). */
+const BACKUP_VERSION = 2;
+const SUPPORTED_VERSIONS = [1, 2];
+
+const BACKUP_INCLUDES: BackupIncludes = {
+  assets: true,
+  liabilities: true,
+  income_streams: true,
+  expenses: true,
+  asset_value_history: true,
+  liability_balance_history: true,
+  net_worth_snapshots: true,
+  liability_features: [
+    'special_repayment',
+    'prepayment_penalty',
+    'invest_after_payoff',
+    'payoff_invest_asset_id',
+  ],
+  asset_features: [
+    'monthly_contribution',
+    'return_scenarios',
+    'include_in_projection',
+  ],
+};
+
+function parseBackupPayload(payload: unknown): BackupData {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid backup file: expected a JSON object');
+  }
+
+  const root = payload as Record<string, unknown>;
+  if (typeof root['version'] === 'number' && Array.isArray(root['assets'])) {
+    return root as unknown as BackupData;
+  }
+
+  const wrapped = root['data'];
+  if (wrapped && typeof wrapped === 'object' && typeof (wrapped as BackupData)['version'] === 'number') {
+    return wrapped as BackupData;
+  }
+
+  throw new Error('Invalid backup format: missing version and data tables');
+}
+
+function assertSupportedVersion(version: number): void {
+  if (!SUPPORTED_VERSIONS.includes(version)) {
+    throw new Error(
+      `Unsupported backup version: ${version}. Supported: ${SUPPORTED_VERSIONS.join(', ')}.`
+    );
+  }
+}
+
+/** JSONB column: accept object or string from export file. */
+function jsonbParam(value: unknown): string {
+  if (value == null) return '[]';
+  if (typeof value === 'string') {
+    try {
+      JSON.parse(value);
+      return value;
+    } catch {
+      return '[]';
+    }
+  }
+  return JSON.stringify(value);
+}
+
+function assetIdsSet(assets: BackupData['assets']): Set<string> {
+  return new Set((assets || []).map((a) => a.id));
+}
 
 export class BackupService {
   async exportAll(): Promise<BackupData> {
@@ -13,37 +80,39 @@ export class BackupService {
         pool.query('SELECT * FROM expenses ORDER BY created_at'),
         pool.query('SELECT * FROM asset_value_history ORDER BY as_of_date, created_at'),
         pool.query('SELECT * FROM liability_balance_history ORDER BY as_of_date, created_at'),
-        pool.query('SELECT * FROM net_worth_snapshots ORDER BY snapshot_month')
+        pool.query('SELECT * FROM net_worth_snapshots ORDER BY snapshot_month'),
       ]);
 
     return {
       version: BACKUP_VERSION,
       exported_at: new Date().toISOString(),
+      includes: { ...BACKUP_INCLUDES },
       assets: assets.rows,
       liabilities: liabilities.rows,
       income_streams: income.rows,
       expenses: expenses.rows,
       asset_value_history: assetHistory.rows,
       liability_balance_history: liabilityHistory.rows,
-      net_worth_snapshots: snapshots.rows
+      net_worth_snapshots: snapshots.rows,
     };
   }
 
-  async importAll(payload: BackupData | { success?: boolean; data: BackupData }): Promise<{ imported: Record<string, number> }> {
-    const data = 'version' in payload ? payload as BackupData : (payload as { data: BackupData }).data;
-    if (!data || data.version !== BACKUP_VERSION) {
-      throw new Error(`Unsupported backup version: ${data?.version}. Expected ${BACKUP_VERSION}.`);
-    }
+  async importAll(payload: unknown): Promise<{ imported: Record<string, number> }> {
+    const data = parseBackupPayload(payload);
+    assertSupportedVersion(data.version);
 
     const client = await pool.connect();
+    const assetIds = assetIdsSet(data.assets);
+
     try {
       await client.query('BEGIN');
 
+      // Child tables first, then liabilities (FK → assets), then assets
       await client.query('DELETE FROM asset_value_history');
       await client.query('DELETE FROM liability_balance_history');
       await client.query('DELETE FROM net_worth_snapshots');
-      await client.query('DELETE FROM assets');
       await client.query('DELETE FROM liabilities');
+      await client.query('DELETE FROM assets');
       await client.query('DELETE FROM income_streams');
       await client.query('DELETE FROM expenses');
 
@@ -55,42 +124,44 @@ export class BackupService {
         throw new Error('Default user not found');
       }
 
-      const idMap = {
-        assets: new Map<string, string>(),
-        liabilities: new Map<string, string>()
-      };
-
+      let assetsImported = 0;
       for (const asset of data.assets || []) {
-        const result = await client.query(
+        await client.query(
           `INSERT INTO assets (
             id, user_id, name, type, current_value, as_of_date, purchase_date, purchase_price,
             monthly_contribution, expected_annual_return, pessimistic_annual_return,
             optimistic_annual_return, include_in_projection, notes, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-           ON CONFLICT (id) DO NOTHING`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
             asset.id,
             userId,
             asset.name,
             asset.type,
             asset.current_value,
-            asset.as_of_date,
-            asset.purchase_date,
-            asset.purchase_price,
+            asset.as_of_date ?? null,
+            asset.purchase_date ?? null,
+            asset.purchase_price ?? null,
             asset.monthly_contribution ?? 0,
             asset.expected_annual_return ?? null,
             asset.pessimistic_annual_return ?? null,
             asset.optimistic_annual_return ?? null,
             asset.include_in_projection ?? true,
-            asset.notes,
-            asset.created_at,
-            asset.updated_at
+            asset.notes ?? null,
+            asset.created_at ?? new Date(),
+            asset.updated_at ?? new Date(),
           ]
         );
-        if (result.rowCount) idMap.assets.set(asset.id, asset.id);
+        assetsImported += 1;
       }
 
+      let liabilitiesImported = 0;
       for (const liability of data.liabilities || []) {
+        const payoffAssetId =
+          liability.payoff_invest_asset_id &&
+          assetIds.has(liability.payoff_invest_asset_id)
+            ? liability.payoff_invest_asset_id
+            : null;
+
         await client.query(
           `INSERT INTO liabilities (
             id, user_id, name, type, current_balance, as_of_month, interest_rate,
@@ -106,31 +177,34 @@ export class BackupService {
             liability.name,
             liability.type,
             liability.current_balance,
-            liability.as_of_month,
-            liability.interest_rate,
-            liability.monthly_payment,
-            liability.minimum_payment,
-            liability.due_date,
-            liability.notes,
-            liability.special_repayment_enabled,
-            liability.special_repayment_amount,
-            liability.special_repayment_frequency,
-            liability.max_annual_prepayment_percentage,
-            liability.prepayment_penalty,
-            liability.prepayment_penalty_rate,
+            liability.as_of_month ?? null,
+            liability.interest_rate ?? null,
+            liability.monthly_payment ?? null,
+            liability.minimum_payment ?? null,
+            liability.due_date ?? null,
+            liability.notes ?? null,
+            liability.special_repayment_enabled ?? false,
+            liability.special_repayment_amount ?? null,
+            liability.special_repayment_frequency ?? null,
+            liability.max_annual_prepayment_percentage ?? null,
+            liability.prepayment_penalty ?? false,
+            liability.prepayment_penalty_rate ?? null,
             liability.invest_after_payoff ?? false,
-            liability.payoff_invest_asset_id ?? null,
-            liability.created_at,
-            liability.updated_at
+            payoffAssetId,
+            liability.created_at ?? new Date(),
+            liability.updated_at ?? new Date(),
           ]
         );
-        idMap.liabilities.set(liability.id, liability.id);
+        liabilitiesImported += 1;
       }
 
+      let incomeImported = 0;
       for (const income of data.income_streams || []) {
         await client.query(
-          `INSERT INTO income_streams (id, user_id, name, type, current_amount, frequency, annual_growth_rate, start_date, end_date, notes, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          `INSERT INTO income_streams (
+            id, user_id, name, type, current_amount, frequency, annual_growth_rate,
+            start_date, end_date, notes, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
           [
             income.id,
             userId,
@@ -138,87 +212,111 @@ export class BackupService {
             income.type,
             income.current_amount,
             income.frequency,
-            income.annual_growth_rate,
-            income.start_date,
-            income.end_date,
-            income.notes,
-            income.created_at,
-            income.updated_at
+            income.annual_growth_rate ?? 0.03,
+            income.start_date ?? null,
+            income.end_date ?? null,
+            income.notes ?? null,
+            income.created_at ?? new Date(),
+            income.updated_at ?? new Date(),
           ]
         );
+        incomeImported += 1;
       }
 
+      let expensesImported = 0;
       for (const expense of data.expenses || []) {
         await client.query(
-          `INSERT INTO expenses (id, user_id, name, category, monthly_amount, annual_inflation_rate, is_discretionary, notes, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          `INSERT INTO expenses (
+            id, user_id, name, category, monthly_amount, annual_inflation_rate,
+            is_discretionary, notes, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             expense.id,
             userId,
             expense.name,
             expense.category,
             expense.monthly_amount,
-            expense.annual_inflation_rate,
-            expense.is_discretionary,
-            expense.notes,
-            expense.created_at,
-            expense.updated_at
+            expense.annual_inflation_rate ?? 0.025,
+            expense.is_discretionary ?? false,
+            expense.notes ?? null,
+            expense.created_at ?? new Date(),
+            expense.updated_at ?? new Date(),
           ]
         );
+        expensesImported += 1;
       }
 
+      let assetHistoryImported = 0;
       for (const h of data.asset_value_history || []) {
-        if (idMap.assets.has(h.asset_id) || data.assets?.some(a => a.id === h.asset_id)) {
-          await client.query(
-            `INSERT INTO asset_value_history (id, asset_id, value, as_of_date, notes, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [h.id, h.asset_id, h.value, h.as_of_date, h.notes, h.created_at]
-          );
-        }
+        if (!assetIds.has(h.asset_id)) continue;
+        await client.query(
+          `INSERT INTO asset_value_history (id, asset_id, value, as_of_date, notes, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            h.id,
+            h.asset_id,
+            h.value,
+            h.as_of_date,
+            h.notes ?? null,
+            h.created_at ?? new Date(),
+          ]
+        );
+        assetHistoryImported += 1;
       }
 
+      const liabilityIds = new Set((data.liabilities || []).map((l) => l.id));
+      let liabilityHistoryImported = 0;
       for (const h of data.liability_balance_history || []) {
-        if (data.liabilities?.some(l => l.id === h.liability_id)) {
-          await client.query(
-            `INSERT INTO liability_balance_history (id, liability_id, balance, as_of_date, notes, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [h.id, h.liability_id, h.balance, h.as_of_date, h.notes, h.created_at]
-          );
-        }
+        if (!liabilityIds.has(h.liability_id)) continue;
+        await client.query(
+          `INSERT INTO liability_balance_history (id, liability_id, balance, as_of_date, notes, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            h.id,
+            h.liability_id,
+            h.balance,
+            h.as_of_date,
+            h.notes ?? null,
+            h.created_at ?? new Date(),
+          ]
+        );
+        liabilityHistoryImported += 1;
       }
 
+      let snapshotsImported = 0;
       for (const snap of data.net_worth_snapshots || []) {
         await client.query(
           `INSERT INTO net_worth_snapshots (
             id, snapshot_month, total_assets, total_liabilities, net_worth,
             asset_breakdown, liability_breakdown, notes, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`,
           [
             snap.id,
             snap.snapshot_month,
             snap.total_assets,
             snap.total_liabilities,
             snap.net_worth,
-            JSON.stringify(snap.asset_breakdown),
-            JSON.stringify(snap.liability_breakdown),
-            snap.notes,
-            snap.created_at
+            jsonbParam(snap.asset_breakdown),
+            jsonbParam(snap.liability_breakdown),
+            snap.notes ?? null,
+            snap.created_at ?? new Date(),
           ]
         );
+        snapshotsImported += 1;
       }
 
       await client.query('COMMIT');
 
       return {
         imported: {
-          assets: data.assets?.length || 0,
-          liabilities: data.liabilities?.length || 0,
-          income_streams: data.income_streams?.length || 0,
-          expenses: data.expenses?.length || 0,
-          asset_value_history: data.asset_value_history?.length || 0,
-          liability_balance_history: data.liability_balance_history?.length || 0,
-          net_worth_snapshots: data.net_worth_snapshots?.length || 0
-        }
+          assets: assetsImported,
+          liabilities: liabilitiesImported,
+          income_streams: incomeImported,
+          expenses: expensesImported,
+          asset_value_history: assetHistoryImported,
+          liability_balance_history: liabilityHistoryImported,
+          net_worth_snapshots: snapshotsImported,
+        },
       };
     } catch (err) {
       await client.query('ROLLBACK');

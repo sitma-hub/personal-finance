@@ -93,7 +93,8 @@ const Backup: React.FC = () => {
             <Paper sx={{ p: 3, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Export</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
-                    Downloads assets, liabilities, income, expenses, value history, and monthly snapshots.
+                    Downloads assets (including investment buckets and return scenarios), liabilities
+                    (special repayments, invest-after-payoff), income, expenses, value history, and monthly snapshots.
                 </Typography>
                 <Button
                     variant="contained"
@@ -108,7 +109,7 @@ const Backup: React.FC = () => {
             <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>Import</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
-                    Replaces all existing data with the contents of a backup file (version 1 JSON).
+                    Replaces all existing data with the contents of a backup file (version 1 or 2 JSON).
                 </Typography>
                 <Button variant="outlined" component="label" startIcon={<UploadIcon />} disabled={loading}>
                     Choose backup file

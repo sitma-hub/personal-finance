@@ -266,9 +266,23 @@ export interface RecentValueUpdate {
     createdAt: string;
 }
 
+export interface BackupIncludes {
+    assets: boolean;
+    liabilities: boolean;
+    income_streams: boolean;
+    expenses: boolean;
+    asset_value_history: boolean;
+    liability_balance_history: boolean;
+    net_worth_snapshots: boolean;
+    liability_features?: string[];
+    asset_features?: string[];
+}
+
 export interface BackupData {
     version: number;
     exported_at: string;
+    /** Present in v2+ exports; documents feature coverage */
+    includes?: BackupIncludes;
     assets: Asset[];
     liabilities: Liability[];
     income_streams: IncomeStream[];
