@@ -33,6 +33,8 @@ import {
     TableRow,
     Switch,
     FormControlLabel,
+    ToggleButton,
+    ToggleButtonGroup,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -49,9 +51,15 @@ import {
     AttachMoney as MoneyIcon,
     Category as CategoryIcon,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { CategoryPieChart, PieLegendMode } from '../../components/charts/CategoryPieChart';
 import { Expense, ExpenseFormData } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
+import {
+    annualRateToPercentInput,
+    formatAnnualRatePercent,
+    normalizeAnnualRate,
+} from '../../utils/rateNormalization';
 import { getLiabilityMonthlyPayment } from '../../utils/liabilityCashFlow';
 import { Link as RouterLink } from 'react-router-dom';
 import { Link } from '@mui/material';
@@ -69,6 +77,7 @@ const Expenses: React.FC = () => {
         is_discretionary: false,
         notes: '',
     });
+    const [pieLegendMode, setPieLegendMode] = useState<PieLegendMode>('percent');
 
     const expenseCategories = [
         'Housing',
@@ -128,10 +137,14 @@ const Expenses: React.FC = () => {
         }
         setFormError(null);
         try {
+            const payload = {
+                ...formData,
+                annual_inflation_rate: normalizeAnnualRate(formData.annual_inflation_rate),
+            };
             if (editingExpense) {
-                await updateExpense(editingExpense.id, formData);
+                await updateExpense(editingExpense.id, payload);
             } else {
-                await createExpense(formData);
+                await createExpense(payload);
             }
             handleCloseDialog();
         } catch {
@@ -299,30 +312,39 @@ const Expenses: React.FC = () => {
                 </Grid>
 
                 {/* Charts */}
+                <Grid item xs={12}>
+                    <Box display="flex" justifyContent="flex-end">
+                        <ToggleButtonGroup
+                            size="small"
+                            exclusive
+                            value={pieLegendMode}
+                            onChange={(_, value: PieLegendMode | null) => {
+                                if (value) setPieLegendMode(value);
+                            }}
+                            aria-label="Pie chart legend display"
+                        >
+                            <ToggleButton value="percent" aria-label="Show percent">
+                                Percent
+                            </ToggleButton>
+                            <ToggleButton value="amount" aria-label="Show amount">
+                                Amount
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+                </Grid>
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Expenses by Category
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={categoryData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monthly Amount']} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <CategoryPieChart
+                            data={categoryData}
+                            height={300}
+                            legendMode={pieLegendMode}
+                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            tooltipLabel="Monthly Amount"
+                            emptyMessage="No expenses to display"
+                        />
                     </Paper>
                 </Grid>
 
@@ -331,25 +353,14 @@ const Expenses: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Living vs debt payments
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={outflowSplitData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {outflowSplitData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monthly Amount']} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <CategoryPieChart
+                            data={outflowSplitData}
+                            height={300}
+                            legendMode={pieLegendMode}
+                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            tooltipLabel="Monthly Amount"
+                            emptyMessage="No outflow data"
+                        />
                     </Paper>
                 </Grid>
 
@@ -443,7 +454,7 @@ const Expenses: React.FC = () => {
                                                     ${expense.monthly_amount.toLocaleString()}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {expense.annual_inflation_rate}%
+                                                    {formatAnnualRatePercent(expense.annual_inflation_rate)}%
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Chip
@@ -530,9 +541,14 @@ const Expenses: React.FC = () => {
                                 fullWidth
                                 label="Annual Inflation Rate (%)"
                                 type="number"
-                                value={formData.annual_inflation_rate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, annual_inflation_rate: Number(e.target.value) }))}
-                                inputProps={{ step: 0.01 }}
+                                value={annualRateToPercentInput(formData.annual_inflation_rate)}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        annual_inflation_rate: (parseFloat(e.target.value) || 0) / 100,
+                                    }))
+                                }
+                                inputProps={{ step: 0.1, min: 0 }}
                             />
                         </Grid>
                         <Grid item xs={12}>

@@ -12,6 +12,26 @@ function normalizeMonthDate(value: string | Date | undefined): string | undefine
   return value;
 }
 
+const UPDATABLE_LIABILITY_FIELDS = new Set([
+  'name',
+  'type',
+  'current_balance',
+  'interest_rate',
+  'monthly_payment',
+  'minimum_payment',
+  'due_date',
+  'as_of_month',
+  'notes',
+  'special_repayment_enabled',
+  'special_repayment_amount',
+  'special_repayment_frequency',
+  'max_annual_prepayment_percentage',
+  'prepayment_penalty',
+  'prepayment_penalty_rate',
+  'invest_after_payoff',
+  'payoff_invest_asset_id',
+]);
+
 export class LiabilityService {
   private readonly userId = 'user@example.com';
 
@@ -50,7 +70,9 @@ export class LiabilityService {
       special_repayment_frequency,
       max_annual_prepayment_percentage,
       prepayment_penalty,
-      prepayment_penalty_rate
+      prepayment_penalty_rate,
+      invest_after_payoff,
+      payoff_invest_asset_id
     } = liabilityData;
 
     const normalizedAsOf = normalizeMonthDate(as_of_month as string | Date | undefined) ||
@@ -65,11 +87,12 @@ export class LiabilityService {
           user_id, name, type, current_balance, interest_rate,
           monthly_payment, minimum_payment, due_date, as_of_month, notes,
           special_repayment_enabled, special_repayment_amount, special_repayment_frequency,
-          max_annual_prepayment_percentage, prepayment_penalty, prepayment_penalty_rate
+          max_annual_prepayment_percentage, prepayment_penalty, prepayment_penalty_rate,
+          invest_after_payoff, payoff_invest_asset_id
         )
         VALUES (
           (SELECT id FROM users WHERE email = $1), $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15, $16
+          $11, $12, $13, $14, $15, $16, $17, $18
         )
         RETURNING *
       `;
@@ -90,7 +113,9 @@ export class LiabilityService {
         special_repayment_frequency,
         max_annual_prepayment_percentage,
         prepayment_penalty ?? false,
-        prepayment_penalty_rate
+        prepayment_penalty_rate,
+        invest_after_payoff ?? false,
+        payoff_invest_asset_id ?? null
       ]);
 
       const liability = result.rows[0];
@@ -119,10 +144,13 @@ export class LiabilityService {
     let paramCount = 1;
 
     Object.entries(updateData).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value !== undefined && UPDATABLE_LIABILITY_FIELDS.has(key)) {
         let normalizedValue = value;
         if (key === 'as_of_month') {
           normalizedValue = normalizeMonthDate(value as string | Date) ?? value;
+        }
+        if (key === 'payoff_invest_asset_id' && (value === '' || value === null)) {
+          normalizedValue = null;
         }
         fields.push(`${key} = $${paramCount}`);
         values.push(normalizedValue);

@@ -8,7 +8,8 @@ export const projectionService = {
     },
 
     getNetWorthProjections: async (years = 10): Promise<ApiResponse<NetWorthProjectionsResponse>> => {
-        const response = await api.get(`/projections/net-worth?years=${years}`);
+        const timeout = Math.min(120_000, 20_000 + years * 2_000);
+        const response = await api.get(`/projections/net-worth?years=${years}`, { timeout });
         return response.data;
     },
 };

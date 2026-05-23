@@ -23,6 +23,7 @@ import {
     TrendingUp as IncomeIcon,
     Receipt as ExpensesIcon,
     ShowChart as InvestmentsIcon,
+    EventNote as CheckInIcon,
     Backup as BackupIcon,
     Brightness4 as DarkModeIcon,
     Brightness7 as LightModeIcon,
@@ -38,6 +39,7 @@ interface LayoutProps {
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Check-in', icon: <CheckInIcon />, path: '/check-in' },
     { text: 'Assets', icon: <AssetsIcon />, path: '/assets' },
     { text: 'Liabilities', icon: <LiabilitiesIcon />, path: '/liabilities' },
     { text: 'Income', icon: <IncomeIcon />, path: '/income' },

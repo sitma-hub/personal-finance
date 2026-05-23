@@ -68,6 +68,8 @@ export interface Liability {
     max_annual_prepayment_percentage?: number;
     prepayment_penalty?: boolean;
     prepayment_penalty_rate?: number;
+    invest_after_payoff?: boolean;
+    payoff_invest_asset_id?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -237,9 +239,20 @@ export interface NetWorthProjectionPoint {
     netWorthOptimistic: number;
 }
 
+export interface PayoffRedirectEvent {
+    liabilityId: string;
+    liabilityName: string;
+    payoffMonth: string;
+    monthlyRedirect: number;
+    targetAssetId: string;
+    targetAssetName: string;
+}
+
 export interface NetWorthProjectionsResponse {
     years: number;
     series: NetWorthProjectionPoint[];
+    payoffInvestingSeries?: NetWorthProjectionPoint[];
+    payoffEvents?: PayoffRedirectEvent[];
     plannedMonthlyContributions: number;
 }
 
@@ -260,5 +273,53 @@ export interface ExpenseFormData {
     monthly_amount: number;
     annual_inflation_rate: number;
     is_discretionary: boolean;
+    notes?: string;
+}
+
+export interface CheckInStatus {
+    missingMonths: string[];
+    recommendedMonth: string;
+    lastSnapshotMonth: string | null;
+    currentMonth: string;
+}
+
+export interface CheckInProposalLineItem {
+    id: string;
+    name: string;
+    type: string;
+    previousAmount: number;
+    proposedAmount: number;
+    delta: number;
+    explanation: string;
+}
+
+export interface CheckInProposal {
+    targetMonth: string;
+    baselineMonth: string | null;
+    basis: 'snapshot' | 'current';
+    offsetMonths: number;
+    isHistorical: boolean;
+    updatesCurrentState: boolean;
+    hasExistingSnapshot: boolean;
+    assets: CheckInProposalLineItem[];
+    liabilities: CheckInProposalLineItem[];
+    totals: {
+        assets: number;
+        liabilities: number;
+        netWorth: number;
+    };
+}
+
+export interface ApplyCheckInLineItem {
+    id: string;
+    amount: number;
+    name?: string;
+    type?: string;
+}
+
+export interface ApplyCheckInRequest {
+    targetMonth: string;
+    assets: ApplyCheckInLineItem[];
+    liabilities: ApplyCheckInLineItem[];
     notes?: string;
 }

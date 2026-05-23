@@ -46,8 +46,9 @@ import {
     AccountBalance as BankIcon,
     AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { Liability, LiabilityType } from '../../types';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { Liability, LiabilityType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { toDateInputValue, toMonthInputValue } from '../../utils/dateInput';
 import { liabilityService } from '../../services/liabilityService';
@@ -57,7 +58,7 @@ type LiabilityFormData = Partial<Liability>;
 
 const Liabilities: React.FC = () => {
     const { state, createLiability, updateLiability, deleteLiability } = useFinancial();
-    const { liabilities, loading, error } = state;
+    const { liabilities, assets, loading, error } = state;
     const [formError, setFormError] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [history, setHistory] = useState<Record<string, LiabilityBalanceHistory[]>>({});
@@ -81,6 +82,8 @@ const Liabilities: React.FC = () => {
         max_annual_prepayment_percentage: 0,
         prepayment_penalty: false,
         prepayment_penalty_rate: 0,
+        invest_after_payoff: false,
+        payoff_invest_asset_id: null,
     });
 
     const liabilityTypeLabels: Record<LiabilityType, string> = {
@@ -138,6 +141,8 @@ const Liabilities: React.FC = () => {
             max_annual_prepayment_percentage: liability.max_annual_prepayment_percentage || 0,
             prepayment_penalty: liability.prepayment_penalty || false,
             prepayment_penalty_rate: liability.prepayment_penalty_rate || 0,
+            invest_after_payoff: liability.invest_after_payoff || false,
+            payoff_invest_asset_id: liability.payoff_invest_asset_id || null,
         });
         setOpenDialog(true);
     };
@@ -203,9 +208,15 @@ const Liabilities: React.FC = () => {
             max_annual_prepayment_percentage: 0,
             prepayment_penalty: false,
             prepayment_penalty_rate: 0,
+            invest_after_payoff: false,
+            payoff_invest_asset_id: null,
         });
         setFormError(null);
     };
+
+    const investableAssets = assets.filter(
+        (a) => INVESTABLE_ASSET_TYPES.includes(a.type) && a.include_in_projection !== false
+    );
 
     const totalBalance = liabilities.reduce((sum, liability) => sum + Number(liability.current_balance), 0);
     const totalMonthlyPayments = liabilities.reduce((sum, liability) => sum + Number(liability.monthly_payment || 0), 0);
@@ -338,25 +349,16 @@ const Liabilities: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Liability Distribution by Type
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={liabilityTypeData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {liabilityTypeData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Balance']} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <CategoryPieChart
+                            data={liabilityTypeData.map((entry, index) => ({
+                                ...entry,
+                                color: COLORS[index % COLORS.length],
+                            }))}
+                            height={300}
+                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            tooltipLabel="Balance"
+                            emptyMessage="No liabilities to display"
+                        />
                     </Paper>
                 </Grid>
 
@@ -793,6 +795,65 @@ const Liabilities: React.FC = () => {
                                         />
                                     </Grid>
                                 )}
+                            </>
+                        )}
+
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 2 }}>
+                                <Typography variant="h6" color="primary">
+                                    After payoff
+                                </Typography>
+                            </Divider>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={formData.invest_after_payoff || false}
+                                        onChange={(e) => setFormData(prev => ({
+                                            ...prev,
+                                            invest_after_payoff: e.target.checked,
+                                        }))}
+                                    />
+                                }
+                                label="Invest monthly payment into stocks after this debt is paid off"
+                            />
+                        </Grid>
+
+                        {formData.invest_after_payoff && (
+                            <>
+                                <Grid item xs={12}>
+                                    <Alert severity="info">
+                                        The net worth forecast on your Dashboard will show a second line
+                                        reflecting extra investing once this liability is projected to be paid off.
+                                    </Alert>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Invest into</InputLabel>
+                                        <Select
+                                            value={formData.payoff_invest_asset_id || ''}
+                                            onChange={(e) => setFormData(prev => ({
+                                                ...prev,
+                                                payoff_invest_asset_id: e.target.value || null,
+                                            }))}
+                                            label="Invest into"
+                                        >
+                                            {investableAssets.length === 0 ? (
+                                                <MenuItem value="" disabled>
+                                                    Add an investment bucket on Assets first
+                                                </MenuItem>
+                                            ) : (
+                                                investableAssets.map((asset) => (
+                                                    <MenuItem key={asset.id} value={asset.id}>
+                                                        {asset.name}
+                                                    </MenuItem>
+                                                ))
+                                            )}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
                             </>
                         )}
                     </Grid>

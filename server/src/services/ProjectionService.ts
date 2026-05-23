@@ -1,5 +1,7 @@
 import { AssetService } from './AssetService';
 import { LiabilityService } from './LiabilityService';
+import { IncomeService } from './IncomeService';
+import { ExpenseService } from './ExpenseService';
 import {
   InvestmentProjectionsResponse,
   NetWorthProjectionsResponse,
@@ -8,7 +10,6 @@ import {
   ProjectionPoint
 } from '../types';
 import {
-  projectAssetMonths,
   addSeries,
   monthLabelFromNow,
 } from '../utils/projection';
@@ -17,12 +18,18 @@ import {
   buildAssetProjectionSeries,
   getAssetRates
 } from '../utils/assetProjection';
-import { getLiabilityMonthlyPayment, getLiabilityMonthlyRate } from '../utils/liabilityCashFlow';
-import { Liability } from '../types';
+import {
+  amortizeAllLiabilities,
+  buildPayoffEvents,
+  buildNetWorthAssetSeries,
+  toNetWorthSeries,
+} from '../utils/payoffInvestProjection';
 
 export class ProjectionService {
   private assetService = new AssetService();
   private liabilityService = new LiabilityService();
+  private incomeService = new IncomeService();
+  private expenseService = new ExpenseService();
 
   async getInvestmentProjections(years: number): Promise<InvestmentProjectionsResponse> {
     const months = years * 12;
@@ -84,79 +91,81 @@ export class ProjectionService {
     };
   }
 
-  private amortizeLiabilities(liabilities: Liability[], months: number): number[] {
-    const series: number[] = [];
-    const balances = liabilities.map((l) => ({
-      balance: parseFloat(String(l.current_balance)),
-      payment: getLiabilityMonthlyPayment(l),
-      rate: getLiabilityMonthlyRate(l.interest_rate)
-    }));
-
-    for (let m = 0; m < months; m++) {
-      let total = 0;
-      balances.forEach((item) => {
-        if (item.balance <= 0) return;
-        const interest = item.balance * item.rate;
-        const principal = Math.max(0, Math.min(item.balance, item.payment - interest));
-        item.balance = Math.max(0, item.balance - principal);
-        total += item.balance;
-      });
-      series.push(Math.round(total * 100) / 100);
-    }
-    return series;
-  }
-
   async getNetWorthProjections(years: number): Promise<NetWorthProjectionsResponse> {
     const months = years * 12;
-    const [assets, liabilities] = await Promise.all([
+    const [assets, liabilities, incomeStreams, expenses] = await Promise.all([
       this.assetService.getAllAssets(),
-      this.liabilityService.getAllLiabilities()
+      this.liabilityService.getAllLiabilities(),
+      this.incomeService.getAllIncomeStreams(),
+      this.expenseService.getAllExpenses(),
     ]);
 
     const investable = assets.filter(isInvestableForProjection);
-    const flatValue = assets
-      .filter((a) => !isInvestableForProjection(a))
-      .reduce((s, a) => s + parseFloat(String(a.current_value)), 0);
+    const baselineAssets = buildNetWorthAssetSeries(
+      assets,
+      liabilities,
+      incomeStreams,
+      expenses,
+      months,
+      false
+    );
+    const assetsPess = baselineAssets.assetsPess;
+    const assetsExp = baselineAssets.assetsExp;
+    const assetsOpt = baselineAssets.assetsOpt;
 
-    let assetsPess: number[] = Array(months).fill(flatValue);
-    let assetsExp: number[] = Array(months).fill(flatValue);
-    let assetsOpt: number[] = Array(months).fill(flatValue);
-
-    investable.forEach((asset) => {
-      const start = parseFloat(String(asset.current_value));
-      const contribution = parseFloat(String(asset.monthly_contribution ?? 0));
-      const rates = getAssetRates(asset);
-      assetsPess = addSeries(assetsPess, projectAssetMonths(start, contribution, rates.pessimistic, months));
-      assetsExp = addSeries(assetsExp, projectAssetMonths(start, contribution, rates.expected, months));
-      assetsOpt = addSeries(assetsOpt, projectAssetMonths(start, contribution, rates.optimistic, months));
-    });
-
-    const liabilitySeries = this.amortizeLiabilities(liabilities, months);
+    const liabSeries = amortizeAllLiabilities(liabilities, months);
     const currentLiab = liabilities.reduce((s, l) => s + parseFloat(String(l.current_balance)), 0);
-    const liabSeries = liabilitySeries.length > 0 ? liabilitySeries : Array(months).fill(currentLiab);
+    const liabilitiesSeries = liabSeries.some((v) => v > 0) || currentLiab > 0
+      ? liabSeries
+      : Array(months).fill(0);
+
+    const series: NetWorthProjectionPoint[] = toNetWorthSeries(
+      assetsPess,
+      assetsExp,
+      assetsOpt,
+      liabilitiesSeries,
+      months
+    );
 
     const plannedMonthlyContributions = investable.reduce(
       (s, a) => s + parseFloat(String(a.monthly_contribution ?? 0)),
       0
     );
 
-    const series: NetWorthProjectionPoint[] = Array.from({ length: months }, (_, i) => {
-      const ap = assetsPess[i] ?? 0;
-      const ae = assetsExp[i] ?? 0;
-      const ao = assetsOpt[i] ?? 0;
-      const lb = liabSeries[i] ?? 0;
-      return {
-        month: monthLabelFromNow(i + 1),
-        assetsPessimistic: ap,
-        assetsExpected: ae,
-        assetsOptimistic: ao,
-        liabilities: lb,
-        netWorthPessimistic: ap - lb,
-        netWorthExpected: ae - lb,
-        netWorthOptimistic: ao - lb
-      };
-    });
+    const hasPayoffRedirect = liabilities.some((l) => l.invest_after_payoff);
+    let payoffInvestingSeries: NetWorthProjectionPoint[] | undefined;
+    let payoffEvents: ReturnType<typeof buildPayoffEvents> | undefined;
 
-    return { years, series, plannedMonthlyContributions };
+    if (hasPayoffRedirect) {
+      const payoffAssets = buildNetWorthAssetSeries(
+        assets,
+        liabilities,
+        incomeStreams,
+        expenses,
+        months,
+        true
+      );
+      payoffInvestingSeries = toNetWorthSeries(
+        payoffAssets.assetsPess,
+        payoffAssets.assetsExp,
+        payoffAssets.assetsOpt,
+        liabilitiesSeries,
+        months
+      );
+      payoffEvents = buildPayoffEvents(liabilities, assets, months);
+    }
+
+    const response: NetWorthProjectionsResponse = {
+      years,
+      series,
+      plannedMonthlyContributions,
+    };
+
+    if (hasPayoffRedirect && payoffInvestingSeries && payoffEvents?.length) {
+      response.payoffInvestingSeries = payoffInvestingSeries;
+      response.payoffEvents = payoffEvents;
+    }
+
+    return response;
   }
 }

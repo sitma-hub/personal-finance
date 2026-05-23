@@ -79,6 +79,8 @@ CREATE TABLE liabilities (
     max_annual_prepayment_percentage DECIMAL(5,4),
     prepayment_penalty BOOLEAN DEFAULT false,
     prepayment_penalty_rate DECIMAL(5,4),
+    invest_after_payoff BOOLEAN NOT NULL DEFAULT false,
+    payoff_invest_asset_id UUID REFERENCES assets(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

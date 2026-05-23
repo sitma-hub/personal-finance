@@ -11,6 +11,7 @@ import incomeRoutes from './routes/income';
 import expenseRoutes from './routes/expenses';
 import dashboardRoutes from './routes/dashboard';
 import snapshotRoutes from './routes/snapshots';
+import checkInRoutes from './routes/checkIn';
 import backupRoutes from './routes/backup';
 import projectionRoutes from './routes/projections';
 
@@ -52,6 +53,7 @@ app.use('/api/income', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/snapshots', snapshotRoutes);
+app.use('/api/check-in', checkInRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/projections', projectionRoutes);
 
@@ -67,6 +69,7 @@ app.get('/api', (_req, res) => {
       expenses: '/api/expenses',
       dashboard: '/api/dashboard',
       snapshots: '/api/snapshots',
+      checkIn: '/api/check-in',
       backup: '/api/backup',
       projections: '/api/projections'
     }

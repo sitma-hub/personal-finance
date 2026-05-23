@@ -9,6 +9,7 @@ import Income from './pages/Income/Income';
 import Expenses from './pages/Expenses/Expenses';
 import Backup from './pages/Backup/Backup';
 import Investments from './pages/Investments/Investments';
+import MonthlyCheckIn from './pages/CheckIn/MonthlyCheckIn';
 import { CustomThemeProvider } from './contexts/ThemeContext';
 import { FinancialProvider } from './contexts/FinancialContext';
 
@@ -20,6 +21,7 @@ function App() {
                     <Layout>
                         <Routes>
                             <Route path="/" element={<UnifiedDashboard />} />
+                            <Route path="/check-in" element={<MonthlyCheckIn />} />
                             <Route path="/assets" element={<Assets />} />
                             <Route path="/liabilities" element={<Liabilities />} />
                             <Route path="/income" element={<Income />} />

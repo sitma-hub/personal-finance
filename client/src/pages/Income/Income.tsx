@@ -48,9 +48,15 @@ import {
     Business as BusinessIcon,
     Star as StarIcon,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { IncomeStream, IncomeFormData, IncomeType } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
+import {
+    annualRateToPercentInput,
+    formatAnnualRatePercent,
+    normalizeAnnualRate,
+} from '../../utils/rateNormalization';
 import { toDateInputValue } from '../../utils/dateInput';
 
 const Income: React.FC = () => {
@@ -106,10 +112,14 @@ const Income: React.FC = () => {
         }
         setFormError(null);
         try {
+            const payload = {
+                ...formData,
+                annual_growth_rate: normalizeAnnualRate(formData.annual_growth_rate),
+            };
             if (editingIncome) {
-                await updateIncome(editingIncome.id, formData);
+                await updateIncome(editingIncome.id, payload);
             } else {
-                await createIncome(formData);
+                await createIncome(payload);
             }
             handleCloseDialog();
         } catch {
@@ -257,25 +267,16 @@ const Income: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Income Distribution by Type
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={incomeTypeData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {incomeTypeData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monthly Income']} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <CategoryPieChart
+                            data={incomeTypeData.map((entry, index) => ({
+                                ...entry,
+                                color: COLORS[index % COLORS.length],
+                            }))}
+                            height={300}
+                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            tooltipLabel="Monthly Income"
+                            emptyMessage="No income to display"
+                        />
                     </Paper>
                 </Grid>
 
@@ -351,7 +352,7 @@ const Income: React.FC = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {income.annual_growth_rate}%
+                                                    {formatAnnualRatePercent(income.annual_growth_rate)}%
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     {income.start_date || 'N/A'}
@@ -447,9 +448,14 @@ const Income: React.FC = () => {
                                 fullWidth
                                 label="Annual Growth Rate (%)"
                                 type="number"
-                                value={formData.annual_growth_rate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, annual_growth_rate: Number(e.target.value) }))}
-                                inputProps={{ step: 0.01 }}
+                                value={annualRateToPercentInput(formData.annual_growth_rate)}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        annual_growth_rate: (parseFloat(e.target.value) || 0) / 100,
+                                    }))
+                                }
+                                inputProps={{ step: 0.1, min: 0 }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>

@@ -99,6 +99,62 @@ export class SnapshotService {
     return result.rows[0];
   }
 
+  async createSnapshotFromBreakdown(
+    snapshotMonth: string,
+    assetBreakdown: SnapshotBreakdownItem[],
+    liabilityBreakdown: SnapshotBreakdownItem[],
+    notes?: string
+  ): Promise<NetWorthSnapshot> {
+    const month = firstOfMonth(snapshotMonth);
+    const totalAssets = assetBreakdown.reduce((s, i) => s + i.amount, 0);
+    const totalLiabilities = liabilityBreakdown.reduce((s, i) => s + i.amount, 0);
+    const netWorth = totalAssets - totalLiabilities;
+
+    const existing = await pool.query(
+      'SELECT id FROM net_worth_snapshots WHERE snapshot_month = $1',
+      [month]
+    );
+
+    if (existing.rows.length > 0) {
+      const updateResult = await pool.query(
+        `UPDATE net_worth_snapshots SET
+          total_assets = $1, total_liabilities = $2, net_worth = $3,
+          asset_breakdown = $4, liability_breakdown = $5, notes = $6
+        WHERE snapshot_month = $7
+        RETURNING *`,
+        [
+          totalAssets,
+          totalLiabilities,
+          netWorth,
+          JSON.stringify(assetBreakdown),
+          JSON.stringify(liabilityBreakdown),
+          notes || null,
+          month
+        ]
+      );
+      return updateResult.rows[0];
+    }
+
+    const result = await pool.query(
+      `INSERT INTO net_worth_snapshots (
+        snapshot_month, total_assets, total_liabilities, net_worth,
+        asset_breakdown, liability_breakdown, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *`,
+      [
+        month,
+        totalAssets,
+        totalLiabilities,
+        netWorth,
+        JSON.stringify(assetBreakdown),
+        JSON.stringify(liabilityBreakdown),
+        notes || null
+      ]
+    );
+
+    return result.rows[0];
+  }
+
   async deleteSnapshot(id: string): Promise<boolean> {
     const result = await pool.query(
       'DELETE FROM net_worth_snapshots WHERE id = $1',

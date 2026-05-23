@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Box,
     Typography,
@@ -14,6 +14,9 @@ import {
     CircularProgress,
     Snackbar,
     Link,
+    ToggleButton,
+    ToggleButtonGroup,
+    TextField,
 } from '@mui/material';
 import {
     TrendingUp as TrendingUpIcon,
@@ -23,6 +26,7 @@ import {
     CameraAlt as SnapshotIcon,
     Refresh as RefreshIcon,
     ShowChart as ShowChartIcon,
+    EventNote as CheckInIcon,
 } from '@mui/icons-material';
 import {
     Line,
@@ -32,16 +36,30 @@ import {
     Tooltip,
     Legend,
     ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
     ComposedChart,
     Area,
 } from 'recharts';
 import { Link as RouterLink } from 'react-router-dom';
 import type { TooltipProps } from 'recharts';
 import { useFinancial } from '../../contexts/FinancialContext';
-import { formatChartMonthLabel } from '../../utils/dateInput';
+import {
+    formatChartMonthLabel,
+    currentMonth,
+    findMissingSnapshotMonths,
+    getRecommendedMonth,
+    normalizeSnapshotMonth,
+} from '../../utils/dateInput';
+import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
+import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { projectionService } from '../../services/projectionService';
+
+const MIN_FORECAST_YEARS = 1;
+const MAX_FORECAST_YEARS = 40;
+
+type ForecastPreset = '5' | '10' | '20' | 'custom';
+
+const clampForecastYears = (years: number): number =>
+    Math.min(MAX_FORECAST_YEARS, Math.max(MIN_FORECAST_YEARS, years));
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -110,26 +128,125 @@ const UnifiedDashboard: React.FC = () => {
     } = state;
     const [saving, setSaving] = useState(false);
     const [snack, setSnack] = useState<string | null>(null);
+    const [chartsReady, setChartsReady] = useState(false);
+    const [forecastPreset, setForecastPreset] = useState<ForecastPreset>('10');
+    const [customYearsInput, setCustomYearsInput] = useState('15');
+    const [forecastProjections, setForecastProjections] = useState<NetWorthProjectionsResponse | null>(null);
+    const [forecastLoading, setForecastLoading] = useState(false);
+    const [forecastError, setForecastError] = useState<string | null>(null);
+
+    const forecastYears = useMemo(() => {
+        if (forecastPreset === 'custom') {
+            const parsed = parseInt(customYearsInput, 10);
+            return clampForecastYears(Number.isFinite(parsed) ? parsed : 15);
+        }
+        return Number(forecastPreset);
+    }, [forecastPreset, customYearsInput]);
+
+    useEffect(() => {
+        if (loading) {
+            setChartsReady(false);
+            return undefined;
+        }
+        const id = window.requestAnimationFrame(() => setChartsReady(true));
+        return () => window.cancelAnimationFrame(id);
+    }, [loading]);
+
+    useEffect(() => {
+        if (forecastYears === netWorthProjections?.years && netWorthProjections) {
+            setForecastProjections(netWorthProjections);
+        }
+    }, [netWorthProjections, forecastYears]);
+
+    useEffect(() => {
+        if (forecastYears === netWorthProjections?.years && netWorthProjections) {
+            return undefined;
+        }
+
+        let cancelled = false;
+        setForecastLoading(true);
+        setForecastError(null);
+
+        projectionService
+            .getNetWorthProjections(forecastYears)
+            .then((res) => {
+                if (!cancelled) {
+                    setForecastProjections(res.data ?? null);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setForecastError('Failed to load forecast for selected horizon');
+                    setForecastProjections(null);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setForecastLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [forecastYears, netWorthProjections]);
+
+    const checkInStatus = useMemo((): CheckInStatus | null => {
+        if (loading) return null;
+        const snapshotMonths = snapshots
+            .map((s) => normalizeSnapshotMonth(s.snapshot_month))
+            .filter((m): m is string => m != null);
+        const cur = currentMonth();
+        const missingMonths = findMissingSnapshotMonths(snapshotMonths, cur);
+        const sorted = [...snapshotMonths].sort();
+        return {
+            missingMonths,
+            recommendedMonth: getRecommendedMonth(missingMonths, snapshotMonths, cur),
+            lastSnapshotMonth: sorted.length > 0 ? (sorted[sorted.length - 1] ?? null) : null,
+            currentMonth: cur,
+        };
+    }, [loading, snapshots]);
+
+    const activeProjections = forecastProjections ?? netWorthProjections;
+
+    const payoffEvents = activeProjections?.payoffEvents ?? [];
+    const hasPayoffForecast = payoffEvents.length > 0 && (activeProjections?.payoffInvestingSeries?.length ?? 0) > 0;
 
     const chartData = useMemo(() => {
-        const historical = netWorthHistory.map((h) => ({
+        type ChartRow = {
+            month: string;
+            actual: number | null;
+            expected: number | null;
+            pessimistic: number | null;
+            optimistic: number | null;
+            assetsExpected?: number;
+            liabilities?: number;
+        };
+
+        const historical: ChartRow[] = netWorthHistory.map((h) => ({
             month: h.month,
             actual: h.netWorth,
-            expected: null as number | null,
-            pessimistic: null as number | null,
-            optimistic: null as number | null,
+            expected: null,
+            pessimistic: null,
+            optimistic: null,
         }));
-        const forecast = (netWorthProjections?.series || []).map((p) => ({
+
+        const forecastSource = hasPayoffForecast
+            ? activeProjections!.payoffInvestingSeries!
+            : (activeProjections?.series || []);
+
+        const forecast: ChartRow[] = forecastSource.map((p) => ({
             month: p.month,
-            actual: null as number | null,
+            actual: null,
             expected: p.netWorthExpected,
             pessimistic: p.netWorthPessimistic,
             optimistic: p.netWorthOptimistic,
             assetsExpected: p.assetsExpected,
             liabilities: p.liabilities,
         }));
-        return [...historical, ...forecast];
-    }, [netWorthHistory, netWorthProjections]);
+
+        return [...historical, ...forecast].sort((a, b) => a.month.localeCompare(b.month));
+    }, [netWorthHistory, activeProjections, hasPayoffForecast]);
 
     const plannedInvesting = netWorthProjections?.plannedMonthlyContributions ?? 0;
 
@@ -157,37 +274,90 @@ const UnifiedDashboard: React.FC = () => {
 
     if (loading && !summary) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="400px" gap={2}>
                 <CircularProgress />
+                <Typography variant="body2" color="text.secondary">Loading financial data…</Typography>
             </Box>
         );
     }
 
-    const pieData = allocation.map((a) => ({
+    if (!loading && !summary) {
+        return (
+            <Box sx={{ width: '100%' }}>
+                <Typography variant="h4" mb={2}>Dashboard</Typography>
+                <Alert
+                    severity="error"
+                    action={
+                        <Button color="inherit" size="small" onClick={() => refresh()}>
+                            Retry
+                        </Button>
+                    }
+                >
+                    {error || 'Unable to load dashboard data. Make sure the API server is running.'}
+                </Alert>
+            </Box>
+        );
+    }
+
+    const pieData = allocation.map((a, i) => ({
         name: a.type.replace(/_/g, ' '),
         value: a.value,
+        color: COLORS[i % COLORS.length],
     }));
 
-    const hasChart = chartData.some((d) => d.actual != null) || chartData.some((d) => d.expected != null);
+    const hasChart = chartData.some((d) => d.actual != null)
+        || chartData.some((d) => d.expected != null);
 
     return (
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
                 <Typography variant="h4">Dashboard</Typography>
-                <Box display="flex" gap={1}>
+                <Box display="flex" gap={1} flexWrap="wrap">
                     <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>Refresh</Button>
                     <Button
-                        variant="contained"
+                        variant="outlined"
                         startIcon={<SnapshotIcon />}
                         onClick={handleSaveSnapshot}
                         disabled={saving}
                     >
-                        {saving ? 'Saving…' : `Save ${currentMonthLabel()}`}
+                        {saving ? 'Saving…' : 'Quick save current month'}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        component={RouterLink}
+                        to={
+                            checkInStatus?.missingMonths.length
+                                ? `/check-in?month=${checkInStatus.missingMonths[0]}`
+                                : '/check-in'
+                        }
+                        startIcon={<CheckInIcon />}
+                    >
+                        Monthly check-in
                     </Button>
                 </Box>
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+            {checkInStatus && checkInStatus.missingMonths.length > 0 && (
+                <Alert
+                    severity="warning"
+                    sx={{ mb: 2 }}
+                    action={
+                        <Button
+                            color="inherit"
+                            size="small"
+                            component={RouterLink}
+                            to={`/check-in?month=${checkInStatus.missingMonths[0]}`}
+                        >
+                            Fill gaps
+                        </Button>
+                    }
+                >
+                    {checkInStatus.missingMonths.length} month{checkInStatus.missingMonths.length === 1 ? '' : 's'} missing
+                    in your snapshot history. Use monthly check-in to backfill with proposed values.
+                </Alert>
+            )}
 
             {summary && (
                 <Grid container spacing={3} mb={3} sx={{ width: '100%' }}>
@@ -268,18 +438,76 @@ const UnifiedDashboard: React.FC = () => {
             <Grid container spacing={3} sx={{ width: '100%' }}>
                 <Grid item xs={12}>
                     <Paper sx={{ p: 2, width: '100%' }}>
-                        <Typography variant="h6" gutterBottom>Net worth over time</Typography>
+                        <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            flexWrap="wrap"
+                            gap={1}
+                            mb={1}
+                        >
+                            <Typography variant="h6">Net worth over time</Typography>
+                            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                                <ToggleButtonGroup
+                                    size="small"
+                                    exclusive
+                                    value={forecastPreset}
+                                    onChange={(_, value: ForecastPreset | null) => {
+                                        if (value) setForecastPreset(value);
+                                    }}
+                                    aria-label="Forecast horizon"
+                                >
+                                    <ToggleButton value="5">5y</ToggleButton>
+                                    <ToggleButton value="10">10y</ToggleButton>
+                                    <ToggleButton value="20">20y</ToggleButton>
+                                    <ToggleButton value="custom">Custom</ToggleButton>
+                                </ToggleButtonGroup>
+                                {forecastPreset === 'custom' && (
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label="Years"
+                                        value={customYearsInput}
+                                        onChange={(e) => setCustomYearsInput(e.target.value)}
+                                        onBlur={() => {
+                                            setCustomYearsInput(String(forecastYears));
+                                        }}
+                                        inputProps={{
+                                            min: MIN_FORECAST_YEARS,
+                                            max: MAX_FORECAST_YEARS,
+                                            step: 1,
+                                        }}
+                                        sx={{ width: 88 }}
+                                    />
+                                )}
+                                {forecastLoading && <CircularProgress size={20} />}
+                            </Box>
+                        </Box>
+                        {forecastError && (
+                            <Alert severity="warning" sx={{ mb: 1 }} onClose={() => setForecastError(null)}>
+                                {forecastError}
+                            </Alert>
+                        )}
                         {!hasChart ? (
                             <Alert severity="info">
                                 Save monthly snapshots for history. Add investment buckets with return assumptions to see a forecast.
                             </Alert>
+                        ) : !chartsReady || (forecastLoading && !chartData.some((d) => d.expected != null)) ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" height={360}>
+                                <CircularProgress size={28} />
+                            </Box>
                         ) : (
                             <>
-                                <Box sx={{ width: '100%', height: { xs: 280, sm: 360, lg: 420 } }}>
-                                    <ResponsiveContainer width="100%" height="100%">
+                                <Box sx={{ width: '100%', height: 360, minHeight: 280 }}>
+                                    <ResponsiveContainer width="100%" height={360} debounce={50}>
                                         <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
                                             <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                                            <XAxis
+                                                dataKey="month"
+                                                tick={{ fontSize: 11 }}
+                                                minTickGap={48}
+                                                tickFormatter={(month) => formatChartMonthLabel(String(month))}
+                                            />
                                             <YAxis tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} width={72} />
                                             <Tooltip content={<NetWorthChartTooltip />} />
                                             <Legend />
@@ -324,8 +552,19 @@ const UnifiedDashboard: React.FC = () => {
                                     </ResponsiveContainer>
                                 </Box>
                                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
-                                    Forecast assumes planned contributions and return scenarios — not guaranteed.
+                                    Forecast ({forecastYears}y) assumes planned contributions and return scenarios
+                                    {hasPayoffForecast ? ', including investing after debt payoff' : ''} — not guaranteed.
                                 </Typography>
+                                {hasPayoffForecast && (
+                                    <Alert severity="info" sx={{ mt: 2 }}>
+                                        {payoffEvents.map((ev) => (
+                                            <Typography key={ev.liabilityId} variant="body2">
+                                                {ev.liabilityName} paid off by {formatChartMonthLabel(ev.payoffMonth)} →
+                                                invest {formatCurrency(ev.monthlyRedirect)}/mo into {ev.targetAssetName}
+                                            </Typography>
+                                        ))}
+                                    </Alert>
+                                )}
                             </>
                         )}
                     </Paper>
@@ -335,19 +574,19 @@ const UnifiedDashboard: React.FC = () => {
                         <Typography variant="h6" gutterBottom>Asset allocation</Typography>
                         {pieData.length === 0 ? (
                             <Typography variant="body2" color="textSecondary">Add assets to see breakdown</Typography>
+                        ) : !chartsReady ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" height={320}>
+                                <CircularProgress size={28} />
+                            </Box>
                         ) : (
-                            <Box sx={{ width: '100%', height: { xs: 260, lg: 320 } }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="45%" outerRadius={110} label>
-                                            {pieData.map((_, i) => (
-                                                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                            <Box sx={{ width: '100%', height: 320, minHeight: 260 }}>
+                                <CategoryPieChart
+                                    data={pieData}
+                                    height={320}
+                                    formatValue={formatCurrency}
+                                    tooltipLabel="Value"
+                                    emptyMessage="No assets"
+                                />
                             </Box>
                         )}
                     </Paper>
@@ -358,8 +597,8 @@ const UnifiedDashboard: React.FC = () => {
                         {recentUpdates.length === 0 ? (
                             <Typography variant="body2" color="textSecondary">No updates yet</Typography>
                         ) : (
-                            <List dense sx={{ maxHeight: { xs: 260, lg: 320 }, overflow: 'auto' }}>
-                                {recentUpdates.map((u) => (
+                            <List dense sx={{ maxHeight: 320, overflow: 'auto' }}>
+                                {(Array.isArray(recentUpdates) ? recentUpdates : []).map((u) => (
                                     <ListItem key={u.id} disablePadding sx={{ py: 0.5 }}>
                                         <ListItemText
                                             primary={`${u.entityName} (${u.entityType})`}

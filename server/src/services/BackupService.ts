@@ -97,8 +97,9 @@ export class BackupService {
             monthly_payment, minimum_payment, due_date, notes,
             special_repayment_enabled, special_repayment_amount, special_repayment_frequency,
             max_annual_prepayment_percentage, prepayment_penalty, prepayment_penalty_rate,
+            invest_after_payoff, payoff_invest_asset_id,
             created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
           [
             liability.id,
             userId,
@@ -117,6 +118,8 @@ export class BackupService {
             liability.max_annual_prepayment_percentage,
             liability.prepayment_penalty,
             liability.prepayment_penalty_rate,
+            liability.invest_after_payoff ?? false,
+            liability.payoff_invest_asset_id ?? null,
             liability.created_at,
             liability.updated_at
           ]
