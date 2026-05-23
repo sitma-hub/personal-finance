@@ -52,8 +52,15 @@ import {
 } from '../../utils/dateInput';
 import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { NetWorthStepModal } from '../../components/dashboard/NetWorthStepModal';
 import { projectionService } from '../../services/projectionService';
 import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
+import {
+    buildNetWorthStepBreakdown,
+    resolveClickedScenario,
+    type NetWorthChartRow,
+    type NetWorthStepBreakdown,
+} from '../../utils/netWorthStepBreakdown';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -128,6 +135,7 @@ const UnifiedDashboard: React.FC = () => {
     const [forecastProjections, setForecastProjections] = useState<NetWorthProjectionsResponse | null>(null);
     const [forecastLoading, setForecastLoading] = useState(false);
     const [forecastError, setForecastError] = useState<string | null>(null);
+    const [stepBreakdown, setStepBreakdown] = useState<NetWorthStepBreakdown | null>(null);
 
     const forecastYears = useMemo(() => {
         if (forecastPreset === 'custom') {
@@ -206,41 +214,65 @@ const UnifiedDashboard: React.FC = () => {
     const payoffEvents = activeProjections?.payoffEvents ?? [];
     const hasPayoffForecast = payoffEvents.length > 0 && (activeProjections?.payoffInvestingSeries?.length ?? 0) > 0;
 
-    const chartData = useMemo(() => {
-        type ChartRow = {
-            month: string;
-            actual: number | null;
-            expected: number | null;
-            pessimistic: number | null;
-            optimistic: number | null;
-            assetsExpected?: number;
-            liabilities?: number;
-        };
-
-        const historical: ChartRow[] = netWorthHistory.map((h) => ({
+    const chartData = useMemo((): NetWorthChartRow[] => {
+        const historical: NetWorthChartRow[] = netWorthHistory.map((h) => ({
             month: h.month,
+            kind: 'snapshot',
             actual: h.netWorth,
             expected: null,
             pessimistic: null,
             optimistic: null,
+            assetsExpected: h.assets,
+            liabilities: h.liabilities,
         }));
 
         const forecastSource = hasPayoffForecast
             ? activeProjections!.payoffInvestingSeries!
             : (activeProjections?.series || []);
 
-        const forecast: ChartRow[] = forecastSource.map((p) => ({
+        const forecast: NetWorthChartRow[] = forecastSource.map((p) => ({
             month: p.month,
+            kind: 'forecast',
             actual: null,
             expected: p.netWorthExpected,
             pessimistic: p.netWorthPessimistic,
             optimistic: p.netWorthOptimistic,
             assetsExpected: p.assetsExpected,
+            assetsPessimistic: p.assetsPessimistic,
+            assetsOptimistic: p.assetsOptimistic,
             liabilities: p.liabilities,
         }));
 
         return [...historical, ...forecast].sort((a, b) => a.month.localeCompare(b.month));
     }, [netWorthHistory, activeProjections, hasPayoffForecast]);
+
+    const handleChartClick = (chartState: { activePayload?: Array<{ payload?: NetWorthChartRow; dataKey?: string }> } | null) => {
+        const payload = chartState?.activePayload?.[0];
+        if (!payload?.payload) return;
+
+        const row = payload.payload;
+        const scenario = resolveClickedScenario(
+            payload.dataKey != null ? String(payload.dataKey) : undefined,
+            row
+        );
+        const index = chartData.findIndex((d) => d.month === row.month);
+        const prevRow = index > 0 ? chartData[index - 1] ?? null : null;
+
+        const breakdown = buildNetWorthStepBreakdown({
+            row,
+            prevRow,
+            clickedScenario: scenario,
+            snapshots,
+            netWorthHistory,
+            payoffEvents,
+            plannedMonthlyContributions:
+                activeProjections?.plannedMonthlyContributions ?? plannedInvesting,
+        });
+
+        if (breakdown) {
+            setStepBreakdown(breakdown);
+        }
+    };
 
     const plannedInvesting = netWorthProjections?.plannedMonthlyContributions ?? 0;
 
@@ -492,9 +524,13 @@ const UnifiedDashboard: React.FC = () => {
                             </Box>
                         ) : (
                             <>
-                                <Box sx={{ width: '100%', height: 360, minHeight: 280 }}>
+                                <Box sx={{ width: '100%', height: 360, minHeight: 280, cursor: 'pointer' }}>
                                     <ResponsiveContainer width="100%" height={360} debounce={50}>
-                                        <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+                                        <ComposedChart
+                                            data={chartData}
+                                            margin={{ top: 8, right: 24, left: 8, bottom: 8 }}
+                                            onClick={handleChartClick}
+                                        >
                                             <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis
                                                 dataKey="month"
@@ -548,7 +584,13 @@ const UnifiedDashboard: React.FC = () => {
                                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
                                     Forecast ({forecastYears}y) assumes planned contributions and return scenarios
                                     {hasPayoffForecast ? ', including investing after debt payoff' : ''} — not guaranteed.
+                                    Click a point to see how that month&apos;s net worth step is calculated.
                                 </Typography>
+                                <NetWorthStepModal
+                                    open={stepBreakdown != null}
+                                    breakdown={stepBreakdown}
+                                    onClose={() => setStepBreakdown(null)}
+                                />
                                 {hasPayoffForecast && (
                                     <Alert severity="info" sx={{ mt: 2 }}>
                                         {payoffEvents.map((ev) => (
