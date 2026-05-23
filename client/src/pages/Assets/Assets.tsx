@@ -41,6 +41,7 @@ import {
 import { useFinancial } from '../../contexts/FinancialContext';
 import { Asset, AssetFormData, AssetType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { assetService } from '../../services/assetService';
+import { formatLocaleDate, formatLocaleMonth } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
 import { AssetValueHistory } from '../../types';
 
@@ -239,7 +240,7 @@ const Assets: React.FC = () => {
                                         {formatCurrency(parseValue(asset.current_value))}
                                     </TableCell>
                                     <TableCell>
-                                        {asset.as_of_date?.substring(0, 7) || '—'}
+                                        {formatLocaleMonth(asset.as_of_date)}
                                     </TableCell>
                                     <TableCell align="right">
                                         {isInvestableType(asset.type) && Number(asset.monthly_contribution) > 0
@@ -265,7 +266,7 @@ const Assets: React.FC = () => {
                                                 ) : (
                                                     history[asset.id].map((h) => (
                                                         <Typography key={h.id} variant="body2">
-                                                            {h.as_of_date?.substring(0, 10)} — {formatCurrency(parseValue(h.value))}
+                                                            {formatLocaleDate(h.as_of_date)} — {formatCurrency(parseValue(h.value))}
                                                         </Typography>
                                                     ))
                                                 )}

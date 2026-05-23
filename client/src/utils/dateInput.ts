@@ -8,21 +8,66 @@ export function toDateInputValue(value?: string | null): string {
     return v.substring(0, 10);
 }
 
-/** Format YYYY-MM (or ISO date) for chart tooltips, e.g. "May 2026". */
-export function formatChartMonthLabel(month?: string | null): string {
-    if (!month) return '';
-    const v = month.trim();
+/** Parse YYYY-MM-DD or YYYY-MM in local calendar (avoids UTC day/month shifts). */
+export function parseLocalCalendarDate(value?: string | null): Date | null {
+    if (!value) return null;
+    const v = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        const [y, m, d] = v.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
     if (/^\d{4}-\d{2}$/.test(v)) {
         const [y, m] = v.split('-').map(Number);
-        return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const date = new Date(y, m - 1, 1);
+        return Number.isNaN(date.getTime()) ? null : date;
     }
     if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
         const d = new Date(`${v.substring(0, 10)}T12:00:00`);
-        if (!Number.isNaN(d.getTime())) {
-            return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        }
+        return Number.isNaN(d.getTime()) ? null : d;
     }
-    return v;
+    return null;
+}
+
+/** Full calendar date for tables/UI, e.g. "15 Jan 2026" (browser locale). */
+export function formatLocaleDate(value?: string | null, fallback = '—'): string {
+    if (!value) return fallback;
+    const d = parseLocalCalendarDate(value);
+    if (!d) return String(value);
+    return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
+/** Month precision fields (YYYY-MM), e.g. "January 2026". */
+export function formatLocaleMonth(value?: string | null, fallback = '—'): string {
+    if (!value) return fallback;
+    const d = parseLocalCalendarDate(value);
+    if (!d) return formatChartMonthLabel(value) || String(value);
+    return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+    });
+}
+
+/** Format YYYY-MM (or ISO date) for chart tooltips, e.g. "May 2026". */
+export function formatChartMonthLabel(month?: string | null): string {
+    if (!month) return '';
+    const d = parseLocalCalendarDate(month);
+    if (d) {
+        const v = String(month).trim();
+        if (/^\d{4}-\d{2}$/.test(v)) {
+            return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        }
+        return d.toLocaleDateString(undefined, {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+        });
+    }
+    return String(month).trim();
 }
 
 /** Normalize API date strings for `<input type="month">` (yyyy-MM). */

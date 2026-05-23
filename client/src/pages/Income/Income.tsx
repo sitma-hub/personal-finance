@@ -58,7 +58,7 @@ import {
     normalizeAnnualRate,
 } from '../../utils/rateNormalization';
 import { formatCurrency } from '../../utils/currency';
-import { toDateInputValue } from '../../utils/dateInput';
+import { formatLocaleDate, toDateInputValue } from '../../utils/dateInput';
 
 const Income: React.FC = () => {
     const { state, createIncome, updateIncome, deleteIncome } = useFinancial();
@@ -356,10 +356,10 @@ const Income: React.FC = () => {
                                                     {formatAnnualRatePercent(income.annual_growth_rate)}%
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    {income.start_date || 'N/A'}
+                                                    {formatLocaleDate(income.start_date, 'N/A')}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    {income.end_date || 'N/A'}
+                                                    {formatLocaleDate(income.end_date, 'N/A')}
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <IconButton

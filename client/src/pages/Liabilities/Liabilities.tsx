@@ -50,7 +50,13 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { Liability, LiabilityType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
-import { toDateInputValue, toMonthInputValue } from '../../utils/dateInput';
+import {
+    formatLocaleDate,
+    formatLocaleMonth,
+    parseLocalCalendarDate,
+    toDateInputValue,
+    toMonthInputValue,
+} from '../../utils/dateInput';
 import { liabilityService } from '../../services/liabilityService';
 import { LiabilityBalanceHistory } from '../../types';
 import { formatCurrency } from '../../utils/currency';
@@ -532,16 +538,17 @@ const Liabilities: React.FC = () => {
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {liability.due_date ? new Date(liability.due_date).toLocaleDateString() : 'N/A'}
+                                                    {formatLocaleDate(liability.due_date, 'N/A')}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {liability.as_of_month ? new Date(liability.as_of_month).toLocaleDateString() : 'N/A'}
+                                                    {formatLocaleMonth(liability.as_of_month, 'N/A')}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     {(() => {
                                                         if (!liability.as_of_month) return 'N/A';
                                                         const now = new Date();
-                                                        const asOf = new Date(liability.as_of_month);
+                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
+                                                        if (!asOf) return 'N/A';
                                                         const months = (now.getFullYear() - asOf.getFullYear()) * 12 + (now.getMonth() - asOf.getMonth());
                                                         if (months <= 1) return 'Current';
                                                         return `${months} mo old`;
@@ -551,7 +558,8 @@ const Liabilities: React.FC = () => {
                                                     {(() => {
                                                         if (!liability.as_of_month) return 'N/A';
                                                         const now = new Date();
-                                                        const asOf = new Date(liability.as_of_month);
+                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
+                                                        if (!asOf) return 'N/A';
                                                         const months = monthsBetween(asOf, now);
                                                         const projected = projectLiabilityBalance(liability, months);
                                                         return formatCurrency(Math.round(projected));
@@ -561,7 +569,8 @@ const Liabilities: React.FC = () => {
                                                     {(() => {
                                                         if (!liability.as_of_month) return 'N/A';
                                                         const now = new Date();
-                                                        const asOf = new Date(liability.as_of_month);
+                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
+                                                        if (!asOf) return 'N/A';
                                                         const months = monthsBetween(asOf, now) + Number(projectionMonths || 0);
                                                         const projected = projectLiabilityBalance(liability, months);
                                                         return formatCurrency(Math.round(projected));

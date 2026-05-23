@@ -44,6 +44,7 @@ import type { TooltipProps } from 'recharts';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
     formatChartMonthLabel,
+    formatLocaleDate,
     currentMonth,
     findMissingSnapshotMonths,
     getRecommendedMonth,
@@ -595,7 +596,7 @@ const UnifiedDashboard: React.FC = () => {
                                     <ListItem key={u.id} disablePadding sx={{ py: 0.5 }}>
                                         <ListItemText
                                             primary={`${u.entityName} (${u.entityType})`}
-                                            secondary={`${u.asOfDate?.toString().substring(0, 10)} — ${formatCurrency(u.amount)}`}
+                                            secondary={`${formatLocaleDate(u.asOfDate)} — ${formatCurrency(u.amount)}`}
                                         />
                                     </ListItem>
                                 ))}
