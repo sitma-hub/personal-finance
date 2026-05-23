@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { formatCurrency } from '../../utils/currency';
 
 export type PieDatum = {
     name: string;
@@ -24,7 +25,7 @@ type CategoryPieChartProps = {
 export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
     data,
     height = 300,
-    formatValue = (v) => v.toLocaleString(),
+    formatValue = formatCurrency,
     tooltipLabel = 'Amount',
     emptyMessage = 'No data',
     legendMode = 'percent',

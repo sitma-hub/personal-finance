@@ -36,8 +36,7 @@ import { Link } from '@mui/material';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { projectionService } from '../../services/projectionService';
 import { InvestmentProjectionsResponse } from '../../types';
-const formatCurrency = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
+import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
 
 const formatPct = (rate: number) => `${(rate * 100).toFixed(1)}%`;
 
@@ -178,7 +177,7 @@ const Investments: React.FC = () => {
                                     <ComposedChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="month" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-                                        <YAxis tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} width={72} />
+                                        <YAxis tickFormatter={formatChartAxisThousands} width={72} />
                                         <Tooltip formatter={(v: number) => formatCurrency(v)} />
                                         <Legend />
                                         <Area
@@ -226,7 +225,7 @@ const Investments: React.FC = () => {
                                             <TableCell>Name</TableCell>
                                             <TableCell>Type</TableCell>
                                             <TableCell align="right">Value</TableCell>
-                                            <TableCell align="right">$/mo</TableCell>
+                                            <TableCell align="right">€/mo</TableCell>
                                             <TableCell align="right">Expected return</TableCell>
                                             <TableCell align="right">10y range</TableCell>
                                         </TableRow>

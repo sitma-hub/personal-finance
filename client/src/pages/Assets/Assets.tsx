@@ -41,6 +41,7 @@ import {
 import { useFinancial } from '../../contexts/FinancialContext';
 import { Asset, AssetFormData, AssetType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { assetService } from '../../services/assetService';
+import { formatCurrency } from '../../utils/currency';
 import { AssetValueHistory } from '../../types';
 
 const assetTypes: { value: AssetType; label: string }[] = [
@@ -187,7 +188,7 @@ const Assets: React.FC = () => {
                                 <Box>
                                     <Typography color="textSecondary" variant="body2">Total Assets</Typography>
                                     <Typography variant="h5">
-                                        ${totalValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                        {formatCurrency(totalValue)}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -213,7 +214,7 @@ const Assets: React.FC = () => {
                             <TableCell>Type</TableCell>
                             <TableCell align="right">Value</TableCell>
                             <TableCell>As of</TableCell>
-                            <TableCell align="right">$/mo plan</TableCell>
+                            <TableCell align="right">€/mo plan</TableCell>
                             <TableCell align="center">Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -235,14 +236,14 @@ const Assets: React.FC = () => {
                                         />
                                     </TableCell>
                                     <TableCell align="right">
-                                        ${parseValue(asset.current_value).toLocaleString()}
+                                        {formatCurrency(parseValue(asset.current_value))}
                                     </TableCell>
                                     <TableCell>
                                         {asset.as_of_date?.substring(0, 7) || '—'}
                                     </TableCell>
                                     <TableCell align="right">
                                         {isInvestableType(asset.type) && Number(asset.monthly_contribution) > 0
-                                            ? `$${Number(asset.monthly_contribution).toLocaleString()}`
+                                            ? formatCurrency(Number(asset.monthly_contribution))
                                             : '—'}
                                     </TableCell>
                                     <TableCell align="center">
@@ -264,7 +265,7 @@ const Assets: React.FC = () => {
                                                 ) : (
                                                     history[asset.id].map((h) => (
                                                         <Typography key={h.id} variant="body2">
-                                                            {h.as_of_date?.substring(0, 10)} — ${parseValue(h.value).toLocaleString()}
+                                                            {h.as_of_date?.substring(0, 10)} — {formatCurrency(parseValue(h.value))}
                                                         </Typography>
                                                     ))
                                                 )}
@@ -318,7 +319,7 @@ const Assets: React.FC = () => {
                             </Alert>
                             <TextField
                                 fullWidth
-                                label="Monthly contribution ($)"
+                                label="Monthly contribution (€)"
                                 type="number"
                                 value={formData.monthly_contribution ?? 0}
                                 onChange={(e) => setFormData({ ...formData, monthly_contribution: parseFloat(e.target.value) || 0 })}

@@ -32,16 +32,9 @@ import {
 import { useFinancial } from '../../contexts/FinancialContext';
 import { CheckInProposal, CheckInProposalLineItem, CheckInStatus } from '../../types';
 import { formatChartMonthLabel, normalizeMonth, currentMonth, clampMonthToCurrent, compareMonths } from '../../utils/dateInput';
+import { formatCurrency } from '../../utils/currency';
 
 const STEPS = ['Select month', 'Review values', 'Confirm'];
-
-const formatCurrency = (amount: number): string =>
-    new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount || 0);
 
 const formatDelta = (delta: number): string => {
     const prefix = delta >= 0 ? '+' : '';

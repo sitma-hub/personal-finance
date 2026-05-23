@@ -61,6 +61,7 @@ import {
     normalizeAnnualRate,
 } from '../../utils/rateNormalization';
 import { getLiabilityMonthlyPayment } from '../../utils/liabilityCashFlow';
+import { formatCurrency } from '../../utils/currency';
 import { Link as RouterLink } from 'react-router-dom';
 import { Link } from '@mui/material';
 
@@ -260,10 +261,10 @@ const Expenses: React.FC = () => {
                                 <Typography variant="h6">Total monthly outflow</Typography>
                             </Box>
                             <Typography variant="h4" color="error.main">
-                                ${totalMonthlyOutflow.toLocaleString()}
+                                {formatCurrency(totalMonthlyOutflow)}
                             </Typography>
                             <Typography variant="caption" color="textSecondary">
-                                Living ${livingExpenses.toLocaleString()} + debt ${debtPayments.toLocaleString()}
+                                Living {formatCurrency(livingExpenses)} + debt {formatCurrency(debtPayments)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -277,7 +278,7 @@ const Expenses: React.FC = () => {
                                 <Typography variant="h6">Annual outflow</Typography>
                             </Box>
                             <Typography variant="h4" color="warning.main">
-                                ${totalAnnualOutflow.toLocaleString()}
+                                {formatCurrency(totalAnnualOutflow)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -291,7 +292,7 @@ const Expenses: React.FC = () => {
                                 <Typography variant="h6">Essential</Typography>
                             </Box>
                             <Typography variant="h4" color="success.main">
-                                ${essentialLiving.toLocaleString()}
+                                {formatCurrency(essentialLiving)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -305,7 +306,7 @@ const Expenses: React.FC = () => {
                                 <Typography variant="h6">Discretionary</Typography>
                             </Box>
                             <Typography variant="h4" color="info.main">
-                                ${discretionaryExpenses.toLocaleString()}
+                                {formatCurrency(discretionaryExpenses)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -341,7 +342,7 @@ const Expenses: React.FC = () => {
                             data={categoryData}
                             height={300}
                             legendMode={pieLegendMode}
-                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            formatValue={formatCurrency}
                             tooltipLabel="Monthly Amount"
                             emptyMessage="No expenses to display"
                         />
@@ -357,7 +358,7 @@ const Expenses: React.FC = () => {
                             data={outflowSplitData}
                             height={300}
                             legendMode={pieLegendMode}
-                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            formatValue={formatCurrency}
                             tooltipLabel="Monthly Amount"
                             emptyMessage="No outflow data"
                         />
@@ -393,10 +394,10 @@ const Expenses: React.FC = () => {
                                                 <TableCell>
                                                     <Chip label={liability.type.replace(/_/g, ' ')} size="small" variant="outlined" />
                                                 </TableCell>
-                                                <TableCell align="right">${monthly.toLocaleString()}</TableCell>
+                                                <TableCell align="right">{formatCurrency(monthly)}</TableCell>
                                                 <TableCell>
                                                     {liability.special_repayment_enabled
-                                                        ? `${Number(liability.special_repayment_amount || 0).toLocaleString()} / ${liability.special_repayment_frequency || 'monthly'}`
+                                                        ? `${formatCurrency(Number(liability.special_repayment_amount || 0))} / ${liability.special_repayment_frequency || 'monthly'}`
                                                         : '—'}
                                                 </TableCell>
                                             </TableRow>
@@ -451,7 +452,7 @@ const Expenses: React.FC = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    ${expense.monthly_amount.toLocaleString()}
+                                                    {formatCurrency(expense.monthly_amount)}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     {formatAnnualRatePercent(expense.annual_inflation_rate)}%
@@ -529,7 +530,7 @@ const Expenses: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Monthly Amount ($)"
+                                label="Monthly Amount (€)"
                                 type="number"
                                 value={formData.monthly_amount}
                                 onChange={(e) => setFormData(prev => ({ ...prev, monthly_amount: Number(e.target.value) }))}

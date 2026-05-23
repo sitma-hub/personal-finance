@@ -39,7 +39,7 @@ This wipes all data. **Export a backup first** from the Backup page if you need 
 | What | Where |
 |------|--------|
 | ETF / brokerage portfolio value | **Assets** → type *Investment* or *Retirement* |
-| Planned $/month into ETFs | Same asset → **Monthly contribution** (not Expenses) |
+| Planned €/month into ETFs | Same asset → **Monthly contribution** (not Expenses) |
 | Expected return scenarios | Same asset → pessimistic / expected / optimistic % per year |
 | Forecast chart & DCA vs surplus | **Investments** page |
 | Mortgage balance & payment | **Liabilities** (payments count in cash flow automatically) |

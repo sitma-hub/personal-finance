@@ -52,6 +52,7 @@ import {
 import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { projectionService } from '../../services/projectionService';
+import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -62,14 +63,6 @@ const clampForecastYears = (years: number): number =>
     Math.min(MAX_FORECAST_YEARS, Math.max(MIN_FORECAST_YEARS, years));
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
-
-const formatCurrency = (amount: number): string =>
-    new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount || 0);
 
 const currentMonthLabel = (): string => {
     const d = new Date();
@@ -508,7 +501,7 @@ const UnifiedDashboard: React.FC = () => {
                                                 minTickGap={48}
                                                 tickFormatter={(month) => formatChartMonthLabel(String(month))}
                                             />
-                                            <YAxis tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} width={72} />
+                                            <YAxis tickFormatter={formatChartAxisThousands} width={72} />
                                             <Tooltip content={<NetWorthChartTooltip />} />
                                             <Legend />
                                             <Area

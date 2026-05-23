@@ -53,6 +53,7 @@ import { useFinancial } from '../../contexts/FinancialContext';
 import { toDateInputValue, toMonthInputValue } from '../../utils/dateInput';
 import { liabilityService } from '../../services/liabilityService';
 import { LiabilityBalanceHistory } from '../../types';
+import { formatCurrency } from '../../utils/currency';
 
 type LiabilityFormData = Partial<Liability>;
 
@@ -292,7 +293,7 @@ const Liabilities: React.FC = () => {
                                 <Typography variant="h6">Total Balance</Typography>
                             </Box>
                             <Typography variant="h4" color="error">
-                                ${totalBalance.toLocaleString()}
+                                {formatCurrency(totalBalance)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -306,7 +307,7 @@ const Liabilities: React.FC = () => {
                                 <Typography variant="h6">Monthly Payments</Typography>
                             </Box>
                             <Typography variant="h4" color="warning.main">
-                                ${totalMonthlyPayments.toLocaleString()}
+                                {formatCurrency(totalMonthlyPayments)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -320,7 +321,7 @@ const Liabilities: React.FC = () => {
                                 <Typography variant="h6">Special Repayments</Typography>
                             </Box>
                             <Typography variant="h4" color="success.main">
-                                ${totalMonthlySpecialRepayments.toLocaleString()}
+                                {formatCurrency(totalMonthlySpecialRepayments)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                                 Monthly average
@@ -355,7 +356,7 @@ const Liabilities: React.FC = () => {
                                 color: COLORS[index % COLORS.length],
                             }))}
                             height={300}
-                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            formatValue={formatCurrency}
                             tooltipLabel="Balance"
                             emptyMessage="No liabilities to display"
                         />
@@ -375,7 +376,7 @@ const Liabilities: React.FC = () => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monthly Amount']} />
+                                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Monthly Amount']} />
                                 <Bar dataKey="value" fill="#8884d8" />
                             </BarChart>
                         </ResponsiveContainer>
@@ -411,25 +412,25 @@ const Liabilities: React.FC = () => {
                                                 <Box display="flex" justifyContent="space-between" mb={1}>
                                                     <Typography variant="body2">Current Balance:</Typography>
                                                     <Typography variant="body2" fontWeight="bold">
-                                                        ${Number(liability.current_balance).toLocaleString()}
+                                                        {formatCurrency(Number(liability.current_balance))}
                                                     </Typography>
                                                 </Box>
                                                 <Box display="flex" justifyContent="space-between" mb={1}>
                                                     <Typography variant="body2">Monthly Payment:</Typography>
                                                     <Typography variant="body2">
-                                                        ${Number(liability.monthly_payment || 0).toLocaleString()}
+                                                        {formatCurrency(Number(liability.monthly_payment || 0))}
                                                     </Typography>
                                                 </Box>
                                                 <Box display="flex" justifyContent="space-between" mb={1}>
                                                     <Typography variant="body2">Special Repayment:</Typography>
                                                     <Typography variant="body2" color="success.main">
-                                                        +${specialRepaymentMonthly.toLocaleString()}
+                                                        +{formatCurrency(specialRepaymentMonthly)}
                                                     </Typography>
                                                 </Box>
                                                 <Box display="flex" justifyContent="space-between" mb={1}>
                                                     <Typography variant="body2">Total Monthly:</Typography>
                                                     <Typography variant="body2" fontWeight="bold">
-                                                        ${totalMonthlyPayment.toLocaleString()}
+                                                        {formatCurrency(totalMonthlyPayment)}
                                                     </Typography>
                                                 </Box>
                                                 <Divider sx={{ my: 1 }} />
@@ -442,7 +443,7 @@ const Liabilities: React.FC = () => {
                                                 <Box display="flex" justifyContent="space-between">
                                                     <Typography variant="body2">Total Interest:</Typography>
                                                     <Typography variant="body2" fontWeight="bold">
-                                                        ${Math.round(totalInterest).toLocaleString()}
+                                                        {formatCurrency(Math.round(totalInterest))}
                                                     </Typography>
                                                 </Box>
                                             </CardContent>
@@ -508,19 +509,19 @@ const Liabilities: React.FC = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    ${liability.current_balance.toLocaleString()}
+                                                    {formatCurrency(liability.current_balance)}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     {liability.interest_rate ? `${liability.interest_rate}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    ${(liability.monthly_payment || 0).toLocaleString()}
+                                                    {formatCurrency(liability.monthly_payment || 0)}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     {liability.special_repayment_enabled && liability.special_repayment_amount ? (
                                                         <Box>
                                                             <Typography variant="body2">
-                                                                ${liability.special_repayment_amount.toLocaleString()}
+                                                                {formatCurrency(liability.special_repayment_amount)}
                                                             </Typography>
                                                             <Typography variant="caption" color="text.secondary">
                                                                 {liability.special_repayment_frequency}
@@ -553,7 +554,7 @@ const Liabilities: React.FC = () => {
                                                         const asOf = new Date(liability.as_of_month);
                                                         const months = monthsBetween(asOf, now);
                                                         const projected = projectLiabilityBalance(liability, months);
-                                                        return `$${Math.round(projected).toLocaleString()}`;
+                                                        return formatCurrency(Math.round(projected));
                                                     })()}
                                                 </TableCell>
                                                 <TableCell align="right">
@@ -563,7 +564,7 @@ const Liabilities: React.FC = () => {
                                                         const asOf = new Date(liability.as_of_month);
                                                         const months = monthsBetween(asOf, now) + Number(projectionMonths || 0);
                                                         const projected = projectLiabilityBalance(liability, months);
-                                                        return `$${Math.round(projected).toLocaleString()}`;
+                                                        return formatCurrency(Math.round(projected));
                                                     })()}
                                                 </TableCell>
                                                 <TableCell align="center">
@@ -626,7 +627,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Current Balance ($)"
+                                label="Current Balance (€)"
                                 type="number"
                                 value={formData.current_balance}
                                 onChange={(e) => setFormData(prev => ({ ...prev, current_balance: Number(e.target.value) }))}
@@ -646,7 +647,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Monthly Payment ($)"
+                                label="Monthly Payment (€)"
                                 type="number"
                                 value={formData.monthly_payment}
                                 onChange={(e) => setFormData(prev => ({ ...prev, monthly_payment: Number(e.target.value) }))}
@@ -655,7 +656,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Minimum Payment ($)"
+                                label="Minimum Payment (€)"
                                 type="number"
                                 value={formData.minimum_payment}
                                 onChange={(e) => setFormData(prev => ({ ...prev, minimum_payment: Number(e.target.value) }))}
@@ -722,7 +723,7 @@ const Liabilities: React.FC = () => {
                                 <Grid item xs={12} sm={6}>
                                     <TextField
                                         fullWidth
-                                        label="Special Repayment Amount ($)"
+                                        label="Special Repayment Amount (€)"
                                         type="number"
                                         value={formData.special_repayment_amount || 0}
                                         onChange={(e) => setFormData(prev => ({

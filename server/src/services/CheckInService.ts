@@ -14,6 +14,7 @@ import {
 import { projectAssetMonths } from '../utils/projection';
 import { isInvestableForProjection, getAssetRates } from '../utils/assetProjection';
 import { getLiabilityMonthlyPayment, getLiabilityMonthlyRate } from '../utils/liabilityCashFlow';
+import { formatCurrency } from '../utils/currency';
 import {
   compareMonths,
   currentMonth,
@@ -67,7 +68,7 @@ function buildAssetExplanation(
   const parts: string[] = [];
 
   if (contribution > 0) {
-    parts.push(`+$${contribution.toLocaleString()}/mo contribution`);
+    parts.push(`+${formatCurrency(contribution)}/mo contribution`);
   }
   parts.push(`${formatPercent(rates.expected)} annual return`);
   parts.push(`over ${offsetMonths} month${offsetMonths === 1 ? '' : 's'}`);
@@ -92,7 +93,7 @@ function buildLiabilityExplanation(
   const parts: string[] = [];
 
   if (payment > 0) {
-    parts.push(`$${payment.toLocaleString()}/mo payment`);
+    parts.push(`${formatCurrency(payment)}/mo payment`);
   }
   if (rate > 0) {
     parts.push(`${formatPercent(rate * 12)} interest`);

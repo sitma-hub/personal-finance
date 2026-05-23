@@ -57,6 +57,7 @@ import {
     formatAnnualRatePercent,
     normalizeAnnualRate,
 } from '../../utils/rateNormalization';
+import { formatCurrency } from '../../utils/currency';
 import { toDateInputValue } from '../../utils/dateInput';
 
 const Income: React.FC = () => {
@@ -227,7 +228,7 @@ const Income: React.FC = () => {
                                 <Typography variant="h6">Monthly Income</Typography>
                             </Box>
                             <Typography variant="h4" color="success.main">
-                                ${totalMonthlyIncome.toLocaleString()}
+                                {formatCurrency(totalMonthlyIncome)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -241,7 +242,7 @@ const Income: React.FC = () => {
                                 <Typography variant="h6">Annual Income</Typography>
                             </Box>
                             <Typography variant="h4" color="primary.main">
-                                ${totalAnnualIncome.toLocaleString()}
+                                {formatCurrency(totalAnnualIncome)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -273,7 +274,7 @@ const Income: React.FC = () => {
                                 color: COLORS[index % COLORS.length],
                             }))}
                             height={300}
-                            formatValue={(v) => `$${v.toLocaleString()}`}
+                            formatValue={formatCurrency}
                             tooltipLabel="Monthly Income"
                             emptyMessage="No income to display"
                         />
@@ -290,7 +291,7 @@ const Income: React.FC = () => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monthly Income']} />
+                                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Monthly Income']} />
                                 <Bar dataKey="value" fill="#4caf50" />
                             </BarChart>
                         </ResponsiveContainer>
@@ -341,7 +342,7 @@ const Income: React.FC = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    ${income.current_amount.toLocaleString()}
+                                                    {formatCurrency(income.current_amount)}
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Chip
@@ -420,7 +421,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Current Amount ($)"
+                                label="Current Amount (€)"
                                 type="number"
                                 value={formData.current_amount}
                                 onChange={(e) => setFormData(prev => ({ ...prev, current_amount: Number(e.target.value) }))}
