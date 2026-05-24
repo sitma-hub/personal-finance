@@ -1,5 +1,7 @@
 import { Liability } from '../types';
 
+export { getLiabilityAnnualRateDecimal, getLiabilityMonthlyRate } from './liabilityPayoffProjection';
+
 export function getLiabilityMonthlyPayment(liability: Liability): number {
     const monthlyPayment = Number(liability.monthly_payment || 0);
     const minimumPayment = Number(liability.minimum_payment || 0);

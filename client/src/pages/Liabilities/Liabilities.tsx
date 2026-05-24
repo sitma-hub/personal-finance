@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     Box,
     Typography,
@@ -54,6 +54,16 @@ import {
     toMonthInputValue,
 } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
+import {
+    projectLiabilityBalanceAtMonths,
+    resolveLiabilityStartingBalance,
+    monthsFromAsOfTo,
+} from '../../utils/liabilityPayoffProjection';
+import {
+    LiabilityPayoffCard,
+    defaultPayoffScenarioState,
+    LiabilityPayoffScenarioState,
+} from './LiabilityPayoffCard';
 
 type LiabilityFormData = Partial<Liability>;
 
@@ -64,6 +74,19 @@ const Liabilities: React.FC = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
     const [projectionMonths, setProjectionMonths] = useState<number>(0);
+    const [payoffScenarioByLiability, setPayoffScenarioByLiability] = useState<
+        Record<string, LiabilityPayoffScenarioState>
+    >({});
+
+    const getPayoffScenarioState = useCallback(
+        (liabilityId: string): LiabilityPayoffScenarioState =>
+            payoffScenarioByLiability[liabilityId] ?? defaultPayoffScenarioState(),
+        [payoffScenarioByLiability]
+    );
+
+    const setPayoffScenarioState = useCallback((liabilityId: string, next: LiabilityPayoffScenarioState) => {
+        setPayoffScenarioByLiability((prev) => ({ ...prev, [liabilityId]: next }));
+    }, []);
     const [formData, setFormData] = useState<LiabilityFormData>({
         name: '',
         type: 'credit_card',
@@ -144,28 +167,6 @@ const Liabilities: React.FC = () => {
             payoff_invest_asset_id: liability.payoff_invest_asset_id || null,
         });
         setOpenDialog(true);
-    };
-
-    const monthsBetween = (from: Date, to: Date): number => {
-        return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
-    };
-
-    const projectLiabilityBalance = (liability: Liability, monthsFromAsOf: number): number => {
-        let balance = Number(liability.current_balance) || 0;
-        const annualRate = Number(liability.interest_rate || 0) / 100;
-        const monthlyRate = annualRate / 12;
-        for (let i = 0; i < Math.max(0, monthsFromAsOf); i++) {
-            const interest = balance * monthlyRate;
-            let payment = Number(liability.monthly_payment || 0);
-            if (!payment || payment <= 0) {
-                // fallback: cover interest plus small principal
-                payment = interest + Math.max(balance * 0.01, 10);
-            }
-            const principal = Math.max(0, payment - interest);
-            balance = Math.max(0, balance - principal);
-            if (balance <= 0) break;
-        }
-        return balance;
     };
 
     const handleDelete = async (id: string) => {
@@ -369,83 +370,31 @@ const Liabilities: React.FC = () => {
                     </Paper>
                 </Grid>
 
-                {/* Repayment Calculator */}
-                <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Special Repayment Impact Calculator
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            See how special repayments can reduce your total interest and payoff time
-                        </Typography>
-
-                        <Grid container spacing={3}>
-                            {liabilities.filter(l => l.special_repayment_enabled && l.special_repayment_amount).map((liability) => {
-                                const monthlyInterest = (Number(liability.current_balance) * Number(liability.interest_rate || 0)) / 100 / 12;
-                                const specialRepaymentMonthly = Number(liability.special_repayment_amount || 0);
-                                const totalMonthlyPayment = Number(liability.monthly_payment || 0) + specialRepaymentMonthly;
-                                const principalReduction = totalMonthlyPayment - monthlyInterest;
-                                const monthsToPayoff = Number(liability.current_balance) / principalReduction;
-                                const totalInterest = (totalMonthlyPayment * monthsToPayoff) - Number(liability.current_balance);
-
-                                return (
-                                    <Grid item xs={12} md={6} key={liability.id}>
-                                        <Card variant="outlined">
-                                            <CardContent>
-                                                <Typography variant="h6" gutterBottom>
-                                                    {liability.name}
-                                                </Typography>
-                                                <Box display="flex" justifyContent="space-between" mb={1}>
-                                                    <Typography variant="body2">Current Balance:</Typography>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {formatCurrency(Number(liability.current_balance))}
-                                                    </Typography>
-                                                </Box>
-                                                <Box display="flex" justifyContent="space-between" mb={1}>
-                                                    <Typography variant="body2">Monthly Payment:</Typography>
-                                                    <Typography variant="body2">
-                                                        {formatCurrency(Number(liability.monthly_payment || 0))}
-                                                    </Typography>
-                                                </Box>
-                                                <Box display="flex" justifyContent="space-between" mb={1}>
-                                                    <Typography variant="body2">Special Repayment:</Typography>
-                                                    <Typography variant="body2" color="success.main">
-                                                        +{formatCurrency(specialRepaymentMonthly)}
-                                                    </Typography>
-                                                </Box>
-                                                <Box display="flex" justifyContent="space-between" mb={1}>
-                                                    <Typography variant="body2">Total Monthly:</Typography>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {formatCurrency(totalMonthlyPayment)}
-                                                    </Typography>
-                                                </Box>
-                                                <Divider sx={{ my: 1 }} />
-                                                <Box display="flex" justifyContent="space-between" mb={1}>
-                                                    <Typography variant="body2">Payoff Time:</Typography>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {Math.ceil(monthsToPayoff)} months
-                                                    </Typography>
-                                                </Box>
-                                                <Box display="flex" justifyContent="space-between">
-                                                    <Typography variant="body2">Total Interest:</Typography>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {formatCurrency(Math.round(totalInterest))}
-                                                    </Typography>
-                                                </Box>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                );
-                            })}
-                        </Grid>
-
-                        {liabilities.filter(l => l.special_repayment_enabled && l.special_repayment_amount).length === 0 && (
-                            <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                                Enable special repayments on your liabilities to see the impact calculations here.
+                {/* Debt payoff timeline */}
+                {liabilities.length > 0 && (
+                    <Grid item xs={12}>
+                        <Paper sx={{ p: 3 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Debt Payoff Timeline
                             </Typography>
-                        )}
-                    </Paper>
-                </Grid>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Projected balance until each debt is paid off. Compare baseline payments with your
+                                saved plan and optional what-if strategies (not saved to the database).
+                            </Typography>
+                            {liabilities.map((liability, index) => (
+                                <LiabilityPayoffCard
+                                    key={liability.id}
+                                    liability={liability}
+                                    liabilityTypeLabel={liabilityTypeLabels[liability.type]}
+                                    typeIcon={liabilityTypeIcons[liability.type]}
+                                    scenarioState={getPayoffScenarioState(liability.id)}
+                                    onScenarioStateChange={(next) => setPayoffScenarioState(liability.id, next)}
+                                    defaultExpanded={index === 0}
+                                />
+                            ))}
+                        </Paper>
+                    </Grid>
+                )}
 
                 {/* Liabilities Table */}
                 <Grid item xs={12}>
@@ -535,24 +484,14 @@ const Liabilities: React.FC = () => {
                                                     })()}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    {(() => {
-                                                        if (!liability.as_of_month) return 'N/A';
-                                                        const now = new Date();
-                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
-                                                        if (!asOf) return 'N/A';
-                                                        const months = monthsBetween(asOf, now);
-                                                        const projected = projectLiabilityBalance(liability, months);
-                                                        return formatCurrency(Math.round(projected));
-                                                    })()}
+                                                    {formatCurrency(
+                                                        Math.round(resolveLiabilityStartingBalance(liability))
+                                                    )}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     {(() => {
-                                                        if (!liability.as_of_month) return 'N/A';
-                                                        const now = new Date();
-                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
-                                                        if (!asOf) return 'N/A';
-                                                        const months = monthsBetween(asOf, now) + Number(projectionMonths || 0);
-                                                        const projected = projectLiabilityBalance(liability, months);
+                                                        const monthsAhead = monthsFromAsOfTo(liability) + Number(projectionMonths || 0);
+                                                        const projected = projectLiabilityBalanceAtMonths(liability, monthsAhead);
                                                         return formatCurrency(Math.round(projected));
                                                     })()}
                                                 </TableCell>
