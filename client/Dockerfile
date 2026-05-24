@@ -2,9 +2,15 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+ARG UID=1000
+ARG GID=1000
+
+RUN addgroup -g $GID -S nodejs && \
+    adduser -S nodejs -u $UID
+
 # Create non-root user first
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# RUN addgroup -g 1001 -S nodejs
+# RUN adduser -S nodejs -u 1001
 
 # Change ownership of /app directory
 RUN chown nodejs:nodejs /app
