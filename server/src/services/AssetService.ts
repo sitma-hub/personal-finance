@@ -175,6 +175,23 @@ export class AssetService {
     return (result.rowCount ?? 0) > 0;
   }
 
+  async getValueHistoryForAssets(
+    assetIds: string[]
+  ): Promise<Pick<AssetValueHistory, 'asset_id' | 'value' | 'as_of_date'>[]> {
+    if (assetIds.length === 0) return [];
+
+    const query = `
+      SELECT h.asset_id, h.value, h.as_of_date
+      FROM asset_value_history h
+      JOIN assets a ON h.asset_id = a.id
+      WHERE a.user_id = (SELECT id FROM users WHERE email = $1)
+        AND h.asset_id = ANY($2::uuid[])
+      ORDER BY h.as_of_date ASC, h.created_at ASC
+    `;
+    const result = await pool.query(query, [this.userId, assetIds]);
+    return result.rows;
+  }
+
   async getValueHistory(assetId: string): Promise<AssetValueHistory[]> {
     const query = `
       SELECT h.* FROM asset_value_history h

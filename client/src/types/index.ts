@@ -220,11 +220,18 @@ export interface AssetProjectionSummary {
     series: ProjectionPoint[];
 }
 
+export interface InvestableHistoryPoint {
+    month: string;
+    actual: number;
+}
+
 export interface InvestmentProjectionsResponse {
     years: number;
     totalCurrentValue: number;
     totalMonthlyContribution: number;
     totalsSeries: ProjectionPoint[];
+    historySeries: InvestableHistoryPoint[];
+    assetHistories: Record<string, InvestableHistoryPoint[]>;
     assets: AssetProjectionSummary[];
 }
 

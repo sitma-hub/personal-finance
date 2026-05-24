@@ -2,6 +2,12 @@ import { AssetService } from './AssetService';
 import { LiabilityService } from './LiabilityService';
 import { IncomeService } from './IncomeService';
 import { ExpenseService } from './ExpenseService';
+import { SnapshotService } from './SnapshotService';
+import {
+  buildInvestableValueHistory,
+  buildPerAssetHistories,
+} from '../utils/investableHistory';
+import { INVESTABLE_ASSET_TYPES } from '../types';
 import {
   InvestmentProjectionsResponse,
   NetWorthProjectionsResponse,
@@ -30,10 +36,20 @@ export class ProjectionService {
   private liabilityService = new LiabilityService();
   private incomeService = new IncomeService();
   private expenseService = new ExpenseService();
+  private snapshotService = new SnapshotService();
 
   async getInvestmentProjections(years: number): Promise<InvestmentProjectionsResponse> {
     const months = years * 12;
     const assets = await this.assetService.getAllAssets();
+    const investableBuckets = assets.filter((a) => INVESTABLE_ASSET_TYPES.includes(a.type));
+    const investableIds = investableBuckets.map((a) => a.id);
+    const [historyRows, snapshots] = await Promise.all([
+      this.assetService.getValueHistoryForAssets(investableIds),
+      this.snapshotService.getAllSnapshots(),
+    ]);
+    const historySeries = buildInvestableValueHistory(investableBuckets, historyRows, snapshots);
+    const assetHistories = buildPerAssetHistories(investableBuckets, historyRows);
+
     const investable = assets.filter(isInvestableForProjection);
 
     const assetSummaries: AssetProjectionSummary[] = investable.map((asset) => {
@@ -87,6 +103,8 @@ export class ProjectionService {
       totalCurrentValue: assetSummaries.reduce((s, a) => s + a.currentValue, 0),
       totalMonthlyContribution: assetSummaries.reduce((s, a) => s + a.monthlyContribution, 0),
       totalsSeries,
+      historySeries,
+      assetHistories,
       assets: assetSummaries
     };
   }
