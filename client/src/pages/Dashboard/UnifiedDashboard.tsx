@@ -52,6 +52,7 @@ import {
 } from '../../utils/dateInput';
 import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { CashFlowSankeyChart } from '../../components/charts/CashFlowSankeyChart';
 import { NetWorthStepModal } from '../../components/dashboard/NetWorthStepModal';
 import { projectionService } from '../../services/projectionService';
 import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
@@ -61,6 +62,7 @@ import {
     type NetWorthChartRow,
     type NetWorthStepBreakdown,
 } from '../../utils/netWorthStepBreakdown';
+import { buildCashFlowSankeyData } from '../../utils/cashFlowSankey';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -126,6 +128,10 @@ const UnifiedDashboard: React.FC = () => {
         loading,
         error,
         snapshots,
+        incomeStreams,
+        expenses,
+        liabilities,
+        assets,
     } = state;
     const [saving, setSaving] = useState(false);
     const [snack, setSnack] = useState<string | null>(null);
@@ -275,6 +281,11 @@ const UnifiedDashboard: React.FC = () => {
     };
 
     const plannedInvesting = netWorthProjections?.plannedMonthlyContributions ?? 0;
+
+    const cashFlowSankeyData = useMemo(
+        () => buildCashFlowSankeyData(incomeStreams, expenses, liabilities, assets),
+        [incomeStreams, expenses, liabilities, assets]
+    );
 
     const handleSaveSnapshot = async () => {
         const existing = snapshots.some((s) => {
@@ -460,6 +471,33 @@ const UnifiedDashboard: React.FC = () => {
                     </Grid>
                 </Grid>
             )}
+
+            <Grid container spacing={3} sx={{ width: '100%', mb: 3 }}>
+                <Grid item xs={12}>
+                    <Paper sx={{ p: 2, width: '100%' }}>
+                        <Typography variant="h6" gutterBottom>
+                            Where your money goes
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Each income stream, expense category, and loan payment is shown separately.
+                            Edit data on{' '}
+                            <Link component={RouterLink} to="/income" underline="hover">
+                                Income
+                            </Link>
+                            {' '}and{' '}
+                            <Link component={RouterLink} to="/expenses" underline="hover">
+                                Expenses
+                            </Link>
+                            .
+                        </Typography>
+                        <CashFlowSankeyChart
+                            data={cashFlowSankeyData}
+                            loading={loading}
+                            ready={chartsReady}
+                        />
+                    </Paper>
+                </Grid>
+            </Grid>
 
             <Grid container spacing={3} sx={{ width: '100%' }}>
                 <Grid item xs={12}>

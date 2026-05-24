@@ -48,7 +48,7 @@ services:
       - /app/node_modules
     networks:
       - pfsm-network
-    command: npm start
+    command: sh -c "npm install && npm start"
 
 volumes:
   postgres_data:

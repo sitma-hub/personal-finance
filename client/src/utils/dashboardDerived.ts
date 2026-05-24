@@ -10,22 +10,7 @@ import {
 } from '../types';
 import { getLiabilityMonthlyPayment } from './liabilityCashFlow';
 import { normalizeSnapshotMonth } from './dateInput';
-
-function monthlyIncomeTotal(incomeStreams: IncomeStream[]): number {
-    return incomeStreams.reduce((sum, income) => {
-        const amount = Number(income.current_amount);
-        switch (income.frequency) {
-            case 'monthly':
-                return sum + amount;
-            case 'annual':
-                return sum + amount / 12;
-            case 'hourly':
-                return sum + (amount * 40 * 52) / 12;
-            default:
-                return sum + amount;
-        }
-    }, 0);
-}
+import { totalMonthlyIncome } from './monthlyAmounts';
 
 function monthlyExpenseTotal(expenses: Expense[], liabilities: Liability[]): number {
     const regular = expenses.reduce((sum, e) => sum + Number(e.monthly_amount), 0);
@@ -43,7 +28,7 @@ export function buildDashboardSummary(
     const totalAssets = assets.reduce((sum, a) => sum + Number(a.current_value), 0);
     const totalLiabilities = liabilities.reduce((sum, l) => sum + Number(l.current_balance), 0);
     const netWorth = totalAssets - totalLiabilities;
-    const monthlyIncome = monthlyIncomeTotal(incomeStreams);
+    const monthlyIncome = totalMonthlyIncome(incomeStreams);
     const monthlyExpenses = monthlyExpenseTotal(expenses, liabilities);
     const monthlySavings = monthlyIncome - monthlyExpenses;
 
