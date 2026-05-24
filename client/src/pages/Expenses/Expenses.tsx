@@ -44,6 +44,8 @@ import {
     School as SchoolIcon,
     SportsEsports as EntertainmentIcon,
     EuroSymbol as MoneyIcon,
+    Bolt as BoltIcon,
+    Bathtub as BathIcon,
     Category as CategoryIcon,
 } from '@mui/icons-material';
 import { CategoryPieChart, PieLegendMode } from '../../components/charts/CategoryPieChart';
@@ -96,9 +98,9 @@ const Expenses: React.FC = () => {
         'Healthcare': <HealthIcon />,
         'Education': <SchoolIcon />,
         'Entertainment': <EntertainmentIcon />,
-        'Utilities': <MoneyIcon />,
+        'Utilities': <BoltIcon />,
         'Insurance': <HealthIcon />,
-        'Personal Care': <ShoppingCartIcon />,
+        'Personal Care': <BathIcon />,
         'Shopping': <ShoppingCartIcon />,
         'Travel': <CarIcon />,
         'Other': <CategoryIcon />,
