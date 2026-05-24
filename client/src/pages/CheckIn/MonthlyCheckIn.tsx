@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { CheckInProposal, CheckInProposalLineItem, CheckInStatus } from '../../types';
-import { formatChartMonthLabel, normalizeMonth, currentMonth, clampMonthToCurrent, compareMonths } from '../../utils/dateInput';
+import { formatChartMonthLabel, normalizeMonth, clampMonthToCurrent, compareMonths } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
 
 const STEPS = ['Select month', 'Review values', 'Confirm'];
@@ -260,16 +260,16 @@ const MonthlyCheckIn: React.FC = () => {
 
     const monthOptions = status
         ? (() => {
-              const { missingMonths, recommendedMonth, currentMonth: cur } = status;
-              const picks = new Set<string>([clampMonthToCurrent(recommendedMonth, cur)]);
-              missingMonths.slice(0, 3).forEach((m) => picks.add(m));
-              if (missingMonths.length > 3) {
-                  picks.add(missingMonths[missingMonths.length - 1]!);
-              }
-              return Array.from(picks)
-                  .filter((m) => compareMonths(m, cur) <= 0)
-                  .sort();
-          })()
+            const { missingMonths, recommendedMonth, currentMonth: cur } = status;
+            const picks = new Set<string>([clampMonthToCurrent(recommendedMonth, cur)]);
+            missingMonths.slice(0, 3).forEach((m) => picks.add(m));
+            if (missingMonths.length > 3) {
+                picks.add(missingMonths[missingMonths.length - 1]!);
+            }
+            return Array.from(picks)
+                .filter((m) => compareMonths(m, cur) <= 0)
+                .sort();
+        })()
         : [];
 
     const isCaughtUp = status

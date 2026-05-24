@@ -19,20 +19,13 @@ import {
     Alert,
     CircularProgress,
     Chip,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemSecondaryAction,
     IconButton,
-    Divider,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
-    Switch,
-    FormControlLabel,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -43,12 +36,11 @@ import {
     EuroSymbol as MoneyIcon,
     AccountBalance as BankIcon,
     Home as HomeIcon,
-    School as SchoolIcon,
     Security as SecurityIcon,
     Business as BusinessIcon,
     Star as StarIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { IncomeStream, IncomeFormData, IncomeType } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';

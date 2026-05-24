@@ -19,10 +19,6 @@ import {
     Alert,
     CircularProgress,
     Chip,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemSecondaryAction,
     IconButton,
     Divider,
     Table,
@@ -46,7 +42,7 @@ import {
     AccountBalance as BankIcon,
     EuroSymbol as MoneyIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { Liability, LiabilityType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
@@ -57,8 +53,6 @@ import {
     toDateInputValue,
     toMonthInputValue,
 } from '../../utils/dateInput';
-import { liabilityService } from '../../services/liabilityService';
-import { LiabilityBalanceHistory } from '../../types';
 import { formatCurrency } from '../../utils/currency';
 
 type LiabilityFormData = Partial<Liability>;
@@ -67,8 +61,6 @@ const Liabilities: React.FC = () => {
     const { state, createLiability, updateLiability, deleteLiability } = useFinancial();
     const { liabilities, assets, loading, error } = state;
     const [formError, setFormError] = useState<string | null>(null);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [history, setHistory] = useState<Record<string, LiabilityBalanceHistory[]>>({});
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
     const [projectionMonths, setProjectionMonths] = useState<number>(0);
@@ -181,18 +173,6 @@ const Liabilities: React.FC = () => {
             return;
         }
         await deleteLiability(id);
-    };
-
-    const toggleHistory = async (id: string) => {
-        if (expandedId === id) {
-            setExpandedId(null);
-            return;
-        }
-        setExpandedId(id);
-        if (!history[id]) {
-            const res = await liabilityService.getBalanceHistory(id);
-            setHistory((prev) => ({ ...prev, [id]: res.data || [] }));
-        }
     };
 
     const handleCloseDialog = () => {
