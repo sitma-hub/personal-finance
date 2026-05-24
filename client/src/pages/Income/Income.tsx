@@ -40,7 +40,7 @@ import {
     Delete as DeleteIcon,
     TrendingUp as TrendingUpIcon,
     Work as WorkIcon,
-    AttachMoney as MoneyIcon,
+    EuroSymbol as MoneyIcon,
     AccountBalance as BankIcon,
     Home as HomeIcon,
     School as SchoolIcon,

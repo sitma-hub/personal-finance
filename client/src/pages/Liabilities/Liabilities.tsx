@@ -44,7 +44,7 @@ import {
     DirectionsCar as CarIcon,
     School as SchoolIcon,
     AccountBalance as BankIcon,
-    AttachMoney as MoneyIcon,
+    EuroSymbol as MoneyIcon,
 } from '@mui/icons-material';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';

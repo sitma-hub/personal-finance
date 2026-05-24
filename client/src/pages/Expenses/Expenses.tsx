@@ -48,10 +48,9 @@ import {
     HealthAndSafety as HealthIcon,
     School as SchoolIcon,
     SportsEsports as EntertainmentIcon,
-    AttachMoney as MoneyIcon,
+    EuroSymbol as MoneyIcon,
     Category as CategoryIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { CategoryPieChart, PieLegendMode } from '../../components/charts/CategoryPieChart';
 import { Expense, ExpenseFormData } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';

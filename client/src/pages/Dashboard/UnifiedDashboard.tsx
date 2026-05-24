@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import {
     TrendingUp as TrendingUpIcon,
-    AttachMoney as MoneyIcon,
+    EuroSymbol as MoneyIcon,
     CreditCard as DebtIcon,
     Savings as SavingsIcon,
     CameraAlt as SnapshotIcon,
