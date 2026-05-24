@@ -18,6 +18,9 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Chip,
+    FormControlLabel,
+    Switch,
+    TextField,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import {
@@ -37,11 +40,33 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Link } from '@mui/material';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { projectionService } from '../../services/projectionService';
-import { InvestableHistoryPoint, InvestmentProjectionsResponse } from '../../types';
+import { AssetProjectionSummary, InvestableHistoryPoint, InvestmentProjectionsResponse } from '../../types';
 import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 
+const MIN_FORECAST_YEARS = 1;
+const MAX_FORECAST_YEARS = 40;
+
+type ForecastPreset = '5' | '10' | '20' | 'custom';
+
+const clampForecastYears = (years: number): number =>
+    Math.min(MAX_FORECAST_YEARS, Math.max(MIN_FORECAST_YEARS, years));
+
 const formatPct = (rate: number) => `${(rate * 100).toFixed(1)}%`;
+
+const projectionAtHorizon = (
+    asset: AssetProjectionSummary,
+    includePayoff: boolean,
+) => {
+    const series = includePayoff && asset.payoffSeries?.length ? asset.payoffSeries : asset.series;
+    const fallback = {
+        pessimistic: asset.currentValue,
+        expected: asset.currentValue,
+        optimistic: asset.currentValue,
+    };
+    if (!series.length) return fallback;
+    return series[series.length - 1] ?? fallback;
+};
 
 type InvestmentChartRow = {
     month: string;
@@ -114,17 +139,27 @@ const Investments: React.FC = () => {
     const navigate = useNavigate();
     const { state } = useFinancial();
     const { summary } = state;
-    const [years, setYears] = useState<5 | 10 | 20>(10);
+    const [forecastPreset, setForecastPreset] = useState<ForecastPreset>('10');
+    const [customYearsInput, setCustomYearsInput] = useState('15');
+    const [includePayoffInForecast, setIncludePayoffInForecast] = useState(false);
     const [data, setData] = useState<InvestmentProjectionsResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const forecastYears = useMemo(() => {
+        if (forecastPreset === 'custom') {
+            const parsed = parseInt(customYearsInput, 10);
+            return clampForecastYears(Number.isFinite(parsed) ? parsed : 15);
+        }
+        return Number(forecastPreset);
+    }, [forecastPreset, customYearsInput]);
 
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
         setError(null);
         projectionService
-            .getInvestmentProjections(years)
+            .getInvestmentProjections(forecastYears)
             .then((res) => {
                 if (!cancelled) setData(res.data);
             })
@@ -135,11 +170,16 @@ const Investments: React.FC = () => {
                 if (!cancelled) setLoading(false);
             });
         return () => { cancelled = true; };
-    }, [years]);
+    }, [forecastYears]);
 
     const surplus = summary?.monthlySavings ?? 0;
     const plannedDca = data?.totalMonthlyContribution ?? 0;
     const afterDca = surplus - plannedDca;
+
+    const payoffEvents = data?.payoffEvents ?? [];
+    const hasPayoffForecast =
+        payoffEvents.length > 0 && (data?.payoffInvestingTotalsSeries?.length ?? 0) > 0;
+    const showPayoffForecast = includePayoffInForecast && hasPayoffForecast;
 
     const chartData = useMemo((): InvestmentChartRow[] => {
         const historical: InvestmentChartRow[] = (data?.historySeries || []).map((point) => ({
@@ -150,7 +190,11 @@ const Investments: React.FC = () => {
             optimistic: null,
         }));
 
-        const forecast: InvestmentChartRow[] = (data?.totalsSeries || []).map((point) => ({
+        const forecastSource = showPayoffForecast
+            ? data!.payoffInvestingTotalsSeries!
+            : (data?.totalsSeries || []);
+
+        const forecast: InvestmentChartRow[] = forecastSource.map((point) => ({
             month: point.month,
             actual: null,
             expected: point.expected,
@@ -159,7 +203,7 @@ const Investments: React.FC = () => {
         }));
 
         return [...historical, ...forecast].sort((a, b) => a.month.localeCompare(b.month));
-    }, [data]);
+    }, [data, showPayoffForecast]);
 
     const hasHistory = chartData.some((row) => row.actual != null);
     const hasForecast = chartData.some((row) => row.expected != null);
@@ -244,16 +288,54 @@ const Investments: React.FC = () => {
                     <Paper sx={{ p: 2, mb: 3 }}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
                             <Typography variant="h6">Investable value over time</Typography>
-                            <ToggleButtonGroup
-                                size="small"
-                                value={years}
-                                exclusive
-                                onChange={(_, v) => v && setYears(v)}
-                            >
-                                <ToggleButton value={5}>5y</ToggleButton>
-                                <ToggleButton value={10}>10y</ToggleButton>
-                                <ToggleButton value={20}>20y</ToggleButton>
-                            </ToggleButtonGroup>
+                            <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                                {hasPayoffForecast && (
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                size="small"
+                                                checked={includePayoffInForecast}
+                                                onChange={(_, checked) => setIncludePayoffInForecast(checked)}
+                                            />
+                                        }
+                                        label="Including investing after debt payoff"
+                                        sx={{ mr: 0 }}
+                                    />
+                                )}
+                                <ToggleButtonGroup
+                                    size="small"
+                                    exclusive
+                                    value={forecastPreset}
+                                    onChange={(_, value: ForecastPreset | null) => {
+                                        if (value) setForecastPreset(value);
+                                    }}
+                                    aria-label="Forecast horizon"
+                                >
+                                    <ToggleButton value="5">5y</ToggleButton>
+                                    <ToggleButton value="10">10y</ToggleButton>
+                                    <ToggleButton value="20">20y</ToggleButton>
+                                    <ToggleButton value="custom">Custom</ToggleButton>
+                                </ToggleButtonGroup>
+                                {forecastPreset === 'custom' && (
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label="Years"
+                                        value={customYearsInput}
+                                        onChange={(e) => setCustomYearsInput(e.target.value)}
+                                        onBlur={() => {
+                                            setCustomYearsInput(String(forecastYears));
+                                        }}
+                                        inputProps={{
+                                            min: MIN_FORECAST_YEARS,
+                                            max: MAX_FORECAST_YEARS,
+                                            step: 1,
+                                        }}
+                                        sx={{ width: 88 }}
+                                    />
+                                )}
+                                {loading && data && <CircularProgress size={20} />}
+                            </Box>
                         </Box>
                         {!hasChart ? (
                             <Alert severity="warning">
@@ -334,8 +416,18 @@ const Investments: React.FC = () => {
                         )}
                         <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
                             Recorded values reflect updates you enter for investment buckets. Forecast scenarios are
-                            illustrative only — not guaranteed returns.
+                            illustrative only{showPayoffForecast ? ', including investing after debt payoff' : ''} — not guaranteed returns.
                         </Typography>
+                        {showPayoffForecast && (
+                            <Alert severity="info" sx={{ mt: 2 }}>
+                                {payoffEvents.map((ev) => (
+                                    <Typography key={ev.liabilityId} variant="body2">
+                                        {ev.liabilityName} paid off by {formatChartMonthLabel(ev.payoffMonth)} →
+                                        invest {formatCurrency(ev.monthlyRedirect)}/mo into {ev.targetAssetName}
+                                    </Typography>
+                                ))}
+                            </Alert>
+                        )}
                     </Paper>
 
                     <Paper sx={{ p: 2 }}>
@@ -353,11 +445,13 @@ const Investments: React.FC = () => {
                                             <TableCell>History</TableCell>
                                             <TableCell align="right">€/mo</TableCell>
                                             <TableCell align="right">Expected return</TableCell>
-                                            <TableCell align="right">10y range</TableCell>
+                                            <TableCell align="right">{data.years}y range</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {data.assets.map((a) => (
+                                        {data.assets.map((a) => {
+                                            const projected = projectionAtHorizon(a, showPayoffForecast);
+                                            return (
                                             <TableRow key={a.id}>
                                                 <TableCell>{a.name}</TableCell>
                                                 <TableCell>
@@ -370,12 +464,13 @@ const Investments: React.FC = () => {
                                                 <TableCell align="right">{formatCurrency(a.monthlyContribution)}</TableCell>
                                                 <TableCell align="right">{formatPct(a.expectedAnnualReturn)}</TableCell>
                                                 <TableCell align="right">
-                                                    {formatCurrency(a.projectedAt10y.pessimistic)}
+                                                    {formatCurrency(projected.pessimistic)}
                                                     {' – '}
-                                                    {formatCurrency(a.projectedAt10y.optimistic)}
+                                                    {formatCurrency(projected.optimistic)}
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </TableContainer>

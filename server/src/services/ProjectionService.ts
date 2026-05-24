@@ -26,8 +26,10 @@ import {
 } from '../utils/assetProjection';
 import {
   amortizeAllLiabilities,
+  buildExtraContributionsByAsset,
   buildPayoffEvents,
   buildNetWorthAssetSeries,
+  projectAssetMonthsVariable,
   toNetWorthSeries,
 } from '../utils/payoffInvestProjection';
 
@@ -98,7 +100,51 @@ export class ProjectionService {
       optimistic: totalsOpt[i] ?? 0
     }));
 
-    return {
+    const liabilities = await this.liabilityService.getAllLiabilities();
+    const hasPayoffRedirect = liabilities.some((l) => l.invest_after_payoff);
+    let payoffInvestingTotalsSeries: ProjectionPoint[] | undefined;
+    let payoffEvents: ReturnType<typeof buildPayoffEvents> | undefined;
+
+    if (hasPayoffRedirect) {
+      const payoffExtras = buildExtraContributionsByAsset(liabilities, assets, months);
+      let payoffPess: number[] = [];
+      let payoffExp: number[] = [];
+      let payoffOpt: number[] = [];
+
+      investable.forEach((asset) => {
+        const start = parseFloat(String(asset.current_value));
+        const base = parseFloat(String(asset.monthly_contribution ?? 0));
+        const rates = getAssetRates(asset);
+        const extra = payoffExtras.get(asset.id) ?? Array(months).fill(0);
+        const pess = projectAssetMonthsVariable(start, base, extra, rates.pessimistic, months);
+        const exp = projectAssetMonthsVariable(start, base, extra, rates.expected, months);
+        const opt = projectAssetMonthsVariable(start, base, extra, rates.optimistic, months);
+
+        const summary = assetSummaries.find((s) => s.id === asset.id);
+        if (summary) {
+          summary.payoffSeries = Array.from({ length: months }, (_, i) => ({
+            month: monthLabelFromNow(i + 1),
+            pessimistic: pess[i] ?? start,
+            expected: exp[i] ?? start,
+            optimistic: opt[i] ?? start,
+          }));
+        }
+
+        payoffPess = addSeries(payoffPess, pess);
+        payoffExp = addSeries(payoffExp, exp);
+        payoffOpt = addSeries(payoffOpt, opt);
+      });
+
+      payoffInvestingTotalsSeries = Array.from({ length: months }, (_, i) => ({
+        month: monthLabelFromNow(i + 1),
+        pessimistic: payoffPess[i] ?? 0,
+        expected: payoffExp[i] ?? 0,
+        optimistic: payoffOpt[i] ?? 0
+      }));
+      payoffEvents = buildPayoffEvents(liabilities, assets, months);
+    }
+
+    const response: InvestmentProjectionsResponse = {
       years,
       totalCurrentValue: assetSummaries.reduce((s, a) => s + a.currentValue, 0),
       totalMonthlyContribution: assetSummaries.reduce((s, a) => s + a.monthlyContribution, 0),
@@ -107,6 +153,13 @@ export class ProjectionService {
       assetHistories,
       assets: assetSummaries
     };
+
+    if (hasPayoffRedirect && payoffInvestingTotalsSeries && payoffEvents?.length) {
+      response.payoffInvestingTotalsSeries = payoffInvestingTotalsSeries;
+      response.payoffEvents = payoffEvents;
+    }
+
+    return response;
   }
 
   async getNetWorthProjections(years: number): Promise<NetWorthProjectionsResponse> {

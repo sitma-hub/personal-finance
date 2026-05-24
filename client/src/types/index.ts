@@ -218,6 +218,7 @@ export interface AssetProjectionSummary {
     projectedAt10y: { pessimistic: number; expected: number; optimistic: number };
     projectedAt20y: { pessimistic: number; expected: number; optimistic: number };
     series: ProjectionPoint[];
+    payoffSeries?: ProjectionPoint[];
 }
 
 export interface InvestableHistoryPoint {
@@ -233,6 +234,8 @@ export interface InvestmentProjectionsResponse {
     historySeries: InvestableHistoryPoint[];
     assetHistories: Record<string, InvestableHistoryPoint[]>;
     assets: AssetProjectionSummary[];
+    payoffInvestingTotalsSeries?: ProjectionPoint[];
+    payoffEvents?: PayoffRedirectEvent[];
 }
 
 export interface NetWorthProjectionPoint {
