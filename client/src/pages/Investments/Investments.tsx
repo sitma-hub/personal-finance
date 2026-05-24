@@ -264,7 +264,6 @@ const Investments: React.FC = () => {
                                     <Typography variant="h5" color={surplus >= 0 ? 'success.main' : 'error.main'}>
                                         {formatCurrency(surplus)}
                                     </Typography>
-                                    <Typography variant="caption" color="textSecondary">Income − living − debt</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -452,23 +451,23 @@ const Investments: React.FC = () => {
                                         {data.assets.map((a) => {
                                             const projected = projectionAtHorizon(a, showPayoffForecast);
                                             return (
-                                            <TableRow key={a.id}>
-                                                <TableCell>{a.name}</TableCell>
-                                                <TableCell>
-                                                    <Chip size="small" label={a.type.replace(/_/g, ' ')} variant="outlined" />
-                                                </TableCell>
-                                                <TableCell align="right">{formatCurrency(a.currentValue)}</TableCell>
-                                                <TableCell>
-                                                    <BucketSparkline points={data.assetHistories?.[a.id] ?? []} />
-                                                </TableCell>
-                                                <TableCell align="right">{formatCurrency(a.monthlyContribution)}</TableCell>
-                                                <TableCell align="right">{formatPct(a.expectedAnnualReturn)}</TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(projected.pessimistic)}
-                                                    {' – '}
-                                                    {formatCurrency(projected.optimistic)}
-                                                </TableCell>
-                                            </TableRow>
+                                                <TableRow key={a.id}>
+                                                    <TableCell>{a.name}</TableCell>
+                                                    <TableCell>
+                                                        <Chip size="small" label={a.type.replace(/_/g, ' ')} variant="outlined" />
+                                                    </TableCell>
+                                                    <TableCell align="right">{formatCurrency(a.currentValue)}</TableCell>
+                                                    <TableCell>
+                                                        <BucketSparkline points={data.assetHistories?.[a.id] ?? []} />
+                                                    </TableCell>
+                                                    <TableCell align="right">{formatCurrency(a.monthlyContribution)}</TableCell>
+                                                    <TableCell align="right">{formatPct(a.expectedAnnualReturn)}</TableCell>
+                                                    <TableCell align="right">
+                                                        {formatCurrency(projected.pessimistic)}
+                                                        {' – '}
+                                                        {formatCurrency(projected.optimistic)}
+                                                    </TableCell>
+                                                </TableRow>
                                             );
                                         })}
                                     </TableBody>
