@@ -9,9 +9,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /app
 
-ENV ESLINT_NO_DEV_ERRORS=true
-ENV DISABLE_ESLINT_PLUGIN=true
-
 # --- Development ---
 FROM base AS development
 
@@ -19,12 +16,15 @@ COPY client/package.json client/package-lock.json ./
 RUN npm ci
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
 
 EXPOSE 3000
 
-# --- Production: static build served by a minimal server or nginx ---
+# --- Production: static build + vite preview ---
 FROM base AS production
+
+ARG VITE_API_URL=http://localhost:5000/api
+ENV VITE_API_URL=$VITE_API_URL
 
 COPY client/package.json client/package-lock.json ./
 RUN npm ci
@@ -38,4 +38,4 @@ USER node
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "preview"]

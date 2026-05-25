@@ -35,7 +35,7 @@ You should **not** need `npm install` on the host for Docker. Dependencies live 
 
 If you skip `setup.sh`, copy `env.docker.example` to `.env` and set `DOCKER_UID` / `DOCKER_GID` to `id -u` and `id -g`.
 
-To reset dependency volumes after permission issues:
+To reset dependency volumes (permissions, or after major frontend dependency changes such as the Vite migration):
 
 ```bash
 docker compose down
@@ -88,11 +88,11 @@ Use **Backup** in the sidebar to download a JSON file. Store it somewhere safe o
 ```bash
 cp server/env.example server/.env
 cd server && npm install && npm run dev
-cd client && npm install && npm start
+cd client && npm install && npm run dev
 ```
 
 ## Stack
 
-- React 18 + Material UI + Recharts
+- React 18 + Vite + Material UI + Recharts
 - Express + TypeScript + PostgreSQL 15
 - Docker Compose for local dev only

@@ -35,9 +35,9 @@ services:
       context: .
       dockerfile: client/Dockerfile
       target: production
+      args:
+        VITE_API_URL: http://localhost:5000/api
     container_name: pfsm-frontend
-    environment:
-      REACT_APP_API_URL: http://localhost:5000/api
     ports:
       - "3000:3000"
     networks:

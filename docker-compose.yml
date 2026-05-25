@@ -43,11 +43,9 @@ services:
       target: development
     container_name: pfsm-frontend
     environment:
-      REACT_APP_API_URL: http://localhost:5000/api
+      VITE_API_URL: http://localhost:5000/api
       DOCKER_UID: ${DOCKER_UID:-1000}
       DOCKER_GID: ${DOCKER_GID:-1000}
-      ESLINT_NO_DEV_ERRORS: "true"
-      DISABLE_ESLINT_PLUGIN: "true"
     ports:
       - "3000:3000"
     volumes:
