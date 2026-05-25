@@ -1,33 +1,41 @@
-FROM node:18-alpine
+# syntax=docker/dockerfile:1
+
+FROM node:18-alpine AS base
+
+RUN apk add --no-cache su-exec
+
+COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# --- Development: bind-mounted source, deps in a named volume ---
+FROM base AS development
 
-# Install dependencies
-RUN npm ci --only=production
+COPY server/package.json server/package-lock.json ./
+RUN npm ci
 
-# Copy source code
-COPY . .
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "run", "dev"]
 
-# Build the application
-RUN npm run build
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-# Change ownership of the app directory
-RUN chown -R nodejs:nodejs /app
-USER nodejs
-
-# Expose port
 EXPOSE 5000
 
-# Health check
+# --- Production: self-contained image, no bind mounts ---
+FROM base AS production
+
+COPY server/package.json server/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY server/ ./
+
+RUN npm run build \
+  && chown -R node:node /app
+
+USER node
+
+EXPOSE 5000
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
 CMD ["npm", "start"]

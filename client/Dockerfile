@@ -1,28 +1,41 @@
-FROM node:18-alpine
+# syntax=docker/dockerfile:1
+
+FROM node:18-alpine AS base
+
+RUN apk add --no-cache su-exec
+
+COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /app
 
-# Create non-root user first
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-# Change ownership of /app directory
-RUN chown nodejs:nodejs /app
-
-# Copy package files and install dependencies as nodejs user
-COPY --chown=nodejs:nodejs package*.json ./
-USER nodejs
-RUN npm install
-
-# Copy source code as nodejs user
-COPY --chown=nodejs:nodejs . .
-
-# Set environment variables to disable ESLint caching
 ENV ESLINT_NO_DEV_ERRORS=true
 ENV DISABLE_ESLINT_PLUGIN=true
 
-# Expose port
+# --- Development ---
+FROM base AS development
+
+COPY client/package.json client/package-lock.json ./
+RUN npm ci
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "start"]
+
 EXPOSE 3000
 
-# Start the application
+# --- Production: static build served by a minimal server or nginx ---
+FROM base AS production
+
+COPY client/package.json client/package-lock.json ./
+RUN npm ci
+
+COPY client/ ./
+
+RUN npm run build \
+  && chown -R node:node /app
+
+USER node
+
+EXPOSE 3000
+
 CMD ["npm", "start"]

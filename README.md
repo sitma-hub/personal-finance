@@ -23,6 +23,28 @@ docker compose up -d
 
 Data persists in the Docker volume `postgres_data`.
 
+### Permissions (new machine / clone)
+
+Containers run an entrypoint as root that:
+
+1. Creates an `app` user with your host UID/GID (from `.env`, written by `setup.sh`)
+2. Owns `node_modules`, `uploads`, `logs`, and lockfiles inside the container
+3. Runs `npm ci` when `package.json` or `package-lock.json` changes
+
+You should **not** need `npm install` on the host for Docker. Dependencies live in named volumes (`backend_node_modules`, `frontend_node_modules`), not in your repo tree.
+
+If you skip `setup.sh`, copy `env.docker.example` to `.env` and set `DOCKER_UID` / `DOCKER_GID` to `id -u` and `id -g`.
+
+To reset dependency volumes after permission issues:
+
+```bash
+docker compose down
+docker volume rm personal-finance_backend_node_modules personal-finance_frontend_node_modules
+docker compose up -d --build
+```
+
+(Volume names are prefixed with the compose project name; run `docker volume ls` if yours differs.)
+
 ## Reset database (new schema)
 
 After schema changes (e.g. investment fields):
