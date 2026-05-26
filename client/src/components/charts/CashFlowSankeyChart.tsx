@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { Box, Paper, Typography, Alert, CircularProgress, useTheme } from '@mui/material';
-import { ResponsiveSankey, type SankeyNodeRef } from '@nivo/sankey';
+import type { Theme } from '@mui/material/styles';
+import { ResponsiveSankey } from '@nivo/sankey';
+import type { DefaultLink, DefaultNode, SankeyLinkDatum } from '@nivo/sankey';
 import { formatCurrency } from '../../utils/currency';
 import { CashFlowSankeyData, SankeyNodeKind } from '../../utils/cashFlowSankey';
 
@@ -15,28 +17,23 @@ const NODE_COLORS_LIGHT: Record<SankeyNodeKind, string> = {
     shortfall: '#d32f2f',
 };
 
-/** Brighter hues for dark backgrounds — higher luminance for nodes, links, and labels. */
+/** Saturated hues for dark UI — links use `normal` blend (not multiply) so flows stay visible. */
 const NODE_COLORS_DARK: Record<SankeyNodeKind, string> = {
-    income: '#81c784',
-    hub: '#b0bec5',
-    expense: '#ffb74d',
-    debt: '#ef5350',
-    investing: '#64b5f6',
-    surplus: '#4db6ac',
+    income: '#66bb6a',
+    hub: '#90a4ae',
+    expense: '#ffa726',
+    debt: '#ff7043',
+    investing: '#42a5f5',
+    surplus: '#26a69a',
     shortfall: '#ff5252',
 };
 
-type SankeyGraphNode = {
-    id: string;
+type SankeyGraphNode = DefaultNode & {
     label: string;
     kind: SankeyNodeKind;
 };
 
-type SankeyGraphLink = {
-    source: string;
-    target: string;
-    value: number;
-};
+type SankeyGraphLink = DefaultLink;
 
 type CashFlowSankeyChartProps = {
     data: CashFlowSankeyData;
@@ -62,6 +59,46 @@ function buildGraph(data: CashFlowSankeyData): {
     };
 }
 
+const sankeyTooltipTheme = (muiTheme: Theme) => ({
+    wrapper: {
+        background: 'transparent',
+        color: muiTheme.palette.text.primary,
+    },
+    container: {
+        background: 'transparent',
+        color: muiTheme.palette.text.primary,
+        fontSize: muiTheme.typography.body2.fontSize,
+        borderRadius: muiTheme.shape.borderRadius,
+        boxShadow: 'none',
+        padding: 0,
+    },
+    basic: {
+        color: muiTheme.palette.text.primary,
+    },
+    table: {
+        color: muiTheme.palette.text.primary,
+    },
+    tableCell: {
+        color: muiTheme.palette.text.primary,
+    },
+});
+
+const SankeyTooltipShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <Paper
+        elevation={8}
+        sx={{
+            p: 1.5,
+            minWidth: 160,
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            border: 1,
+            borderColor: 'divider',
+        }}
+    >
+        {children}
+    </Paper>
+);
+
 const NodeTooltip: React.FC<{
     node: { id: string | number; label?: string | number; value?: number };
     kindById: Map<string, SankeyNodeKind>;
@@ -77,15 +114,34 @@ const NodeTooltip: React.FC<{
             : '';
 
     return (
-        <Paper elevation={3} sx={{ p: 1.5, minWidth: 160 }}>
-            <Typography variant="subtitle2" fontWeight={600}>
+        <SankeyTooltipShell>
+            <Typography variant="subtitle2" fontWeight={600} color="text.primary">
                 {label}
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" color="text.secondary">
                 {formatCurrency(value)}
                 {share}
             </Typography>
-        </Paper>
+        </SankeyTooltipShell>
+    );
+};
+
+const LinkTooltip: React.FC<{
+    link: SankeyLinkDatum<SankeyGraphNode, SankeyGraphLink>;
+    labelById: Map<string, string>;
+}> = ({ link, labelById }) => {
+    const sourceLabel = labelById.get(link.source.id) ?? link.source.id;
+    const targetLabel = labelById.get(link.target.id) ?? link.target.id;
+
+    return (
+        <SankeyTooltipShell>
+            <Typography variant="subtitle2" fontWeight={600} color="text.primary">
+                {sourceLabel} → {targetLabel}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+                {formatCurrency(link.value)}
+            </Typography>
+        </SankeyTooltipShell>
     );
 };
 
@@ -115,8 +171,9 @@ export const CashFlowSankeyChart: React.FC<CashFlowSankeyChartProps> = ({
                     fill: labelColor,
                 },
             },
+            tooltip: sankeyTooltipTheme(muiTheme),
         }),
-        [labelColor]
+        [labelColor, muiTheme]
     );
 
     if (loading || !ready) {
@@ -150,22 +207,23 @@ export const CashFlowSankeyChart: React.FC<CashFlowSankeyChartProps> = ({
                     data={{ nodes, links }}
                     margin={{ top: 24, right: 200, bottom: 24, left: 200 }}
                     align="justify"
-                    colors={(node: SankeyNodeRef) =>
-                        nodeColors[kindById.get(String(node.id)) ?? 'hub']
+                    colors={(node) =>
+                        nodeColors[kindById.get(node.id) ?? 'hub']
                     }
                     nodeOpacity={1}
                     nodeHoverOpacity={1}
                     nodeThickness={16}
                     nodeSpacing={20}
                     nodeBorderWidth={isDark ? 1 : 0}
-                    nodeBorderColor={isDark ? muiTheme.palette.divider : undefined}
-                    linkOpacity={isDark ? 0.55 : 0.45}
-                    linkHoverOpacity={isDark ? 0.75 : 0.65}
-                    linkContract={2}
-                    enableLinkGradient
-                    label={(node: SankeyNodeRef) =>
-                        labelById.get(String(node.id)) ?? String(node.id)
+                    nodeBorderColor={
+                        isDark ? muiTheme.palette.action.selected : undefined
                     }
+                    linkOpacity={isDark ? 0.68 : 0.45}
+                    linkHoverOpacity={isDark ? 0.88 : 0.65}
+                    linkContract={2}
+                    linkBlendMode={isDark ? 'normal' : 'multiply'}
+                    enableLinkGradient
+                    label={(node) => labelById.get(node.id) ?? node.id}
                     labelPosition="outside"
                     labelOrientation="horizontal"
                     labelPadding={12}
@@ -175,16 +233,19 @@ export const CashFlowSankeyChart: React.FC<CashFlowSankeyChartProps> = ({
                             : { from: 'color', modifiers: [['darker', 1.2]] }
                     }
                     theme={sankeyTheme}
-                    nodeTooltip={({ node }: { node: SankeyNodeRef }) => (
+                    nodeTooltip={({ node }) => (
                         <NodeTooltip
                             node={{
                                 id: node.id,
-                                label: labelById.get(String(node.id)) ?? String(node.id),
+                                label: labelById.get(node.id) ?? node.id,
                                 value: node.value,
                             }}
                             kindById={kindById}
                             monthlyIncome={monthlyIncome}
                         />
+                    )}
+                    linkTooltip={({ link }) => (
+                        <LinkTooltip link={link} labelById={labelById} />
                     )}
                 />
             </Box>
