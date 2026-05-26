@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Doughnut } from 'react-chartjs-2';
 import type { Chart, ChartData, ChartOptions } from 'chart.js';
 import '../../chartjs/register';
@@ -33,6 +34,18 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
     emptyMessage = 'No data',
     legendMode = 'percent',
 }) => {
+    const muiTheme = useTheme();
+    const labelColor = muiTheme.palette.text.primary;
+    const tooltipColors = useMemo(
+        () => ({
+            backgroundColor: muiTheme.palette.background.paper,
+            titleColor: muiTheme.palette.text.primary,
+            bodyColor: muiTheme.palette.text.secondary,
+            borderColor: muiTheme.palette.divider,
+        }),
+        [muiTheme],
+    );
+
     const slices = useMemo(
         () => data.filter((d) => d.value > 0).sort((a, b) => b.value - a.value),
         [data],
@@ -67,6 +80,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
                     position: 'right',
                     align: 'center',
                     labels: {
+                        color: labelColor,
                         font: { size: 13 },
                         padding: 10,
                         generateLabels: (chart: Chart<'doughnut'>) => {
@@ -90,6 +104,8 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
                                     text: String(text),
                                     fillStyle: String(fill),
                                     strokeStyle: String(fill),
+                                    fontColor: labelColor,
+                                    color: labelColor,
                                     lineWidth: 0,
                                     hidden: false,
                                     index,
@@ -99,6 +115,9 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
                     },
                 },
                 tooltip: {
+                    ...tooltipColors,
+                    borderWidth: 1,
+                    padding: 10,
                     callbacks: {
                         label: (ctx) => {
                             const value = Number(ctx.parsed);
@@ -108,7 +127,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
                 },
             },
         }),
-        [formatValue, legendMode, tooltipLabel],
+        [formatValue, labelColor, legendMode, tooltipColors, tooltipLabel],
     );
 
     if (slices.length === 0) {
