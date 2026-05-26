@@ -67,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Box>
             <Toolbar>
                 <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-                    Net Worth Tracker
+                    BudgetBuddy
                 </Typography>
             </Toolbar>
             <List>
@@ -115,7 +115,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Personal Net Worth
+                        Personal Finance Tracker
                     </Typography>
                     <IconButton color="inherit" onClick={toggleDarkMode}>
                         {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
