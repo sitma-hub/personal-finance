@@ -1,11 +1,18 @@
 import React, { useMemo } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Chart } from 'react-chartjs-2';
 import type { ChartData, ChartOptions } from 'chart.js';
 import '../../chartjs/register';
 import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 import { ChartContainer } from './ChartContainer';
-import { baseCartesianOptions, currencyLinearScale, monthCategoryScale } from './chartTheme';
+import {
+    baseCartesianOptions,
+    chartLegendLabels,
+    chartTooltipPlugin,
+    currencyLinearScale,
+    monthCategoryScale,
+} from './chartTheme';
 
 export type ForecastChartRow = {
     month: string;
@@ -51,6 +58,7 @@ export const ForecastRangeChart: React.FC<ForecastRangeChartProps> = ({
     onPointClick,
     showAssetLiabilityFooter = false,
 }) => {
+    const muiTheme = useTheme();
     const labels = useMemo(() => data.map((row) => row.month), [data]);
 
     const chartData: ChartData<'line'> = useMemo(() => {
@@ -122,9 +130,10 @@ export const ForecastRangeChart: React.FC<ForecastRangeChartProps> = ({
             },
             plugins: {
                 legend: {
-                    labels: { boxWidth: 12, font: { size: 12 } },
+                    labels: chartLegendLabels(muiTheme),
                 },
                 tooltip: {
+                    ...chartTooltipPlugin(muiTheme),
                     callbacks: {
                         title: (items) => {
                             const month = labels[items[0]?.dataIndex ?? 0] ?? '';
@@ -149,11 +158,11 @@ export const ForecastRangeChart: React.FC<ForecastRangeChartProps> = ({
                 },
             },
             scales: {
-                x: monthCategoryScale(labels),
-                y: currencyLinearScale(),
+                x: monthCategoryScale(muiTheme, labels),
+                y: currencyLinearScale(muiTheme),
             },
         }),
-        [data, labels, onPointClick, seriesLabels, showAssetLiabilityFooter],
+        [data, labels, muiTheme, onPointClick, seriesLabels, showAssetLiabilityFooter],
     );
 
     return (

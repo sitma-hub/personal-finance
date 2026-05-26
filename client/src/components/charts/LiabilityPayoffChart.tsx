@@ -6,12 +6,19 @@ import {
     Typography,
     Alert,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import '../../chartjs/register';
 import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 import type { PayoffChartRow, PayoffScenario, PayoffScheduleResult } from '../../utils/liabilityPayoffProjection';
 import { ChartContainer } from './ChartContainer';
-import { baseCartesianOptions, currencyLinearScale, monthCategoryScale } from './chartTheme';
+import {
+    baseCartesianOptions,
+    chartLegendLabels,
+    chartTooltipPlugin,
+    currencyLinearScale,
+    monthCategoryScale,
+} from './chartTheme';
 
 export type PayoffChartSeries = {
     scenario: PayoffScenario;
@@ -30,6 +37,7 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     chartRows,
     height = 280,
 }) => {
+    const muiTheme = useTheme();
     const amortizeWarnings = series.filter((s) => s.result.doesNotAmortize);
     const unpaidWarnings = series.filter(
         (s) => s.result.monthsToPayoff == null && s.result.startingBalance > 0
@@ -63,9 +71,10 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
             ...baseCartesianOptions(),
             plugins: {
                 legend: {
-                    labels: { boxWidth: 12, font: { size: 12 } },
+                    labels: chartLegendLabels(muiTheme),
                 },
                 tooltip: {
+                    ...chartTooltipPlugin(muiTheme),
                     callbacks: {
                         title: (items) => formatChartMonthLabel(labels[items[0]?.dataIndex ?? 0] ?? ''),
                         label: (ctx) => {
@@ -89,7 +98,7 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
                             type: 'line',
                             yMin: 0,
                             yMax: 0,
-                            borderColor: '#666',
+                            borderColor: muiTheme.palette.divider,
                             borderWidth: 1,
                             borderDash: [4, 4],
                         },
@@ -97,11 +106,11 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
                 },
             },
             scales: {
-                x: monthCategoryScale(labels),
-                y: currencyLinearScale(),
+                x: monthCategoryScale(muiTheme, labels),
+                y: currencyLinearScale(muiTheme),
             },
         }),
-        [labels, seriesById],
+        [labels, muiTheme, seriesById],
     );
 
     if (series.length === 0) {

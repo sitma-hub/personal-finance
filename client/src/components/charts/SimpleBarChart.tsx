@@ -1,9 +1,15 @@
 import React, { useMemo } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Bar } from 'react-chartjs-2';
 import '../../chartjs/register';
 import { formatCurrency } from '../../utils/currency';
 import { ChartContainer } from './ChartContainer';
-import { baseCartesianOptions, chartGridColor, currencyLinearScale } from './chartTheme';
+import {
+    baseCartesianOptions,
+    chartTooltipPlugin,
+    currencyLinearScale,
+    namedCategoryScale,
+} from './chartTheme';
 
 export type BarDatum = {
     name: string;
@@ -24,6 +30,8 @@ export const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
     tooltipLabel = 'Amount',
     defaultColor = '#4caf50',
 }) => {
+    const muiTheme = useTheme();
+
     const chartData = useMemo(
         () => ({
             labels: data.map((d) => d.name),
@@ -44,6 +52,7 @@ export const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    ...chartTooltipPlugin(muiTheme),
                     callbacks: {
                         label: (ctx: { parsed: { y: number | null } }) =>
                             `${tooltipLabel}: ${formatCurrency(ctx.parsed.y ?? 0)}`,
@@ -51,19 +60,11 @@ export const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
                 },
             },
             scales: {
-                x: {
-                    grid: { display: false },
-                },
-                y: {
-                    ...currencyLinearScale(),
-                    grid: {
-                        color: chartGridColor,
-                        borderDash: [3, 3],
-                    },
-                },
+                x: namedCategoryScale(muiTheme),
+                y: currencyLinearScale(muiTheme),
             },
         }),
-        [tooltipLabel],
+        [muiTheme, tooltipLabel],
     );
 
     if (data.length === 0) {
