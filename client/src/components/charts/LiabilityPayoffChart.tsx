@@ -1,25 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { Line } from 'react-chartjs-2';
+import type { ChartData, ChartOptions } from 'chart.js';
 import {
     Box,
-    Paper,
     Typography,
     Alert,
 } from '@mui/material';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    ReferenceLine,
-} from 'recharts';
-import type { TooltipProps } from 'recharts';
-import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
+import '../../chartjs/register';
+import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 import type { PayoffChartRow, PayoffScenario, PayoffScheduleResult } from '../../utils/liabilityPayoffProjection';
+import { ChartContainer } from './ChartContainer';
+import { baseCartesianOptions, currencyLinearScale, monthCategoryScale } from './chartTheme';
 
 export type PayoffChartSeries = {
     scenario: PayoffScenario;
@@ -33,40 +25,6 @@ type LiabilityPayoffChartProps = {
     height?: number;
 };
 
-const PayoffChartTooltip: React.FC<
-    TooltipProps<number, string> & { series: PayoffChartSeries[] }
-> = ({ active, payload, label, series }) => {
-    if (!active || !payload?.length) return null;
-    const month = String(label ?? '');
-    const seriesById = new Map(series.map((s) => [s.scenario.id, s]));
-
-    return (
-        <Paper elevation={3} sx={{ p: 1.5, minWidth: 200 }}>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                {formatChartMonthLabel(month)}
-            </Typography>
-            {payload
-                .filter((entry) => entry.value != null)
-                .map((entry) => {
-                    const meta = seriesById.get(String(entry.dataKey));
-                    const point = meta?.result.points.find((p) => p.month === month);
-                    return (
-                        <Box key={String(entry.dataKey)} sx={{ mb: 0.5 }}>
-                            <Typography variant="body2" sx={{ color: entry.color }}>
-                                {meta?.scenario.label ?? entry.name}: {formatCurrency(Number(entry.value))}
-                            </Typography>
-                            {point && point.cumulativeInterest > 0 && (
-                                <Typography variant="caption" color="text.secondary" display="block">
-                                    Interest to date: {formatCurrency(point.cumulativeInterest)}
-                                </Typography>
-                            )}
-                        </Box>
-                    );
-                })}
-        </Paper>
-    );
-};
-
 export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     series,
     chartRows,
@@ -75,6 +33,75 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     const amortizeWarnings = series.filter((s) => s.result.doesNotAmortize);
     const unpaidWarnings = series.filter(
         (s) => s.result.monthsToPayoff == null && s.result.startingBalance > 0
+    );
+
+    const labels = useMemo(() => chartRows.map((row) => row.month), [chartRows]);
+    const seriesById = useMemo(() => new Map(series.map((s) => [s.scenario.id, s])), [series]);
+
+    const chartData: ChartData<'line'> = useMemo(
+        () => ({
+            labels,
+            datasets: series.map(({ scenario, color }) => ({
+                label: scenario.label,
+                data: chartRows.map((row) => {
+                    const value = row[scenario.id];
+                    return typeof value === 'number' ? value : null;
+                }),
+                borderColor: color,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                spanGaps: false,
+                scenarioId: scenario.id,
+            })),
+        }),
+        [chartRows, labels, series],
+    );
+
+    const options: ChartOptions<'line'> = useMemo(
+        () => ({
+            ...baseCartesianOptions(),
+            plugins: {
+                legend: {
+                    labels: { boxWidth: 12, font: { size: 12 } },
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => formatChartMonthLabel(labels[items[0]?.dataIndex ?? 0] ?? ''),
+                        label: (ctx) => {
+                            const scenarioId = (ctx.dataset as { scenarioId?: string }).scenarioId;
+                            const meta = scenarioId ? seriesById.get(scenarioId) : undefined;
+                            const month = labels[ctx.dataIndex];
+                            const point = meta?.result.points.find((p) => p.month === month);
+                            const lines = [
+                                `${meta?.scenario.label ?? ctx.dataset.label}: ${formatCurrency(ctx.parsed.y ?? 0)}`,
+                            ];
+                            if (point && point.cumulativeInterest > 0) {
+                                lines.push(`Interest to date: ${formatCurrency(point.cumulativeInterest)}`);
+                            }
+                            return lines;
+                        },
+                    },
+                },
+                annotation: {
+                    annotations: {
+                        zeroLine: {
+                            type: 'line',
+                            yMin: 0,
+                            yMax: 0,
+                            borderColor: '#666',
+                            borderWidth: 1,
+                            borderDash: [4, 4],
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: monthCategoryScale(labels),
+                y: currencyLinearScale(),
+            },
+        }),
+        [labels, seriesById],
     );
 
     if (series.length === 0) {
@@ -106,36 +133,11 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
                     Payoff extends beyond 50 years for some scenarios; chart shows the first 600 months.
                 </Alert>
             )}
-            <Box sx={{ width: '100%', height }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartRows} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                            dataKey="month"
-                            tick={{ fontSize: 11 }}
-                            minTickGap={48}
-                            interval="preserveStartEnd"
-                            tickFormatter={(month) => formatChartMonthLabel(String(month))}
-                        />
-                        <YAxis tickFormatter={formatChartAxisThousands} width={72} />
-                        <Tooltip content={<PayoffChartTooltip series={series} />} />
-                        <Legend />
-                        <ReferenceLine y={0} stroke="#666" strokeDasharray="4 4" />
-                        {series.map(({ scenario, color }) => (
-                            <Line
-                                key={scenario.id}
-                                type="monotone"
-                                dataKey={scenario.id}
-                                name={scenario.label}
-                                stroke={color}
-                                strokeWidth={2}
-                                dot={false}
-                                connectNulls={false}
-                            />
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
-            </Box>
+            <ChartContainer height={height}>
+                {({ width, height: h }) => (
+                    <Line data={chartData} options={options} width={width} height={h} />
+                )}
+            </ChartContainer>
         </Box>
     );
 };

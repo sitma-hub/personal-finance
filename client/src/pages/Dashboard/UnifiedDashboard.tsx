@@ -28,19 +28,7 @@ import {
     ShowChart as ShowChartIcon,
     EventNote as CheckInIcon,
 } from '@mui/icons-material';
-import {
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    ComposedChart,
-    Area,
-} from 'recharts';
 import { Link as RouterLink } from 'react-router-dom';
-import type { TooltipProps } from 'recharts';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
     formatChartMonthLabel,
@@ -53,9 +41,10 @@ import {
 import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { CashFlowSankeyChart } from '../../components/charts/CashFlowSankeyChart';
+import { ForecastRangeChart } from '../../components/charts/ForecastRangeChart';
 import { NetWorthStepModal } from '../../components/dashboard/NetWorthStepModal';
 import { projectionService } from '../../services/projectionService';
-import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
+import { formatCurrency } from '../../utils/currency';
 import {
     buildNetWorthStepBreakdown,
     resolveClickedScenario,
@@ -77,44 +66,6 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'
 const currentMonthLabel = (): string => {
     const d = new Date();
     return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-};
-
-const SERIES_LABELS: Record<string, string> = {
-    actual: 'Recorded (snapshots)',
-    expected: 'Forecast (expected)',
-    pessimistic: 'Forecast (pessimistic)',
-    optimistic: 'Forecast (optimistic)',
-};
-
-const NetWorthChartTooltip: React.FC<TooltipProps<number, string>> = ({
-    active,
-    payload,
-    label,
-}) => {
-    if (!active || !payload?.length) return null;
-    const month = String(payload[0]?.payload?.month ?? label ?? '');
-    return (
-        <Paper elevation={3} sx={{ p: 1.5, minWidth: 180 }}>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                {formatChartMonthLabel(month)}
-            </Typography>
-            {payload
-                .filter((entry) => entry.value != null)
-                .map((entry) => (
-                    <Typography key={entry.dataKey} variant="body2" sx={{ color: entry.color }}>
-                        {SERIES_LABELS[String(entry.dataKey)] ?? entry.name}:{' '}
-                        {formatCurrency(Number(entry.value))}
-                    </Typography>
-                ))}
-            {payload[0]?.payload?.assetsExpected != null && (
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                    Assets (forecast): {formatCurrency(Number(payload[0].payload.assetsExpected))}
-                    {' · '}
-                    Liabilities: {formatCurrency(Number(payload[0].payload.liabilities))}
-                </Typography>
-            )}
-        </Paper>
-    );
 };
 
 const UnifiedDashboard: React.FC = () => {
@@ -252,15 +203,8 @@ const UnifiedDashboard: React.FC = () => {
         return [...historical, ...forecast].sort((a, b) => a.month.localeCompare(b.month));
     }, [netWorthHistory, activeProjections, hasPayoffForecast]);
 
-    const handleChartClick = (chartState: { activePayload?: Array<{ payload?: NetWorthChartRow; dataKey?: string }> } | null) => {
-        const payload = chartState?.activePayload?.[0];
-        if (!payload?.payload) return;
-
-        const row = payload.payload;
-        const scenario = resolveClickedScenario(
-            payload.dataKey != null ? String(payload.dataKey) : undefined,
-            row
-        );
+    const handleChartClick = (row: NetWorthChartRow, scenarioKey: string) => {
+        const scenario = resolveClickedScenario(scenarioKey, row);
         const index = chartData.findIndex((d) => d.month === row.month);
         const prevRow = index > 0 ? chartData[index - 1] ?? null : null;
 
@@ -563,61 +507,12 @@ const UnifiedDashboard: React.FC = () => {
                         ) : (
                             <>
                                 <Box sx={{ width: '100%', height: 360, minHeight: 280, cursor: 'pointer' }}>
-                                    <ResponsiveContainer width="100%" height={360} debounce={50}>
-                                        <ComposedChart
-                                            data={chartData}
-                                            margin={{ top: 8, right: 24, left: 8, bottom: 8 }}
-                                            onClick={handleChartClick}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis
-                                                dataKey="month"
-                                                tick={{ fontSize: 11 }}
-                                                minTickGap={48}
-                                                tickFormatter={(month) => formatChartMonthLabel(String(month))}
-                                            />
-                                            <YAxis tickFormatter={formatChartAxisThousands} width={72} />
-                                            <Tooltip content={<NetWorthChartTooltip />} />
-                                            <Legend />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="optimistic"
-                                                stroke="#90caf9"
-                                                fill="#90caf9"
-                                                fillOpacity={0.2}
-                                                name="Forecast (optimistic)"
-                                                connectNulls
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="pessimistic"
-                                                stroke="#bbdefb"
-                                                fill="#ffffff"
-                                                fillOpacity={0}
-                                                name="Forecast (pessimistic)"
-                                                connectNulls
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="expected"
-                                                stroke="#1976d2"
-                                                strokeWidth={2}
-                                                strokeDasharray="6 4"
-                                                dot={false}
-                                                name="Forecast (expected)"
-                                                connectNulls
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="actual"
-                                                stroke="#1565c0"
-                                                strokeWidth={2}
-                                                dot={{ r: 3 }}
-                                                name="Recorded (snapshots)"
-                                                connectNulls
-                                            />
-                                        </ComposedChart>
-                                    </ResponsiveContainer>
+                                    <ForecastRangeChart
+                                        data={chartData}
+                                        height={360}
+                                        onPointClick={handleChartClick}
+                                        showAssetLiabilityFooter
+                                    />
                                 </Box>
                                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
                                     Forecast ({forecastYears}y) assumes planned contributions and return scenarios

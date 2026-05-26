@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
+import './chartjs/register';
 import './index.css';
 
 const root = ReactDOM.createRoot(

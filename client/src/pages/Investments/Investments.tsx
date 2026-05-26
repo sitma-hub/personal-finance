@@ -23,25 +23,14 @@ import {
     TextField,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import {
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    ComposedChart,
-    Line,
-    LineChart,
-} from 'recharts';
-import type { TooltipProps } from 'recharts';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Link } from '@mui/material';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { projectionService } from '../../services/projectionService';
 import { AssetProjectionSummary, InvestableHistoryPoint, InvestmentProjectionsResponse } from '../../types';
-import { formatChartAxisThousands, formatCurrency } from '../../utils/currency';
+import { ForecastRangeChart } from '../../components/charts/ForecastRangeChart';
+import { SparklineChart } from '../../components/charts/SparklineChart';
+import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 
 const MIN_FORECAST_YEARS = 1;
@@ -76,35 +65,11 @@ type InvestmentChartRow = {
     optimistic: number | null;
 };
 
-const SERIES_LABELS: Record<string, string> = {
+const INVESTMENT_SERIES_LABELS: Record<string, string> = {
     actual: 'Recorded value',
     expected: 'Forecast (expected)',
     pessimistic: 'Forecast (pessimistic)',
     optimistic: 'Forecast (optimistic)',
-};
-
-const InvestmentChartTooltip: React.FC<TooltipProps<number, string>> = ({
-    active,
-    payload,
-    label,
-}) => {
-    if (!active || !payload?.length) return null;
-    const month = String(payload[0]?.payload?.month ?? label ?? '');
-    return (
-        <Paper elevation={3} sx={{ p: 1.5, minWidth: 180 }}>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                {formatChartMonthLabel(month)}
-            </Typography>
-            {payload
-                .filter((entry) => entry.value != null)
-                .map((entry) => (
-                    <Typography key={entry.dataKey} variant="body2" sx={{ color: entry.color }}>
-                        {SERIES_LABELS[String(entry.dataKey)] ?? entry.name}:{' '}
-                        {formatCurrency(Number(entry.value))}
-                    </Typography>
-                ))}
-        </Paper>
-    );
 };
 
 const BucketSparkline: React.FC<{ points: InvestableHistoryPoint[] }> = ({ points }) => {
@@ -116,23 +81,7 @@ const BucketSparkline: React.FC<{ points: InvestableHistoryPoint[] }> = ({ point
         );
     }
 
-    const trendUp = points[points.length - 1].actual >= points[0].actual;
-
-    return (
-        <Box sx={{ width: 96, height: 32 }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={points}>
-                    <Line
-                        type="monotone"
-                        dataKey="actual"
-                        stroke={trendUp ? '#2e7d32' : '#c62828'}
-                        strokeWidth={1.5}
-                        dot={false}
-                    />
-                </LineChart>
-            </ResponsiveContainer>
-        </Box>
-    );
+    return <SparklineChart points={points} />;
 };
 
 const Investments: React.FC = () => {
@@ -345,64 +294,13 @@ const Investments: React.FC = () => {
                             </Alert>
                         ) : (
                             <Box sx={{ width: '100%', height: { xs: 300, lg: 400 } }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis
-                                            dataKey="month"
-                                            tick={{ fontSize: 11 }}
-                                            minTickGap={48}
-                                            interval="preserveStartEnd"
-                                            tickFormatter={(month) => formatChartMonthLabel(String(month))}
-                                        />
-                                        <YAxis tickFormatter={formatChartAxisThousands} width={72} />
-                                        <Tooltip content={<InvestmentChartTooltip />} />
-                                        <Legend />
-                                        {hasForecast && (
-                                            <>
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="optimistic"
-                                                    stroke="#64b5f6"
-                                                    fill="#64b5f6"
-                                                    fillOpacity={0.15}
-                                                    name="Forecast (optimistic)"
-                                                    connectNulls
-                                                />
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="pessimistic"
-                                                    stroke="#90caf9"
-                                                    fill="#90caf9"
-                                                    fillOpacity={0.08}
-                                                    name="Forecast (pessimistic)"
-                                                    connectNulls
-                                                />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="expected"
-                                                    stroke="#1976d2"
-                                                    strokeWidth={2}
-                                                    strokeDasharray="6 4"
-                                                    dot={false}
-                                                    name="Forecast (expected)"
-                                                    connectNulls
-                                                />
-                                            </>
-                                        )}
-                                        {hasHistory && (
-                                            <Line
-                                                type="monotone"
-                                                dataKey="actual"
-                                                stroke="#1565c0"
-                                                strokeWidth={2}
-                                                dot={{ r: 3 }}
-                                                name="Recorded value"
-                                                connectNulls
-                                            />
-                                        )}
-                                    </ComposedChart>
-                                </ResponsiveContainer>
+                                <ForecastRangeChart
+                                    data={chartData}
+                                    height="100%"
+                                    hasHistory={hasHistory}
+                                    hasForecast={hasForecast}
+                                    seriesLabels={INVESTMENT_SERIES_LABELS}
+                                />
                             </Box>
                         )}
                         {!hasHistory && hasForecast && (

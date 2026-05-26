@@ -1,6 +1,9 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import React, { useMemo } from 'react';
+import { Doughnut } from 'react-chartjs-2';
+import type { Chart, ChartData, ChartOptions } from 'chart.js';
+import '../../chartjs/register';
 import { formatCurrency } from '../../utils/currency';
+import { ChartContainer } from './ChartContainer';
 
 export type PieDatum = {
     name: string;
@@ -30,10 +33,83 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
     emptyMessage = 'No data',
     legendMode = 'percent',
 }) => {
-    const slices = data
-        .filter((d) => d.value > 0)
-        .sort((a, b) => b.value - a.value);
-    const total = slices.reduce((sum, d) => sum + d.value, 0);
+    const slices = useMemo(
+        () => data.filter((d) => d.value > 0).sort((a, b) => b.value - a.value),
+        [data],
+    );
+    const colors = slices.map(
+        (entry, index) => entry.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+    );
+
+    const chartData: ChartData<'doughnut'> = useMemo(
+        () => ({
+            labels: slices.map((d) => d.name),
+            datasets: [
+                {
+                    data: slices.map((d) => d.value),
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                },
+            ],
+        }),
+        [slices, colors],
+    );
+
+    const options: ChartOptions<'doughnut'> = useMemo(
+        () => ({
+            responsive: false,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { top: 12, right: 12, bottom: 12, left: 12 },
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    align: 'center',
+                    labels: {
+                        font: { size: 13 },
+                        padding: 10,
+                        generateLabels: (chart: Chart<'doughnut'>) => {
+                            const dataset = chart.data.datasets[0];
+                            const sliceTotal = (dataset.data as number[]).reduce(
+                                (sum, value) => sum + Number(value),
+                                0,
+                            );
+                            const labels = (chart.data.labels ?? []) as string[];
+                            return labels.map((label, index) => {
+                                const value = Number(dataset.data[index]);
+                                const text =
+                                    legendMode === 'amount'
+                                        ? `${label} ${formatValue(value)}`
+                                        : `${label} ${sliceTotal > 0 ? ((value / sliceTotal) * 100).toFixed(0) : 0}%`;
+                                const fill =
+                                    (Array.isArray(dataset.backgroundColor)
+                                        ? dataset.backgroundColor[index]
+                                        : dataset.backgroundColor) ?? '#666';
+                                return {
+                                    text: String(text),
+                                    fillStyle: String(fill),
+                                    strokeStyle: String(fill),
+                                    lineWidth: 0,
+                                    hidden: false,
+                                    index,
+                                };
+                            });
+                        },
+                    },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const value = Number(ctx.parsed);
+                            return `${tooltipLabel}: ${formatValue(value)}`;
+                        },
+                    },
+                },
+            },
+        }),
+        [formatValue, legendMode, tooltipLabel],
+    );
 
     if (slices.length === 0) {
         return (
@@ -43,54 +119,11 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
         );
     }
 
-    const legendFormatter = (name: string) => {
-        const item = slices.find((d) => d.name === name);
-        if (!item || total <= 0) return name;
-        if (legendMode === 'amount') {
-            return `${name} ${formatValue(item.value)}`;
-        }
-        const pct = ((item.value / total) * 100).toFixed(0);
-        return `${name} ${pct}%`;
-    };
-
-    const outerRadius = Math.min(height * 0.36, 100);
-
     return (
-        <ResponsiveContainer width="100%" height={height}>
-            <PieChart margin={{ top: 12, right: 12, bottom: 12, left: 12 }}>
-                <Pie
-                    data={slices}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="38%"
-                    cy="50%"
-                    outerRadius={outerRadius}
-                    label={false}
-                    isAnimationActive={false}
-                >
-                    {slices.map((entry, index) => (
-                        <Cell
-                            key={entry.name}
-                            fill={entry.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length]}
-                        />
-                    ))}
-                </Pie>
-                <Tooltip
-                    formatter={(value: number) => [formatValue(value), tooltipLabel]}
-                />
-                <Legend
-                    layout="vertical"
-                    align="right"
-                    verticalAlign="middle"
-                    formatter={legendFormatter}
-                    wrapperStyle={{
-                        fontSize: 13,
-                        lineHeight: 1.65,
-                        maxWidth: '52%',
-                        paddingLeft: 8,
-                    }}
-                />
-            </PieChart>
-        </ResponsiveContainer>
+        <ChartContainer height={height}>
+            {({ width, height: h }) => (
+                <Doughnut data={chartData} options={options} width={width} height={h} />
+            )}
+        </ChartContainer>
     );
 };

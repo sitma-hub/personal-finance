@@ -40,8 +40,8 @@ import {
     Business as BusinessIcon,
     Star as StarIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { SimpleBarChart } from '../../components/charts/SimpleBarChart';
 import { IncomeStream, IncomeFormData, IncomeType } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
@@ -278,15 +278,12 @@ const Income: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Income by Type (Monthly)
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={incomeTypeData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Monthly Income']} />
-                                <Bar dataKey="value" fill="#4caf50" />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <SimpleBarChart
+                            data={incomeTypeData}
+                            height={300}
+                            tooltipLabel="Monthly Income"
+                            defaultColor="#4caf50"
+                        />
                     </Paper>
                 </Grid>
 

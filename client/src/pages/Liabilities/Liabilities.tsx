@@ -42,8 +42,8 @@ import {
     AccountBalance as BankIcon,
     EuroSymbol as MoneyIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
+import { SimpleBarChart } from '../../components/charts/SimpleBarChart';
 import { Liability, LiabilityType, INVESTABLE_ASSET_TYPES } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
@@ -355,18 +355,15 @@ const Liabilities: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Payment Breakdown
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={[
+                        <SimpleBarChart
+                            data={[
                                 { name: 'Regular Payments', value: totalMonthlyPayments, color: '#ff9800' },
                                 { name: 'Special Repayments', value: totalMonthlySpecialRepayments, color: '#4caf50' },
-                            ]}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Monthly Amount']} />
-                                <Bar dataKey="value" fill="#8884d8" />
-                            </BarChart>
-                        </ResponsiveContainer>
+                            ]}
+                            height={300}
+                            tooltipLabel="Monthly Amount"
+                            defaultColor="#8884d8"
+                        />
                     </Paper>
                 </Grid>
 
