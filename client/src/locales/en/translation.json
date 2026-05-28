@@ -379,7 +379,26 @@
     },
     "backup": {
       "title": "Backup & restore",
-      "subtitle": "Export all your data to a JSON file for safekeeping, or restore from a previous backup."
+      "subtitle": "Export all your data to a JSON file for safekeeping, or restore from a previous backup.",
+      "body": "Export all your data to a JSON file for safekeeping, or restore from a previous backup. Data lives in the Docker Postgres volume — export regularly if you reset the database.",
+      "lastExport": "Last export on this browser: {{date}}",
+      "export": {
+        "title": "Export",
+        "description": "Downloads assets (including investment buckets and return scenarios), liabilities (special repayments, invest-after-payoff), income, expenses, value history, and monthly snapshots.",
+        "downloadButton": "Download JSON backup"
+      },
+      "import": {
+        "title": "Import",
+        "description": "Replaces all existing data with the contents of a backup file (version 1 or 2 JSON).",
+        "chooseFile": "Choose backup file"
+      },
+      "confirmImportReplaceAll": "This will replace ALL your data with the backup file. Continue?",
+      "messages": {
+        "exportSuccess": "Backup downloaded successfully.",
+        "exportFailed": "Export failed. Is the server running?",
+        "importSuccess": "Import completed. Data restored.",
+        "importFailed": "Import failed. Check file format."
+      }
     },
     "checkIn": {
       "title": "Monthly check-in",

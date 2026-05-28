@@ -379,7 +379,26 @@
     },
     "backup": {
       "title": "Backup & Wiederherstellung",
-      "subtitle": "Exportiere alle Daten als JSON zur Sicherung oder stelle sie aus einem Backup wieder her."
+      "subtitle": "Exportiere alle Daten als JSON zur Sicherung oder stelle sie aus einem Backup wieder her.",
+      "body": "Exportiere alle Daten als JSON zur Sicherung oder stelle sie aus einem Backup wieder her. Die Daten liegen im Docker-Postgres-Volume — exportiere regelmäßig, wenn du die Datenbank zurücksetzt.",
+      "lastExport": "Letzter Export in diesem Browser: {{date}}",
+      "export": {
+        "title": "Export",
+        "description": "Lädt Vermögen (inkl. Investment-Töpfe und Renditeszenarien), Schulden (Sondertilgung, Investieren nach Tilgung), Einnahmen, Ausgaben, Wertverlauf und monatliche Snapshots herunter.",
+        "downloadButton": "JSON-Backup herunterladen"
+      },
+      "import": {
+        "title": "Import",
+        "description": "Ersetzt alle vorhandenen Daten durch den Inhalt einer Backup-Datei (JSON Version 1 oder 2).",
+        "chooseFile": "Backup-Datei auswählen"
+      },
+      "confirmImportReplaceAll": "Dies ersetzt ALLE deine Daten durch die Backup-Datei. Fortfahren?",
+      "messages": {
+        "exportSuccess": "Backup erfolgreich heruntergeladen.",
+        "exportFailed": "Export fehlgeschlagen. Läuft der Server?",
+        "importSuccess": "Import abgeschlossen. Daten wiederhergestellt.",
+        "importFailed": "Import fehlgeschlagen. Prüfe das Dateiformat."
+      }
     },
     "checkIn": {
       "title": "Monatlicher Check-in",

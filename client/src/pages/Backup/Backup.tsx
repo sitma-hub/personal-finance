@@ -41,16 +41,16 @@ const Backup: React.FC = () => {
             a.click();
             URL.revokeObjectURL(url);
             localStorage.setItem(LAST_EXPORT_KEY, new Date().toISOString());
-            setMessage({ type: 'success', text: 'Backup downloaded successfully.' });
+            setMessage({ type: 'success', text: t('pages.backup.messages.exportSuccess') });
         } catch {
-            setMessage({ type: 'error', text: 'Export failed. Is the server running?' });
+            setMessage({ type: 'error', text: t('pages.backup.messages.exportFailed') });
         } finally {
             setLoading(false);
         }
     };
 
     const handleImport = async (file: File) => {
-        if (!window.confirm('This will replace ALL your data with the backup file. Continue?')) {
+        if (!window.confirm(t('pages.backup.confirmImportReplaceAll'))) {
             return;
         }
         setLoading(true);
@@ -61,12 +61,12 @@ const Backup: React.FC = () => {
             const data = JSON.parse(text) as BackupPayload;
             const res = await backupService.importAll(data);
             setImportCounts(res.data.imported);
-            setMessage({ type: 'success', text: 'Import completed. Data restored.' });
+            setMessage({ type: 'success', text: t('pages.backup.messages.importSuccess') });
             await refresh();
         } catch (err) {
             setMessage({
                 type: 'error',
-                text: err instanceof Error ? err.message : 'Import failed. Check file format.',
+                text: err instanceof Error ? err.message : t('pages.backup.messages.importFailed'),
             });
         } finally {
             setLoading(false);
@@ -81,8 +81,7 @@ const Backup: React.FC = () => {
                 subtitle={t('pages.backup.subtitle')}
             />
             <Typography variant="body1" color="textSecondary" paragraph>
-                Export all your data to a JSON file for safekeeping, or restore from a previous backup.
-                Data lives in the Docker Postgres volume — export regularly if you reset the database.
+                {t('pages.backup.body')}
             </Typography>
 
             {message && (
@@ -93,15 +92,14 @@ const Backup: React.FC = () => {
 
             {lastExport && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                    Last export on this browser: {new Date(lastExport).toLocaleString()}
+                    {t('pages.backup.lastExport', { date: new Date(lastExport).toLocaleString() })}
                 </Alert>
             )}
 
             <GlassSurface sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Export</Typography>
+                <Typography variant="h6" gutterBottom>{t('pages.backup.export.title')}</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
-                    Downloads assets (including investment buckets and return scenarios), liabilities
-                    (special repayments, invest-after-payoff), income, expenses, value history, and monthly snapshots.
+                    {t('pages.backup.export.description')}
                 </Typography>
                 <Button
                     variant="contained"
@@ -109,17 +107,17 @@ const Backup: React.FC = () => {
                     onClick={handleExport}
                     disabled={loading}
                 >
-                    Download JSON backup
+                    {t('pages.backup.export.downloadButton')}
                 </Button>
             </GlassSurface>
 
             <GlassSurface sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>Import</Typography>
+                <Typography variant="h6" gutterBottom>{t('pages.backup.import.title')}</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
-                    Replaces all existing data with the contents of a backup file (version 1 or 2 JSON).
+                    {t('pages.backup.import.description')}
                 </Typography>
                 <Button variant="outlined" component="label" startIcon={<UploadIcon />} disabled={loading}>
-                    Choose backup file
+                    {t('pages.backup.import.chooseFile')}
                     <input
                         type="file"
                         accept=".json,application/json"
