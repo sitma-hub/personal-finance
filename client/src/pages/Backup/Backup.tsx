@@ -9,7 +9,7 @@ import {
     ListItemText,
     CircularProgress,
 } from '@mui/material';
-import { Download as DownloadIcon, Upload as UploadIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, Upload as UploadIcon, Backup as BackupIcon } from '@mui/icons-material';
 import { backupService, BackupPayload } from '../../services/backupService';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { GlassSurface } from '../../components/ui/GlassSurface';
@@ -74,6 +74,7 @@ const Backup: React.FC = () => {
     return (
         <Box>
             <PageHeader
+                icon={<BackupIcon color="primary" />}
                 title="Backup & restore"
                 subtitle="Export all your data to a JSON file for safekeeping, or restore from a previous backup."
             />

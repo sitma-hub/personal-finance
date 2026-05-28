@@ -29,6 +29,7 @@ import {
     Edit as EditIcon,
     Delete as DeleteIcon,
     TrendingDown as TrendingDownIcon,
+    Receipt as ReceiptIcon,
     ShoppingCart as ShoppingCartIcon,
     Home as HomeIcon,
     DirectionsCar as CarIcon,
@@ -222,6 +223,7 @@ const Expenses: React.FC = () => {
     return (
         <Box>
             <PageHeader
+                icon={<ReceiptIcon color="primary" />}
                 title="Expenses"
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>

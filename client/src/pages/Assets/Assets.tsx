@@ -166,6 +166,7 @@ const Assets: React.FC = () => {
     return (
         <Box>
             <PageHeader
+                icon={<AccountBalance color="primary" />}
                 title="Assets"
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>

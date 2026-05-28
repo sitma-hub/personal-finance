@@ -241,6 +241,7 @@ const Liabilities: React.FC = () => {
     return (
         <Box>
             <PageHeader
+                icon={<CreditCardIcon color="primary" />}
                 title="Liabilities"
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>

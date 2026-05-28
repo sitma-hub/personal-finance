@@ -2,12 +2,13 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 
 export type PageHeaderProps = {
+    icon?: React.ReactNode;
     title: React.ReactNode;
     subtitle?: React.ReactNode;
     actions?: React.ReactNode;
 };
 
-export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
+export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) {
     return (
         <Box
             sx={{
@@ -20,9 +21,12 @@ export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
             }}
         >
             <Box sx={{ minWidth: 0 }}>
-                <Typography variant="h4" sx={{ fontSize: { xs: 26, sm: 30, md: 34 } }}>
-                    {title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    {icon ? <Box sx={{ display: 'grid', placeItems: 'center' }}>{icon}</Box> : null}
+                    <Typography variant="h4" sx={{ fontSize: { xs: 26, sm: 30, md: 34 } }}>
+                        {title}
+                    </Typography>
+                </Box>
                 {subtitle ? (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         {subtitle}

@@ -21,6 +21,7 @@ import {
     EuroSymbol as MoneyIcon,
     CreditCard as DebtIcon,
     Savings as SavingsIcon,
+    Dashboard as DashboardIcon,
     CameraAlt as SnapshotIcon,
     Refresh as RefreshIcon,
     ShowChart as ShowChartIcon,
@@ -298,36 +299,42 @@ const UnifiedDashboard: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
-            <PageHeader
-                title="Dashboard"
-                actions={
-                    <>
-                        <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>
-                            Refresh
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<SnapshotIcon />}
-                            onClick={handleSaveSnapshot}
-                            disabled={saving}
-                        >
-                            {saving ? 'Saving…' : 'Quick save current month'}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            component={RouterLink}
-                            to={
-                                checkInStatus?.missingMonths.length
-                                    ? `/check-in?month=${checkInStatus.missingMonths[0]}`
-                                    : '/check-in'
-                            }
-                            startIcon={<CheckInIcon />}
-                        >
-                            Monthly check-in
-                        </Button>
-                    </>
-                }
-            />
+            {/* Use Grid spacing so header aligns with KPI tiles */}
+            <Grid container spacing={3} sx={{ mb: 3, width: '100%' }}>
+                <Grid item xs={12}>
+                    <PageHeader
+                        icon={<DashboardIcon color="primary" />}
+                        title="Dashboard"
+                        actions={
+                            <>
+                                <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>
+                                    Refresh
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<SnapshotIcon />}
+                                    onClick={handleSaveSnapshot}
+                                    disabled={saving}
+                                >
+                                    {saving ? 'Saving…' : 'Quick save current month'}
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    component={RouterLink}
+                                    to={
+                                        checkInStatus?.missingMonths.length
+                                            ? `/check-in?month=${checkInStatus.missingMonths[0]}`
+                                            : '/check-in'
+                                    }
+                                    startIcon={<CheckInIcon />}
+                                >
+                                    Monthly check-in
+                                </Button>
+                            </>
+                        }
+                    />
+                </Grid>
+            </Grid>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 

@@ -193,6 +193,7 @@ const Income: React.FC = () => {
     return (
         <Box>
             <PageHeader
+                icon={<TrendingUpIcon color="success" />}
                 title="Income Streams"
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>

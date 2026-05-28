@@ -289,12 +289,8 @@ const MonthlyCheckIn: React.FC = () => {
     return (
         <Box sx={{ width: '100%', maxWidth: 1200 }}>
             <PageHeader
-                title={
-                    <Box display="flex" alignItems="center" gap={1.25}>
-                        <EventNoteIcon color="primary" fontSize="large" />
-                        <Box component="span">Monthly check-in</Box>
-                    </Box>
-                }
+                icon={<EventNoteIcon color="primary" />}
+                title="Monthly check-in"
                 subtitle="Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your last snapshot or current records — you supervise every save."
             />
 

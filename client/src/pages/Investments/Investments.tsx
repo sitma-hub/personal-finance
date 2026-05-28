@@ -15,7 +15,7 @@ import {
     useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Link } from '@mui/material';
 import { useFinancial } from '../../contexts/FinancialContext';
@@ -169,6 +169,7 @@ const Investments: React.FC = () => {
     return (
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
             <PageHeader
+                icon={<ShowChartIcon color="primary" />}
                 title="Investments"
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/assets')}>
