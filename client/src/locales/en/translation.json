@@ -1,0 +1,424 @@
+{
+  "app": {
+    "name": "BudgetBuddy",
+    "title": "Personal Finance Tracker",
+    "titleShort": "Finance"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "checkIn": "Monthly check-in",
+    "assets": "Assets",
+    "liabilities": "Liabilities",
+    "income": "Income",
+    "expenses": "Expenses",
+    "investments": "Investments",
+    "backup": "Backup"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue",
+    "save": "Save",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "none": "None",
+    "noData": "No data",
+    "saving": "Saving…"
+  },
+  "actions": {
+    "monthlyCheckIn": "Monthly check-in",
+    "quickSaveCurrentMonth": "Quick save current month",
+    "addAsset": "Add Asset",
+    "addLiability": "Add Liability",
+    "addExpense": "Add Expense",
+    "addIncomeStream": "Add Income Stream",
+    "addInvestmentBucket": "Add investment bucket"
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "loading": "Loading financial data…",
+      "snapshot": {
+        "overwriteConfirm": "A snapshot for {{month}} already exists. Overwrite?"
+      },
+      "snack": {
+        "netWorthRecorded": "Net worth recorded for {{month}}",
+        "saveSnapshotFailed": "Failed to save snapshot"
+      },
+      "kpi": {
+        "netWorth": "Net worth",
+        "assets": "Assets",
+        "liabilities": "Liabilities",
+        "monthlyCashFlow": "Monthly cash flow",
+        "plannedInvesting": "Planned investing"
+      },
+      "cashFlow": {
+        "title": "Where your money goes",
+        "subtitlePrefix": "Each income stream, expense category, and loan payment is shown separately. Edit data on",
+        "subtitleMiddle": "and",
+        "subtitleSuffix": "."
+      },
+      "netWorth": {
+        "title": "Net worth over time",
+        "forecastHorizon": "Forecast horizon",
+        "years": "Years",
+        "captionPrefix": "Forecast ({{years}}y) assumes planned contributions and return scenarios",
+        "captionPayoffSuffix": ", including investing after debt payoff",
+        "captionSuffix": " — not guaranteed. Click a point to see how that month's net worth step is calculated.",
+        "empty": "Save monthly snapshots for history. Add investment buckets with return assumptions to see a forecast."
+      },
+      "allocation": {
+        "title": "Asset allocation",
+        "empty": "Add assets to see breakdown",
+        "tooltipValue": "Value",
+        "emptyChart": "No assets"
+      },
+      "recentUpdates": {
+        "title": "Recent value updates",
+        "empty": "No updates yet"
+      }
+    },
+    "assets": {
+      "title": "Assets",
+      "kpi": { "totalAssets": "Total Assets", "count": "Count" },
+      "table": { "name": "Name", "type": "Type", "value": "Value", "asOf": "As of", "planPerMonth": "€/mo plan" },
+      "history": { "load": "Load value history", "empty": "No history yet", "title": "Value history" },
+      "form": {
+        "addTitle": "Add Asset",
+        "editTitle": "Edit Asset",
+        "name": "Name",
+        "type": "Type",
+        "currentValue": "Current value",
+        "asOfMonth": "As of (YYYY-MM)",
+        "asOfHelper": "Month this value applies to",
+        "investableInfo": "Update current value when you get a statement. Monthly contribution is your plan (not an expense).",
+        "monthlyContribution": "Monthly contribution (€)",
+        "pessimisticReturn": "Pessimistic %/yr",
+        "expectedReturn": "Expected %/yr",
+        "optimisticReturn": "Optimistic %/yr",
+        "includeInForecast": "Include in investment forecast",
+        "notes": "Notes"
+      }
+    },
+    "income": {
+      "title": "Income Streams",
+      "confirmDelete": "Are you sure you want to delete this income stream?",
+      "kpi": {
+        "monthlyIncome": "Monthly Income",
+        "annualIncome": "Annual Income",
+        "incomeStreams": "Income Streams"
+      },
+      "charts": {
+        "distribution": "Income Distribution by Type",
+        "byTypeMonthly": "Income by Type (Monthly)",
+        "tooltipMonthlyIncome": "Monthly Income",
+        "empty": "No income to display"
+      },
+      "table": {
+        "title": "All Income Streams",
+        "columns": {
+          "name": "Name",
+          "type": "Type",
+          "amount": "Amount",
+          "frequency": "Frequency",
+          "growthRate": "Growth Rate",
+          "startDate": "Start Date",
+          "endDate": "End Date"
+        }
+      },
+      "types": {
+        "salary": "Salary",
+        "hourly_wage": "Hourly Wage",
+        "freelance": "Freelance",
+        "investment_income": "Investment Income",
+        "rental_income": "Rental Income",
+        "pension": "Pension",
+        "social_security": "Social Security",
+        "other_income": "Other Income"
+      },
+      "frequency": {
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "hourly": "Hourly"
+      },
+      "form": {
+        "addTitle": "Add New Income Stream",
+        "editTitle": "Edit Income Stream",
+        "name": "Income Stream Name",
+        "type": "Type",
+        "currentAmount": "Current Amount (€)",
+        "frequency": "Frequency",
+        "annualGrowth": "Annual Growth Rate (%)",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "notes": "Notes",
+        "errors": {
+          "nameRequired": "Please enter an income stream name"
+        }
+      }
+    },
+    "expenses": {
+      "title": "Expenses",
+      "kpi": {
+        "totalMonthlyOutflow": "Total monthly outflow",
+        "totalMonthlyOutflowFooter": "Living {{living}} + debt {{debt}}",
+        "annualOutflow": "Annual outflow",
+        "essential": "Essential",
+        "discretionary": "Discretionary"
+      },
+      "help": {
+        "debtTrackedPrefix": "Mortgages and other loans are tracked under",
+        "debtTrackedSuffix": " (balance + monthly payment). Their payments are included in totals below automatically — do not add the same payment again as an expense."
+      },
+      "confirmDelete": "Are you sure you want to delete this expense?",
+      "debtPayments": {
+        "title": "Debt payments (from Liabilities)",
+        "emptyPrefix": "No liability payments configured. Add a mortgage or loan on the",
+        "emptySuffix": "page.",
+        "table": {
+          "name": "Name",
+          "type": "Type",
+          "monthlyPayment": "Monthly payment",
+          "specialRepayment": "Special repayment"
+        }
+      },
+      "livingTable": {
+        "title": "Living expenses",
+        "columns": {
+          "name": "Name",
+          "category": "Category",
+          "monthlyAmount": "Monthly Amount",
+          "annualInflation": "Annual Inflation",
+          "type": "Type"
+        }
+      },
+      "form": {
+        "addTitle": "Add New Expense",
+        "editTitle": "Edit Expense",
+        "name": "Expense Name",
+        "category": "Category",
+        "monthlyAmount": "Monthly Amount (€)",
+        "annualInflation": "Annual Inflation Rate (%)",
+        "discretionaryExpense": "Discretionary Expense",
+        "notes": "Notes",
+        "errors": {
+          "nameRequired": "Please enter an expense name",
+          "categoryRequired": "Please select a category"
+        }
+      },
+      "charts": {
+        "legend": {
+          "ariaGroup": "Pie chart legend display",
+          "ariaPercent": "Show percent",
+          "ariaAmount": "Show amount",
+          "percent": "Percent",
+          "amount": "Amount"
+        },
+        "byCategory": "Expenses by Category",
+        "livingVsDebt": "Living vs debt payments",
+        "tooltipMonthlyAmount": "Monthly Amount",
+        "emptyExpenses": "No expenses to display",
+        "emptyOutflow": "No outflow data",
+        "debtSlice": "Debt: {{name}}",
+        "outflowSplit": {
+          "essential": "Living (essential)",
+          "discretionary": "Living (discretionary)",
+          "debtPayments": "Debt payments"
+        }
+      },
+      "categories": {
+        "Housing": "Housing",
+        "Transportation": "Transportation",
+        "Food & Dining": "Food & Dining",
+        "Healthcare": "Healthcare",
+        "Education": "Education",
+        "Entertainment": "Entertainment",
+        "Utilities": "Utilities",
+        "Insurance": "Insurance",
+        "Personal Care": "Personal Care",
+        "Shopping": "Shopping",
+        "Travel": "Travel",
+        "Other": "Other"
+      }
+    },
+    "investments": {
+      "title": "Investments",
+      "help": {
+        "intro": "Track ETF buckets under",
+        "introSuffix": "(investment or retirement type). Set monthly contribution and return scenarios here — not under Expenses. Update values over time to see how market fluctuations affect your portfolio."
+      },
+      "kpi": {
+        "investableNow": "Investable value now",
+        "plannedDca": "Planned DCA / month",
+        "surplus": "Monthly surplus",
+        "afterDca": "After planned DCA",
+        "afterDcaWarning": "DCA exceeds surplus — adjust plan or expenses"
+      },
+      "chart": {
+        "title": "Investable value over time",
+        "includePayoff": "Including investing after debt payoff",
+        "forecastHorizon": "Forecast horizon",
+        "years": "Years",
+        "noBuckets": {
+          "prefix": "No buckets in forecast. Add an investment account with expected return and enable \"Include in forecast\". Update bucket values on",
+          "middle": "or via",
+          "suffix": "to build history."
+        },
+        "noHistory": {
+          "prefix": "No recorded history yet. Update bucket values on",
+          "middle": "or use",
+          "suffix": "to track how your investments move with the market."
+        },
+        "captionPrefix": "Recorded values reflect updates you enter for investment buckets. Forecast scenarios are illustrative only",
+        "captionPayoffSuffix": ", including investing after debt payoff",
+        "captionSuffix": " — not guaranteed returns."
+      },
+      "table": {
+        "title": "Investment buckets",
+        "empty": "No investment buckets yet."
+      }
+    },
+    "liabilities": {
+      "title": "Liabilities",
+      "projectMonths": "Project +N months",
+      "kpi": {
+        "totalBalance": "Total Balance",
+        "monthlyPayments": "Monthly Payments",
+        "specialRepayments": "Special Repayments",
+        "monthlyAverage": "Monthly average",
+        "totalLiabilities": "Total Liabilities"
+      },
+      "charts": {
+        "distribution": "Liability Distribution by Type",
+        "paymentBreakdown": "Payment Breakdown",
+        "regularPayments": "Regular Payments",
+        "specialRepayments": "Special Repayments",
+        "tooltipBalance": "Balance",
+        "tooltipMonthlyAmount": "Monthly Amount",
+        "empty": "No liabilities to display"
+      },
+      "payoff": {
+        "title": "Debt Payoff Timeline",
+        "subtitle": "Projected balance until each debt is paid off. Compare baseline payments with your saved plan and optional what-if strategies (not saved to the database)."
+      },
+      "types": {
+        "mortgage": "Mortgage",
+        "auto_loan": "Auto Loan",
+        "personal_loan": "Personal Loan",
+        "credit_card": "Credit Card",
+        "student_loan": "Student Loan",
+        "other_debt": "Other Debt"
+      },
+      "payoffCard": {
+        "rateNa": "N/A",
+        "paidOff": "Paid off",
+        "noRemainingBalance": "This liability has no remaining balance.",
+        "noAsOfMonth": "No as-of month set — chart uses the recorded balance as of today.",
+        "scenarios": "Scenarios",
+        "scenarioBaseline": "Baseline (regular payment only)",
+        "scenarioCurrentPlan": "Current plan (incl. special repayments)",
+        "extraMonthlyCurrentPlan": "Extra monthly (current plan + extra)",
+        "extraMonthlyBaseline": "Extra monthly (regular payment + extra)",
+        "lumpSumCurrentPlan": "Lump sum today (current plan + lump sum)",
+        "lumpSumBaseline": "Lump sum today (regular payment + lump sum)",
+        "perMonth": "€/month",
+        "amountEuro": "€",
+        "summary": "Summary",
+        "vsCurrentPlan": "vs current plan",
+        "vsBaseline": "vs baseline",
+        "fallbackYears": "50+ years",
+        "fallbackMonths": "600+ mo",
+        "interest": "interest",
+        "interestSaved": "interest saved",
+        "baselineMatches": "Baseline and current plan match — no special repayments configured or they have no effect on this schedule."
+      },
+      "payoffChart": {
+        "selectScenario": "Select at least one scenario to display the payoff chart.",
+        "alreadyPaidOff": "This liability is already paid off.",
+        "warningNotAmortizing": "Regular payment does not cover monthly interest — the balance may not decrease on the baseline plan.",
+        "warningBeyond50y": "Payoff extends beyond 50 years for some scenarios; chart shows the first 600 months.",
+        "interestToDate": "Interest to date: {{amount}}"
+      },
+      "table": { "title": "All Liabilities" },
+      "form": {
+        "addTitle": "Add New Liability",
+        "editTitle": "Edit Liability",
+        "name": "Liability Name",
+        "type": "Type",
+        "currentBalance": "Current Balance (€)",
+        "interestRate": "Interest Rate (%)",
+        "monthlyPayment": "Monthly Payment (€)",
+        "minimumPayment": "Minimum Payment (€)",
+        "dueDate": "Due Date",
+        "asOfMonth": "As of Month",
+        "asOfHelper": "Month this balance applies to",
+        "notes": "Notes",
+        "specialSection": "Special Repayment Options",
+        "specialEnable": "Enable Special Repayments",
+        "specialAmount": "Special Repayment Amount (€)",
+        "specialFrequency": "Repayment Frequency",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "annual": "Annual",
+        "maxAnnualPrepay": "Max Annual Prepayment %",
+        "maxAnnualPrepayHelper": "Maximum percentage of principal that can be prepaid annually",
+        "penaltyApplies": "Prepayment Penalty Applies",
+        "penaltyRate": "Prepayment Penalty Rate (%)",
+        "investSection": "Invest after payoff",
+        "investAfterPayoff": "Invest monthly payment into stocks after this debt is paid off",
+        "investInfo": "The net worth forecast on your Dashboard will show a second line reflecting extra investing once this liability is projected to be paid off.",
+        "investInto": "Invest into",
+        "investNoAssets": "Add an investment bucket on Assets first",
+        "errors": {
+          "nameRequired": "Please enter a liability name"
+        }
+      }
+    },
+    "backup": {
+      "title": "Backup & restore",
+      "subtitle": "Export all your data to a JSON file for safekeeping, or restore from a previous backup."
+    },
+    "checkIn": {
+      "title": "Monthly check-in",
+      "subtitle": "Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your last snapshot or current records — you supervise every save.",
+      "steps": { "selectMonth": "Select month", "reviewValues": "Review values", "confirm": "Confirm" },
+      "month": {
+        "pickTitle": "Which month are you recording?",
+        "orEnter": "Or enter month",
+        "caughtUp": "You're caught up through {{month}}. You can re-save this month if your values changed.",
+        "missingLabel": "{{count}} month missing in your snapshot history",
+        "missingLabel_plural": "{{count}} months missing in your snapshot history",
+        "startEarliest": "Start with the earliest gap to keep history consistent.",
+        "lastSnapshot": "Last snapshot: {{month}}"
+      },
+      "review": {
+        "previous": "Previous",
+        "proposed": "Proposed",
+        "yourValue": "Your value",
+        "change": "Change",
+        "basis": "Basis",
+        "basisSnapshot": "Proposed from {{baselineMonth}} snapshot ({{offsetMonths}} month forward).",
+        "basisSnapshot_plural": "Proposed from {{baselineMonth}} snapshot ({{offsetMonths}} months forward).",
+        "basisCurrent": "Proposed from your current asset and liability values.",
+        "backfillOnly": "Backfill only — current asset and liability values will not change for this historical month.",
+        "notes": "Notes (optional)",
+        "noProposal": "No proposal loaded. Go back and select a month."
+      },
+      "confirm": {
+        "title": "Confirm check-in for {{month}}",
+        "updatesCurrent": "This will update your current asset and liability records and save a monthly snapshot.",
+        "historicalOnly": "This will save a historical snapshot only. Your current records stay as they are.",
+        "notesPrefix": "Notes: {{notes}}",
+        "save": "Save {{month}} check-in"
+      },
+      "buttons": {
+        "reviewValues": "Review values",
+        "fillGaps": "Fill gaps"
+      }
+    }
+  }
+}
+

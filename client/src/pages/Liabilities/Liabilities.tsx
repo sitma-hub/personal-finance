@@ -62,12 +62,14 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
 import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
 import { getChartSeriesColors } from '../../theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 type LiabilityFormData = Partial<Liability>;
 
 const Liabilities: React.FC = () => {
     const theme = useTheme();
     const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
     const { state, createLiability, updateLiability, deleteLiability } = useFinancial();
     const { liabilities, assets, loading, error } = state;
     const [formError, setFormError] = useState<string | null>(null);
@@ -109,12 +111,12 @@ const Liabilities: React.FC = () => {
     });
 
     const liabilityTypeLabels: Record<LiabilityType, string> = {
-        mortgage: 'Mortgage',
-        auto_loan: 'Auto Loan',
-        personal_loan: 'Personal Loan',
-        credit_card: 'Credit Card',
-        student_loan: 'Student Loan',
-        other_debt: 'Other Debt',
+        mortgage: t('pages.liabilities.types.mortgage'),
+        auto_loan: t('pages.liabilities.types.auto_loan'),
+        personal_loan: t('pages.liabilities.types.personal_loan'),
+        credit_card: t('pages.liabilities.types.credit_card'),
+        student_loan: t('pages.liabilities.types.student_loan'),
+        other_debt: t('pages.liabilities.types.other_debt'),
     };
 
     const liabilityTypeIcons: Record<LiabilityType, React.ReactElement> = {
@@ -128,7 +130,7 @@ const Liabilities: React.FC = () => {
 
     const handleSubmit = async () => {
         if (!formData.name?.trim()) {
-            setFormError('Please enter a liability name');
+            setFormError(t('pages.liabilities.form.errors.nameRequired'));
             return;
         }
         setFormError(null);
@@ -242,17 +244,17 @@ const Liabilities: React.FC = () => {
         <Box>
             <PageHeader
                 icon={<CreditCardIcon color="primary" />}
-                title="Liabilities"
+                title={t('pages.liabilities.title')}
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
-                        Add Liability
+                        {t('actions.addLiability')}
                     </Button>
                 }
             />
 
             <Box display="flex" alignItems="center" gap={2} mb={2}>
                 <TextField
-                    label="Project +N months"
+                    label={t('pages.liabilities.projectMonths')}
                     type="number"
                     value={projectionMonths}
                     onChange={(e) => setProjectionMonths(Math.max(0, Number(e.target.value)))}
@@ -272,7 +274,7 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={3}>
                     <StatCard
                         icon={<TrendingDownIcon color="error" />}
-                        label="Total Balance"
+                        label={t('pages.liabilities.kpi.totalBalance')}
                         value={formatCurrency(totalBalance)}
                         sx={{ height: '100%' }}
                     />
@@ -281,7 +283,7 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={3}>
                     <StatCard
                         icon={<MoneyIcon color="warning" />}
-                        label="Monthly Payments"
+                        label={t('pages.liabilities.kpi.monthlyPayments')}
                         value={formatCurrency(totalMonthlyPayments)}
                         sx={{ height: '100%' }}
                     />
@@ -290,9 +292,9 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={3}>
                     <StatCard
                         icon={<AddIcon color="success" />}
-                        label="Special Repayments"
+                        label={t('pages.liabilities.kpi.specialRepayments')}
                         value={formatCurrency(totalMonthlySpecialRepayments)}
-                        footer="Monthly average"
+                        footer={t('pages.liabilities.kpi.monthlyAverage')}
                         sx={{ height: '100%' }}
                     />
                 </Grid>
@@ -300,7 +302,7 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={3}>
                     <StatCard
                         icon={<CreditCardIcon color="info" />}
-                        label="Total Liabilities"
+                        label={t('pages.liabilities.kpi.totalLiabilities')}
                         value={liabilities.length}
                         sx={{ height: '100%' }}
                     />
@@ -310,7 +312,7 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={6}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            Liability Distribution by Type
+                            {t('pages.liabilities.charts.distribution')}
                         </Typography>
                         <CategoryPieChart
                             data={liabilityTypeData.map((entry, index) => ({
@@ -319,8 +321,8 @@ const Liabilities: React.FC = () => {
                             }))}
                             height={300}
                             formatValue={formatCurrency}
-                            tooltipLabel="Balance"
-                            emptyMessage="No liabilities to display"
+                            tooltipLabel={t('pages.liabilities.charts.tooltipBalance')}
+                            emptyMessage={t('pages.liabilities.charts.empty')}
                         />
                     </GlassSurface>
                 </Grid>
@@ -328,15 +330,15 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12} md={6}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            Payment Breakdown
+                            {t('pages.liabilities.charts.paymentBreakdown')}
                         </Typography>
                         <SimpleBarChart
                             data={[
-                                { name: 'Regular Payments', value: totalMonthlyPayments, color: '#ff9800' },
-                                { name: 'Special Repayments', value: totalMonthlySpecialRepayments, color: '#4caf50' },
+                                { name: t('pages.liabilities.charts.regularPayments'), value: totalMonthlyPayments, color: '#ff9800' },
+                                { name: t('pages.liabilities.charts.specialRepayments'), value: totalMonthlySpecialRepayments, color: '#4caf50' },
                             ]}
                             height={300}
-                            tooltipLabel="Monthly Amount"
+                            tooltipLabel={t('pages.liabilities.charts.tooltipMonthlyAmount')}
                             defaultColor="#8884d8"
                         />
                     </GlassSurface>
@@ -347,11 +349,10 @@ const Liabilities: React.FC = () => {
                     <Grid item xs={12}>
                         <GlassSurface sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom>
-                                Debt Payoff Timeline
+                                {t('pages.liabilities.payoff.title')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Projected balance until each debt is paid off. Compare baseline payments with your
-                                saved plan and optional what-if strategies (not saved to the database).
+                                {t('pages.liabilities.payoff.subtitle')}
                             </Typography>
                             {liabilities.map((liability, index) => (
                                 <LiabilityPayoffCard
@@ -372,7 +373,7 @@ const Liabilities: React.FC = () => {
                 <Grid item xs={12}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            All Liabilities
+                            {t('pages.liabilities.table.title')}
                         </Typography>
                         {loading ? (
                             <Box display="flex" justifyContent="center" p={3}>
@@ -520,14 +521,14 @@ const Liabilities: React.FC = () => {
                 fullScreen={fullScreenDialog}
             >
                 <DialogTitle>
-                    {editingLiability ? 'Edit Liability' : 'Add New Liability'}
+                    {editingLiability ? t('pages.liabilities.form.editTitle') : t('pages.liabilities.form.addTitle')}
                 </DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Liability Name"
+                                label={t('pages.liabilities.form.name')}
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                 required
@@ -535,11 +536,11 @@ const Liabilities: React.FC = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <FormControl fullWidth required>
-                                <InputLabel>Type</InputLabel>
+                                <InputLabel>{t('pages.liabilities.form.type')}</InputLabel>
                                 <Select
                                     value={formData.type}
                                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as LiabilityType }))}
-                                    label="Type"
+                                    label={t('pages.liabilities.form.type')}
                                 >
                                     {Object.entries(liabilityTypeLabels).map(([value, label]) => (
                                         <MenuItem key={value} value={value}>
@@ -552,7 +553,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Current Balance (€)"
+                                label={t('pages.liabilities.form.currentBalance')}
                                 type="number"
                                 value={formData.current_balance}
                                 onChange={(e) => setFormData(prev => ({ ...prev, current_balance: Number(e.target.value) }))}
@@ -562,7 +563,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Interest Rate (%)"
+                                label={t('pages.liabilities.form.interestRate')}
                                 type="number"
                                 value={formData.interest_rate}
                                 onChange={(e) => setFormData(prev => ({ ...prev, interest_rate: Number(e.target.value) }))}
@@ -572,7 +573,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Monthly Payment (€)"
+                                label={t('pages.liabilities.form.monthlyPayment')}
                                 type="number"
                                 value={formData.monthly_payment}
                                 onChange={(e) => setFormData(prev => ({ ...prev, monthly_payment: Number(e.target.value) }))}
@@ -581,7 +582,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Minimum Payment (€)"
+                                label={t('pages.liabilities.form.minimumPayment')}
                                 type="number"
                                 value={formData.minimum_payment}
                                 onChange={(e) => setFormData(prev => ({ ...prev, minimum_payment: Number(e.target.value) }))}
@@ -590,7 +591,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Due Date"
+                                label={t('pages.liabilities.form.dueDate')}
                                 type="date"
                                 value={formData.due_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
@@ -600,18 +601,18 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="As of Month"
+                                label={t('pages.liabilities.form.asOfMonth')}
                                 type="month"
                                 value={formData.as_of_month || ''}
                                 onChange={(e) => setFormData(prev => ({ ...prev, as_of_month: e.target.value }))}
                                 InputLabelProps={{ shrink: true }}
-                                helperText="Month this balance applies to"
+                                helperText={t('pages.liabilities.form.asOfHelper')}
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
-                                label="Notes"
+                                label={t('pages.liabilities.form.notes')}
                                 multiline
                                 rows={3}
                                 value={formData.notes}
@@ -623,7 +624,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12}>
                             <Divider sx={{ my: 2 }}>
                                 <Typography variant="h6" color="primary">
-                                    Special Repayment Options
+                                    {t('pages.liabilities.form.specialSection')}
                                 </Typography>
                             </Divider>
                         </Grid>
@@ -639,7 +640,7 @@ const Liabilities: React.FC = () => {
                                         }))}
                                     />
                                 }
-                                label="Enable Special Repayments"
+                                label={t('pages.liabilities.form.specialEnable')}
                             />
                         </Grid>
 
@@ -648,7 +649,7 @@ const Liabilities: React.FC = () => {
                                 <Grid item xs={12} sm={6}>
                                     <TextField
                                         fullWidth
-                                        label="Special Repayment Amount (€)"
+                                        label={t('pages.liabilities.form.specialAmount')}
                                         type="number"
                                         value={formData.special_repayment_amount || 0}
                                         onChange={(e) => setFormData(prev => ({
@@ -660,18 +661,18 @@ const Liabilities: React.FC = () => {
 
                                 <Grid item xs={12} sm={6}>
                                     <FormControl fullWidth>
-                                        <InputLabel>Repayment Frequency</InputLabel>
+                                        <InputLabel>{t('pages.liabilities.form.specialFrequency')}</InputLabel>
                                         <Select
                                             value={formData.special_repayment_frequency || 'monthly'}
                                             onChange={(e) => setFormData(prev => ({
                                                 ...prev,
                                                 special_repayment_frequency: e.target.value as 'monthly' | 'quarterly' | 'annual'
                                             }))}
-                                            label="Repayment Frequency"
+                                            label={t('pages.liabilities.form.specialFrequency')}
                                         >
-                                            <MenuItem value="monthly">Monthly</MenuItem>
-                                            <MenuItem value="quarterly">Quarterly</MenuItem>
-                                            <MenuItem value="annual">Annual</MenuItem>
+                                            <MenuItem value="monthly">{t('pages.liabilities.form.monthly')}</MenuItem>
+                                            <MenuItem value="quarterly">{t('pages.liabilities.form.quarterly')}</MenuItem>
+                                            <MenuItem value="annual">{t('pages.liabilities.form.annual')}</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Grid>
@@ -679,7 +680,7 @@ const Liabilities: React.FC = () => {
                                 <Grid item xs={12} sm={6}>
                                     <TextField
                                         fullWidth
-                                        label="Max Annual Prepayment %"
+                                        label={t('pages.liabilities.form.maxAnnualPrepay')}
                                         type="number"
                                         value={formData.max_annual_prepayment_percentage || 0}
                                         onChange={(e) => setFormData(prev => ({
@@ -687,7 +688,7 @@ const Liabilities: React.FC = () => {
                                             max_annual_prepayment_percentage: Number(e.target.value)
                                         }))}
                                         inputProps={{ step: 0.1, min: 0, max: 100 }}
-                                        helperText="Maximum percentage of principal that can be prepaid annually"
+                                        helperText={t('pages.liabilities.form.maxAnnualPrepayHelper')}
                                     />
                                 </Grid>
 
@@ -702,7 +703,7 @@ const Liabilities: React.FC = () => {
                                                 }))}
                                             />
                                         }
-                                        label="Prepayment Penalty Applies"
+                                        label={t('pages.liabilities.form.penaltyApplies')}
                                     />
                                 </Grid>
 
@@ -710,7 +711,7 @@ const Liabilities: React.FC = () => {
                                     <Grid item xs={12} sm={6}>
                                         <TextField
                                             fullWidth
-                                            label="Prepayment Penalty Rate (%)"
+                                            label={t('pages.liabilities.form.penaltyRate')}
                                             type="number"
                                             value={formData.prepayment_penalty_rate || 0}
                                             onChange={(e) => setFormData(prev => ({
@@ -727,7 +728,7 @@ const Liabilities: React.FC = () => {
                         <Grid item xs={12}>
                             <Divider sx={{ my: 2 }}>
                                 <Typography variant="h6" color="primary">
-                                    After payoff
+                                    {t('pages.liabilities.form.investSection')}
                                 </Typography>
                             </Divider>
                         </Grid>
@@ -743,7 +744,7 @@ const Liabilities: React.FC = () => {
                                         }))}
                                     />
                                 }
-                                label="Invest monthly payment into stocks after this debt is paid off"
+                                label={t('pages.liabilities.form.investAfterPayoff')}
                             />
                         </Grid>
 
@@ -751,24 +752,23 @@ const Liabilities: React.FC = () => {
                             <>
                                 <Grid item xs={12}>
                                     <Alert severity="info">
-                                        The net worth forecast on your Dashboard will show a second line
-                                        reflecting extra investing once this liability is projected to be paid off.
+                                        {t('pages.liabilities.form.investInfo')}
                                     </Alert>
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
                                     <FormControl fullWidth>
-                                        <InputLabel>Invest into</InputLabel>
+                                        <InputLabel>{t('pages.liabilities.form.investInto')}</InputLabel>
                                         <Select
                                             value={formData.payoff_invest_asset_id || ''}
                                             onChange={(e) => setFormData(prev => ({
                                                 ...prev,
                                                 payoff_invest_asset_id: e.target.value || null,
                                             }))}
-                                            label="Invest into"
+                                            label={t('pages.liabilities.form.investInto')}
                                         >
                                             {investableAssets.length === 0 ? (
                                                 <MenuItem value="" disabled>
-                                                    Add an investment bucket on Assets first
+                                                    {t('pages.liabilities.form.investNoAssets')}
                                                 </MenuItem>
                                             ) : (
                                                 investableAssets.map((asset) => (
@@ -785,13 +785,15 @@ const Liabilities: React.FC = () => {
                     </Grid>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
+                    <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
                     <Button
                         onClick={handleSubmit}
                         variant="contained"
                         disabled={loading}
                     >
-                        {loading ? <CircularProgress size={20} /> : (editingLiability ? 'Update' : 'Create')}
+                        {loading
+                            ? <CircularProgress size={20} />
+                            : (editingLiability ? t('common.update') : t('common.create'))}
                     </Button>
                 </DialogActions>
             </Dialog>

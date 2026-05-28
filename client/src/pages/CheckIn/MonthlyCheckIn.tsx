@@ -35,8 +35,9 @@ import { formatCurrency } from '../../utils/currency';
 import { GlassSurface } from '../../components/ui/GlassSurface';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
+import { useTranslation } from 'react-i18next';
 
-const STEPS = ['Select month', 'Review values', 'Confirm'];
+const STEPS_KEYS = ['pages.checkIn.steps.selectMonth', 'pages.checkIn.steps.reviewValues', 'pages.checkIn.steps.confirm'] as const;
 
 const formatDelta = (delta: number): string => {
     const prefix = delta >= 0 ? '+' : '';
@@ -50,6 +51,7 @@ interface EditableLineItem extends CheckInProposalLineItem {
 const MonthlyCheckIn: React.FC = () => {
     const theme = useTheme();
     const smDown = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { getCheckInStatus, getCheckInProposal, applyCheckIn, state } = useFinancial();
@@ -201,7 +203,7 @@ const MonthlyCheckIn: React.FC = () => {
         <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>{title}</Typography>
             {items.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">None</Typography>
+                <Typography variant="body2" color="text.secondary">{t('common.none')}</Typography>
             ) : (
                 <GlassSurface sx={{ p: 0 }}>
                     <TableContainer>
@@ -209,11 +211,11 @@ const MonthlyCheckIn: React.FC = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Name</TableCell>
-                                    <TableCell align="right">Previous</TableCell>
-                                    <TableCell align="right">Proposed</TableCell>
-                                    <TableCell align="right">Your value</TableCell>
-                                    <TableCell align="right">Change</TableCell>
-                                    <TableCell>Basis</TableCell>
+                                <TableCell align="right">{t('pages.checkIn.review.previous')}</TableCell>
+                                <TableCell align="right">{t('pages.checkIn.review.proposed')}</TableCell>
+                                <TableCell align="right">{t('pages.checkIn.review.yourValue')}</TableCell>
+                                <TableCell align="right">{t('pages.checkIn.review.change')}</TableCell>
+                                <TableCell>{t('pages.checkIn.review.basis')}</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -290,35 +292,34 @@ const MonthlyCheckIn: React.FC = () => {
         <Box sx={{ width: '100%', maxWidth: 1200 }}>
             <PageHeader
                 icon={<EventNoteIcon color="primary" />}
-                title="Monthly check-in"
-                subtitle="Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your last snapshot or current records — you supervise every save."
+                title={t('pages.checkIn.title')}
+                subtitle={t('pages.checkIn.subtitle')}
             />
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             {state.error && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
 
             <Stepper activeStep={activeStep} sx={{ mb: 4 }} orientation={smDown ? 'vertical' : 'horizontal'}>
-                {STEPS.map((label) => (
-                    <Step key={label}>
-                        <StepLabel>{label}</StepLabel>
+                {STEPS_KEYS.map((key) => (
+                    <Step key={key}>
+                        <StepLabel>{t(key)}</StepLabel>
                     </Step>
                 ))}
             </Stepper>
 
             {activeStep === 0 && status && (
                 <GlassSurface sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom>Which month are you recording?</Typography>
+                    <Typography variant="h6" gutterBottom>{t('pages.checkIn.month.pickTitle')}</Typography>
 
                     {isCaughtUp && (
                         <Alert severity="success" sx={{ mb: 2 }}>
-                            You&apos;re caught up through {formatChartMonthLabel(status.currentMonth)}.
-                            You can re-save this month if your values changed.
+                            {t('pages.checkIn.month.caughtUp', { month: formatChartMonthLabel(status.currentMonth) })}
                         </Alert>
                     )}
 
                     {missingCountLabel && (
                         <Alert severity="warning" sx={{ mb: 2 }}>
-                            {missingCountLabel}. Start with the earliest gap to keep history consistent.
+                            {missingCountLabel}. {t('pages.checkIn.month.startEarliest')}
                         </Alert>
                     )}
 
@@ -342,7 +343,7 @@ const MonthlyCheckIn: React.FC = () => {
                     </Box>
 
                     <TextField
-                        label="Or enter month"
+                        label={t('pages.checkIn.month.orEnter')}
                         type="month"
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(clampMonthToCurrent(e.target.value, status.currentMonth))}
@@ -353,7 +354,7 @@ const MonthlyCheckIn: React.FC = () => {
 
                     {status.lastSnapshotMonth && (
                         <Typography variant="body2" color="text.secondary">
-                            Last snapshot: {formatChartMonthLabel(status.lastSnapshotMonth)}
+                            {t('pages.checkIn.month.lastSnapshot', { month: formatChartMonthLabel(status.lastSnapshotMonth) })}
                         </Typography>
                     )}
                 </GlassSurface>
@@ -369,14 +370,17 @@ const MonthlyCheckIn: React.FC = () => {
                         <>
                             <Alert severity="info" sx={{ mb: 2 }}>
                                 {proposal.basis === 'snapshot' && proposal.baselineMonth
-                                    ? `Proposed from ${formatChartMonthLabel(proposal.baselineMonth)} snapshot (${proposal.offsetMonths} month${proposal.offsetMonths === 1 ? '' : 's'} forward).`
-                                    : 'Proposed from your current asset and liability values.'}
+                                    ? t('pages.checkIn.review.basisSnapshot', {
+                                        baselineMonth: formatChartMonthLabel(proposal.baselineMonth),
+                                        offsetMonths: proposal.offsetMonths,
+                                        count: proposal.offsetMonths,
+                                      })
+                                    : t('pages.checkIn.review.basisCurrent')}
                             </Alert>
 
                             {proposal.isHistorical && (
                                 <Alert severity="info" sx={{ mb: 2 }}>
-                                    Backfill only — current asset and liability values will not change for this
-                                    historical month.
+                                    {t('pages.checkIn.review.backfillOnly')}
                                 </Alert>
                             )}
 
@@ -396,7 +400,7 @@ const MonthlyCheckIn: React.FC = () => {
                             </Grid>
 
                             <TextField
-                                label="Notes (optional)"
+                                label={t('pages.checkIn.review.notes')}
                                 fullWidth
                                 multiline
                                 minRows={2}
@@ -405,7 +409,7 @@ const MonthlyCheckIn: React.FC = () => {
                             />
                         </>
                     ) : (
-                        <Alert severity="warning">No proposal loaded. Go back and select a month.</Alert>
+                        <Alert severity="warning">{t('pages.checkIn.review.noProposal')}</Alert>
                     )}
                 </GlassSurface>
             )}
@@ -413,7 +417,7 @@ const MonthlyCheckIn: React.FC = () => {
             {activeStep === 2 && proposal && (
                 <GlassSurface sx={{ p: 3 }}>
                     <Typography variant="h6" gutterBottom>
-                        Confirm check-in for {formatChartMonthLabel(proposal.targetMonth)}
+                        {t('pages.checkIn.confirm.title', { month: formatChartMonthLabel(proposal.targetMonth) })}
                     </Typography>
 
                     <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -430,13 +434,13 @@ const MonthlyCheckIn: React.FC = () => {
 
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {proposal.updatesCurrentState
-                            ? 'This will update your current asset and liability records and save a monthly snapshot.'
-                            : 'This will save a historical snapshot only. Your current records stay as they are.'}
+                            ? t('pages.checkIn.confirm.updatesCurrent')
+                            : t('pages.checkIn.confirm.historicalOnly')}
                     </Typography>
 
                     {notes && (
                         <Typography variant="body2" sx={{ mb: 2 }}>
-                            Notes: {notes}
+                            {t('pages.checkIn.confirm.notesPrefix', { notes })}
                         </Typography>
                     )}
                 </GlassSurface>
@@ -448,7 +452,7 @@ const MonthlyCheckIn: React.FC = () => {
                     onClick={activeStep === 0 ? () => navigate('/') : handleBack}
                     disabled={saving}
                 >
-                    {activeStep === 0 ? 'Cancel' : 'Back'}
+                    {activeStep === 0 ? t('common.cancel') : t('common.back')}
                 </Button>
 
                 <Box display="flex" gap={1}>
@@ -459,7 +463,7 @@ const MonthlyCheckIn: React.FC = () => {
                             onClick={handleNextFromMonth}
                             disabled={!canProceedFromMonth || loadingProposal}
                         >
-                            Review values
+                            {t('pages.checkIn.buttons.reviewValues')}
                         </Button>
                     )}
                     {activeStep === 1 && (
@@ -469,7 +473,7 @@ const MonthlyCheckIn: React.FC = () => {
                             onClick={handleNextFromReview}
                             disabled={!canProceedFromReview || loadingProposal}
                         >
-                            Continue
+                            {t('common.continue')}
                         </Button>
                     )}
                     {activeStep === 2 && (
@@ -480,7 +484,11 @@ const MonthlyCheckIn: React.FC = () => {
                             onClick={handleApply}
                             disabled={!canApply}
                         >
-                            {saving ? 'Saving…' : `Save ${formatChartMonthLabel(proposal?.targetMonth ?? selectedMonth)} check-in`}
+                            {saving
+                                ? t('common.saving')
+                                : t('pages.checkIn.confirm.save', {
+                                    month: formatChartMonthLabel(proposal?.targetMonth ?? selectedMonth),
+                                  })}
                         </Button>
                     )}
                 </Box>

@@ -19,6 +19,7 @@ import { Liability } from '../../types';
 import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 import { LiabilityPayoffChart, PayoffChartSeries } from '../../components/charts/LiabilityPayoffChart';
+import { useTranslation } from 'react-i18next';
 import {
     PayoffScenario,
     buildPayoffChartRows,
@@ -88,6 +89,26 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
 }) => {
     const theme = useTheme();
     const smDown = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
+
+    const localizeScenarioLabel = (scenario: PayoffScenario): string => {
+        switch (scenario.kind) {
+            case 'baseline':
+                return t('pages.liabilities.payoffCard.scenarioBaseline');
+            case 'saved':
+                return t('pages.liabilities.payoffCard.scenarioCurrentPlan');
+            case 'extra_monthly':
+                return scenario.includeSavedSpecialRepayments
+                    ? t('pages.liabilities.payoffCard.extraMonthlyCurrentPlan')
+                    : t('pages.liabilities.payoffCard.extraMonthlyBaseline');
+            case 'lump_sum':
+                return scenario.includeSavedSpecialRepayments
+                    ? t('pages.liabilities.payoffCard.lumpSumCurrentPlan')
+                    : t('pages.liabilities.payoffCard.lumpSumBaseline');
+            default:
+                return scenario.label;
+        }
+    };
     const activeScenarios = useMemo(
         () => buildActiveScenarios(scenarioState),
         [scenarioState]
@@ -95,11 +116,11 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
 
     const chartSeries = useMemo((): PayoffChartSeries[] => {
         return activeScenarios.map((scenario, index) => ({
-            scenario,
+            scenario: { ...scenario, label: localizeScenarioLabel(scenario) },
             result: buildPayoffSchedule(liability, scenario),
             color: PAYOFF_CHART_COLORS[index % PAYOFF_CHART_COLORS.length],
         }));
-    }, [liability, activeScenarios]);
+    }, [liability, activeScenarios, t]);
 
     const chartRows = useMemo(
         () => buildPayoffChartRows(liability, activeScenarios),
@@ -118,15 +139,15 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
 
     const startingBalance = savedResult.startingBalance;
     const isPaidOff = startingBalance <= 0;
-    const rateLabel = liability.interest_rate ? `${liability.interest_rate}%` : 'N/A';
+    const rateLabel = liability.interest_rate ? `${liability.interest_rate}%` : t('pages.liabilities.payoffCard.rateNa');
 
     const whatIfIncludesSpecial = scenarioState.showSaved;
     const extraMonthlyCheckboxLabel = whatIfIncludesSpecial
-        ? 'Extra monthly (current plan + extra)'
-        : 'Extra monthly (regular payment + extra)';
+        ? t('pages.liabilities.payoffCard.extraMonthlyCurrentPlan')
+        : t('pages.liabilities.payoffCard.extraMonthlyBaseline');
     const lumpSumCheckboxLabel = whatIfIncludesSpecial
-        ? 'Lump sum today (current plan + lump sum)'
-        : 'Lump sum today (regular payment + lump sum)';
+        ? t('pages.liabilities.payoffCard.lumpSumCurrentPlan')
+        : t('pages.liabilities.payoffCard.lumpSumBaseline');
 
     const update = (patch: Partial<LiabilityPayoffScenarioState>) => {
         onScenarioStateChange({ ...scenarioState, ...patch });
@@ -142,26 +163,26 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                     </Typography>
                     <Chip label={liabilityTypeLabel} size="small" variant="outlined" />
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto', mr: 1 }}>
-                        {isPaidOff ? 'Paid off' : formatCurrency(startingBalance)}
+                        {isPaidOff ? t('pages.liabilities.payoffCard.paidOff') : formatCurrency(startingBalance)}
                         {!isPaidOff && ` @ ${rateLabel}`}
                     </Typography>
                 </Box>
             </AccordionSummary>
             <AccordionDetails>
                 {isPaidOff ? (
-                    <Alert severity="success">This liability has no remaining balance.</Alert>
+                    <Alert severity="success">{t('pages.liabilities.payoffCard.noRemainingBalance')}</Alert>
                 ) : (
                     <>
                         {!liability.as_of_month && (
                             <Alert severity="info" sx={{ mb: 2 }}>
-                                No as-of month set — chart uses the recorded balance as of today.
+                                {t('pages.liabilities.payoffCard.noAsOfMonth')}
                             </Alert>
                         )}
 
                         <LiabilityPayoffChart series={chartSeries} chartRows={chartRows} />
 
                         <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                            Scenarios
+                            {t('pages.liabilities.payoffCard.scenarios')}
                         </Typography>
                         <Stack spacing={0.5} sx={{ mb: 2 }}>
                             <FormControlLabel
@@ -171,7 +192,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                         onChange={(e) => update({ showBaseline: e.target.checked })}
                                     />
                                 }
-                                label="Baseline (regular payment only)"
+                                label={t('pages.liabilities.payoffCard.scenarioBaseline')}
                             />
                             <FormControlLabel
                                 control={
@@ -180,7 +201,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                         onChange={(e) => update({ showSaved: e.target.checked })}
                                     />
                                 }
-                                label="Current plan (incl. special repayments)"
+                                label={t('pages.liabilities.payoffCard.scenarioCurrentPlan')}
                             />
                             <Box display="flex" alignItems="center" flexWrap="wrap" gap={1}>
                                 <FormControlLabel
@@ -195,7 +216,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                 <TextField
                                     size="small"
                                     type="number"
-                                    label="€/month"
+                                    label={t('pages.liabilities.payoffCard.perMonth')}
                                     value={scenarioState.extraMonthlyAmount}
                                     onChange={(e) =>
                                         update({ extraMonthlyAmount: Math.max(0, Number(e.target.value)) })
@@ -218,7 +239,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                 <TextField
                                     size="small"
                                     type="number"
-                                    label="€"
+                                    label={t('pages.liabilities.payoffCard.amountEuro')}
                                     value={scenarioState.lumpSumAmount}
                                     onChange={(e) =>
                                         update({ lumpSumAmount: Math.max(0, Number(e.target.value)) })
@@ -231,7 +252,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                         </Stack>
 
                         <Typography variant="subtitle2" gutterBottom>
-                            Summary
+                            {t('pages.liabilities.payoffCard.summary')}
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1}>
                             {chartSeries.map(({ scenario, result, color }) => {
@@ -240,8 +261,8 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                     scenario.includeSavedSpecialRepayments === true;
                                 const comparisonRef = whatIfUsesCurrentPlan ? savedResult : baselineResult;
                                 const comparisonLabel = whatIfUsesCurrentPlan
-                                    ? 'vs current plan'
-                                    : 'vs baseline';
+                                    ? t('pages.liabilities.payoffCard.vsCurrentPlan')
+                                    : t('pages.liabilities.payoffCard.vsBaseline');
                                 const referenceScenarioId = whatIfUsesCurrentPlan
                                     ? SAVED_SCENARIO_ID
                                     : BASELINE_SCENARIO_ID;
@@ -253,11 +274,11 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                 const payoffLabel =
                                     result.payoffMonth != null
                                         ? formatChartMonthLabel(result.payoffMonth)
-                                        : '50+ years';
+                                        : t('pages.liabilities.payoffCard.fallbackYears');
                                 const monthsLabel =
                                     result.monthsToPayoff != null
                                         ? `${result.monthsToPayoff} mo`
-                                        : '600+ mo';
+                                        : t('pages.liabilities.payoffCard.fallbackMonths');
 
                                 return (
                                     <Chip
@@ -266,12 +287,12 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                             <Box component="span">
                                                 <strong>{scenario.label}:</strong>{' '}
                                                 {payoffLabel} · {monthsLabel} ·{' '}
-                                                {formatCurrency(result.totalInterest)} interest
+                                                {formatCurrency(result.totalInterest)} {t('pages.liabilities.payoffCard.interest')}
                                                 {showComparison && (
                                                         <>
                                                             {' '}
                                                             (−{vsRef.monthsSaved} mo {comparisonLabel},{' '}
-                                                            {formatCurrency(vsRef.interestSaved ?? 0)} interest saved)
+                                                            {formatCurrency(vsRef.interestSaved ?? 0)} {t('pages.liabilities.payoffCard.interestSaved')})
                                                         </>
                                                     )}
                                             </Box>
@@ -294,8 +315,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                             baselineResult.monthsToPayoff != null &&
                             savedResult.monthsToPayoff === baselineResult.monthsToPayoff && (
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                                    Baseline and current plan match — no special repayments configured or they have no
-                                    effect on this schedule.
+                                    {t('pages.liabilities.payoffCard.baselineMatches')}
                                 </Typography>
                             )}
                     </>

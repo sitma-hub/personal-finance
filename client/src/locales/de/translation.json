@@ -1,0 +1,424 @@
+{
+  "app": {
+    "name": "BudgetBuddy",
+    "title": "Finanzübersicht",
+    "titleShort": "Finanzen"
+  },
+  "nav": {
+    "dashboard": "Übersicht",
+    "checkIn": "Monatlicher Check-in",
+    "assets": "Vermögen",
+    "liabilities": "Schulden",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben",
+    "investments": "Investments",
+    "backup": "Backup"
+  },
+  "common": {
+    "refresh": "Aktualisieren",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "back": "Zurück",
+    "continue": "Weiter",
+    "save": "Speichern",
+    "create": "Erstellen",
+    "update": "Aktualisieren",
+    "close": "Schließen",
+    "none": "Keine",
+    "noData": "Keine Daten",
+    "saving": "Speichern…"
+  },
+  "actions": {
+    "monthlyCheckIn": "Monatlicher Check-in",
+    "quickSaveCurrentMonth": "Schnellspeicher aktueller Monat",
+    "addAsset": "Vermögen hinzufügen",
+    "addLiability": "Schuld hinzufügen",
+    "addExpense": "Ausgabe hinzufügen",
+    "addIncomeStream": "Einnahmequelle hinzufügen",
+    "addInvestmentBucket": "Investment-Topf hinzufügen"
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Übersicht",
+      "netWorth": {
+        "title": "Vermögen im Zeitverlauf",
+        "forecastHorizon": "Prognosehorizont",
+        "years": "Jahre",
+        "captionPrefix": "Prognose ({{years}} J.) basiert auf geplanten Beiträgen und Renditeszenarien",
+        "captionPayoffSuffix": ", inkl. Investieren nach Schuldentilgung",
+        "captionSuffix": " — keine Garantie. Klicke einen Punkt, um zu sehen, wie der Vermögensschritt dieses Monats berechnet wird.",
+        "empty": "Speichere monatliche Snapshots für den Verlauf. Lege Investment-Töpfe mit Renditeannahmen an, um eine Prognose zu sehen."
+      },
+      "loading": "Finanzdaten werden geladen…",
+      "snapshot": {
+        "overwriteConfirm": "Ein Snapshot für {{month}} existiert bereits. Überschreiben?"
+      },
+      "snack": {
+        "netWorthRecorded": "Vermögen für {{month}} gespeichert",
+        "saveSnapshotFailed": "Snapshot konnte nicht gespeichert werden"
+      },
+      "kpi": {
+        "netWorth": "Vermögen",
+        "assets": "Vermögen",
+        "liabilities": "Schulden",
+        "monthlyCashFlow": "Monatlicher Cashflow",
+        "plannedInvesting": "Geplantes Investieren"
+      },
+      "cashFlow": {
+        "title": "Wohin dein Geld fließt",
+        "subtitlePrefix": "Jede Einnahmequelle, Ausgabenkategorie und Kreditrate wird separat angezeigt. Daten bearbeiten unter",
+        "subtitleMiddle": "und",
+        "subtitleSuffix": "."
+      },
+      "allocation": {
+        "title": "Asset-Allokation",
+        "empty": "Füge Vermögenswerte hinzu, um die Aufteilung zu sehen",
+        "tooltipValue": "Wert",
+        "emptyChart": "Keine Vermögenswerte"
+      },
+      "recentUpdates": {
+        "title": "Letzte Wert-Updates",
+        "empty": "Noch keine Updates"
+      }
+    },
+    "assets": {
+      "title": "Vermögen",
+      "kpi": { "totalAssets": "Gesamtvermögen", "count": "Anzahl" },
+      "table": { "name": "Name", "type": "Typ", "value": "Wert", "asOf": "Stand", "planPerMonth": "€/Monat Plan" },
+      "history": { "load": "Wertverlauf laden", "empty": "Noch kein Verlauf", "title": "Wertverlauf" },
+      "form": {
+        "addTitle": "Vermögen hinzufügen",
+        "editTitle": "Vermögen bearbeiten",
+        "name": "Name",
+        "type": "Typ",
+        "currentValue": "Aktueller Wert",
+        "asOfMonth": "Stand (YYYY-MM)",
+        "asOfHelper": "Monat, für den dieser Wert gilt",
+        "investableInfo": "Aktualisiere den aktuellen Wert bei neuen Abrechnungen. Der monatliche Beitrag ist dein Plan (keine Ausgabe).",
+        "monthlyContribution": "Monatlicher Beitrag (€)",
+        "pessimisticReturn": "Pessimistisch %/Jahr",
+        "expectedReturn": "Erwartet %/Jahr",
+        "optimisticReturn": "Optimistisch %/Jahr",
+        "includeInForecast": "In Investment-Prognose einbeziehen",
+        "notes": "Notizen"
+      }
+    },
+    "income": {
+      "title": "Einnahmequellen",
+      "confirmDelete": "Möchtest du diese Einnahmequelle wirklich löschen?",
+      "kpi": {
+        "monthlyIncome": "Monatliches Einkommen",
+        "annualIncome": "Jahreseinkommen",
+        "incomeStreams": "Einnahmequellen"
+      },
+      "charts": {
+        "distribution": "Einkommensverteilung nach Typ",
+        "byTypeMonthly": "Einkommen nach Typ (monatlich)",
+        "tooltipMonthlyIncome": "Monatliches Einkommen",
+        "empty": "Keine Einnahmen zum Anzeigen"
+      },
+      "table": {
+        "title": "Alle Einnahmequellen",
+        "columns": {
+          "name": "Name",
+          "type": "Typ",
+          "amount": "Betrag",
+          "frequency": "Häufigkeit",
+          "growthRate": "Wachstumsrate",
+          "startDate": "Startdatum",
+          "endDate": "Enddatum"
+        }
+      },
+      "types": {
+        "salary": "Gehalt",
+        "hourly_wage": "Stundenlohn",
+        "freelance": "Freiberuflich",
+        "investment_income": "Kapitalerträge",
+        "rental_income": "Mieteinnahmen",
+        "pension": "Rente",
+        "social_security": "Sozialleistungen",
+        "other_income": "Sonstige Einnahmen"
+      },
+      "frequency": {
+        "monthly": "Monatlich",
+        "annual": "Jährlich",
+        "hourly": "Stündlich"
+      },
+      "form": {
+        "addTitle": "Neue Einnahmequelle hinzufügen",
+        "editTitle": "Einnahmequelle bearbeiten",
+        "name": "Name der Einnahmequelle",
+        "type": "Typ",
+        "currentAmount": "Aktueller Betrag (€)",
+        "frequency": "Häufigkeit",
+        "annualGrowth": "Jährliche Wachstumsrate (%)",
+        "startDate": "Startdatum",
+        "endDate": "Enddatum",
+        "notes": "Notizen",
+        "errors": {
+          "nameRequired": "Bitte gib einen Namen für die Einnahmequelle ein"
+        }
+      }
+    },
+    "expenses": {
+      "title": "Ausgaben",
+      "kpi": {
+        "totalMonthlyOutflow": "Gesamtabfluss pro Monat",
+        "totalMonthlyOutflowFooter": "Lebenshaltung {{living}} + Schulden {{debt}}",
+        "annualOutflow": "Jahresabfluss",
+        "essential": "Notwendig",
+        "discretionary": "Optional"
+      },
+      "help": {
+        "debtTrackedPrefix": "Hypotheken und andere Kredite werden unter",
+        "debtTrackedSuffix": " (Saldo + monatliche Rate) erfasst. Die Raten sind unten automatisch in den Summen enthalten — füge dieselbe Zahlung nicht noch einmal als Ausgabe hinzu."
+      },
+      "confirmDelete": "Möchtest du diese Ausgabe wirklich löschen?",
+      "debtPayments": {
+        "title": "Schuldenraten (aus Verbindlichkeiten)",
+        "emptyPrefix": "Keine Raten konfiguriert. Füge eine Hypothek oder einen Kredit auf der Seite",
+        "emptySuffix": "hinzu.",
+        "table": {
+          "name": "Name",
+          "type": "Typ",
+          "monthlyPayment": "Monatliche Rate",
+          "specialRepayment": "Sondertilgung"
+        }
+      },
+      "livingTable": {
+        "title": "Lebenshaltungskosten",
+        "columns": {
+          "name": "Name",
+          "category": "Kategorie",
+          "monthlyAmount": "Monatlicher Betrag",
+          "annualInflation": "Jährliche Inflation",
+          "type": "Typ"
+        }
+      },
+      "form": {
+        "addTitle": "Neue Ausgabe hinzufügen",
+        "editTitle": "Ausgabe bearbeiten",
+        "name": "Name der Ausgabe",
+        "category": "Kategorie",
+        "monthlyAmount": "Monatlicher Betrag (€)",
+        "annualInflation": "Jährliche Inflationsrate (%)",
+        "discretionaryExpense": "Optionale Ausgabe",
+        "notes": "Notizen",
+        "errors": {
+          "nameRequired": "Bitte gib einen Namen für die Ausgabe ein",
+          "categoryRequired": "Bitte wähle eine Kategorie aus"
+        }
+      },
+      "charts": {
+        "legend": {
+          "ariaGroup": "Anzeige der Legende im Tortendiagramm",
+          "ariaPercent": "Prozent anzeigen",
+          "ariaAmount": "Betrag anzeigen",
+          "percent": "Prozent",
+          "amount": "Betrag"
+        },
+        "byCategory": "Ausgaben nach Kategorie",
+        "livingVsDebt": "Lebenshaltung vs. Schuldenraten",
+        "tooltipMonthlyAmount": "Monatlicher Betrag",
+        "emptyExpenses": "Keine Ausgaben zum Anzeigen",
+        "emptyOutflow": "Keine Abflussdaten",
+        "debtSlice": "Schulden: {{name}}",
+        "outflowSplit": {
+          "essential": "Lebenshaltung (notwendig)",
+          "discretionary": "Lebenshaltung (optional)",
+          "debtPayments": "Schuldenraten"
+        }
+      },
+      "categories": {
+        "Housing": "Wohnen",
+        "Transportation": "Transport",
+        "Food & Dining": "Essen & Trinken",
+        "Healthcare": "Gesundheit",
+        "Education": "Bildung",
+        "Entertainment": "Freizeit",
+        "Utilities": "Nebenkosten",
+        "Insurance": "Versicherungen",
+        "Personal Care": "Körperpflege",
+        "Shopping": "Einkaufen",
+        "Travel": "Reisen",
+        "Other": "Sonstiges"
+      }
+    },
+    "investments": {
+      "title": "Investments",
+      "help": {
+        "intro": "Verwalte ETF-Töpfe unter",
+        "introSuffix": "(Investment- oder Renten-Typ). Lege monatliche Beiträge und Renditeszenarien hier fest — nicht unter Ausgaben. Aktualisiere Werte im Zeitverlauf, um zu sehen, wie Marktschwankungen dein Portfolio beeinflussen."
+      },
+      "kpi": {
+        "investableNow": "Investierbarer Wert jetzt",
+        "plannedDca": "Geplantes Sparen / Monat",
+        "surplus": "Monatlicher Überschuss",
+        "afterDca": "Nach geplantem Sparen",
+        "afterDcaWarning": "Sparplan übersteigt Überschuss — Plan oder Ausgaben anpassen"
+      },
+      "chart": {
+        "title": "Investierbarer Wert im Zeitverlauf",
+        "includePayoff": "Investieren nach Schuldentilgung einbeziehen",
+        "forecastHorizon": "Prognosehorizont",
+        "years": "Jahre",
+        "noBuckets": {
+          "prefix": "Keine Töpfe in der Prognose. Lege ein Investmentkonto mit erwarteter Rendite an und aktiviere „In Prognose einbeziehen“. Aktualisiere Topf-Werte unter",
+          "middle": "oder über",
+          "suffix": "um Verlauf aufzubauen."
+        },
+        "noHistory": {
+          "prefix": "Noch kein Verlauf vorhanden. Aktualisiere Topf-Werte unter",
+          "middle": "oder nutze",
+          "suffix": "um deine Entwicklung zu verfolgen."
+        },
+        "captionPrefix": "Erfasste Werte sind deine eingetragenen Updates für Investment-Töpfe. Prognosen sind nur illustrativ",
+        "captionPayoffSuffix": ", inkl. Investieren nach Schuldentilgung",
+        "captionSuffix": " — keine garantierten Renditen."
+      },
+      "table": {
+        "title": "Investment-Töpfe",
+        "empty": "Noch keine Investment-Töpfe."
+      }
+    },
+    "liabilities": {
+      "title": "Schulden",
+      "projectMonths": "Projektion +N Monate",
+      "kpi": {
+        "totalBalance": "Gesamtsaldo",
+        "monthlyPayments": "Monatliche Zahlungen",
+        "specialRepayments": "Sondertilgung",
+        "monthlyAverage": "Monatlicher Durchschnitt",
+        "totalLiabilities": "Anzahl Schulden"
+      },
+      "charts": {
+        "distribution": "Verteilung nach Typ",
+        "paymentBreakdown": "Zahlungsaufteilung",
+        "regularPayments": "Regelmäßige Zahlungen",
+        "specialRepayments": "Sondertilgung",
+        "tooltipBalance": "Saldo",
+        "tooltipMonthlyAmount": "Monatsbetrag",
+        "empty": "Keine Schulden vorhanden"
+      },
+      "payoff": {
+        "title": "Schulden-Tilgungsplan",
+        "subtitle": "Prognostizierter Saldo bis zur vollständigen Tilgung. Vergleiche Basiszahlungen mit deinem gespeicherten Plan und optionalen Was-wäre-wenn-Szenarien (nicht in der Datenbank gespeichert)."
+      },
+      "types": {
+        "mortgage": "Hypothek",
+        "auto_loan": "Autokredit",
+        "personal_loan": "Privatkredit",
+        "credit_card": "Kreditkarte",
+        "student_loan": "Studienkredit",
+        "other_debt": "Sonstige Schulden"
+      },
+      "payoffCard": {
+        "rateNa": "k. A.",
+        "paidOff": "Getilgt",
+        "noRemainingBalance": "Diese Schuld hat keinen offenen Saldo mehr.",
+        "noAsOfMonth": "Kein Standmonat gesetzt — das Diagramm nutzt den erfassten Saldo von heute.",
+        "scenarios": "Szenarien",
+        "scenarioBaseline": "Basis (nur reguläre Rate)",
+        "scenarioCurrentPlan": "Aktueller Plan (inkl. Sondertilgung)",
+        "extraMonthlyCurrentPlan": "Extra monatlich (aktueller Plan + extra)",
+        "extraMonthlyBaseline": "Extra monatlich (reguläre Rate + extra)",
+        "lumpSumCurrentPlan": "Einmalzahlung heute (aktueller Plan + Einmalzahlung)",
+        "lumpSumBaseline": "Einmalzahlung heute (reguläre Rate + Einmalzahlung)",
+        "perMonth": "€/Monat",
+        "amountEuro": "€",
+        "summary": "Zusammenfassung",
+        "vsCurrentPlan": "vs aktueller Plan",
+        "vsBaseline": "vs Basis",
+        "fallbackYears": "50+ Jahre",
+        "fallbackMonths": "600+ Mon.",
+        "interest": "Zinsen",
+        "interestSaved": "Zinsen gespart",
+        "baselineMatches": "Basis und aktueller Plan sind identisch — keine Sondertilgung konfiguriert oder ohne Effekt auf diesen Verlauf."
+      },
+      "payoffChart": {
+        "selectScenario": "Wähle mindestens ein Szenario aus, um das Tilgungsdiagramm anzuzeigen.",
+        "alreadyPaidOff": "Diese Schuld ist bereits getilgt.",
+        "warningNotAmortizing": "Die reguläre Rate deckt die monatlichen Zinsen nicht — der Saldo sinkt im Basisplan ggf. nicht.",
+        "warningBeyond50y": "Für einige Szenarien dauert die Tilgung länger als 50 Jahre; das Diagramm zeigt die ersten 600 Monate.",
+        "interestToDate": "Zinsen bis heute: {{amount}}"
+      },
+      "table": { "title": "Alle Schulden" },
+      "form": {
+        "addTitle": "Schuld hinzufügen",
+        "editTitle": "Schuld bearbeiten",
+        "name": "Name der Schuld",
+        "type": "Typ",
+        "currentBalance": "Aktueller Saldo (€)",
+        "interestRate": "Zinssatz (%)",
+        "monthlyPayment": "Monatliche Rate (€)",
+        "minimumPayment": "Mindestzahlung (€)",
+        "dueDate": "Fälligkeitsdatum",
+        "asOfMonth": "Standmonat",
+        "asOfHelper": "Monat, für den dieser Saldo gilt",
+        "notes": "Notizen",
+        "specialSection": "Optionen für Sondertilgung",
+        "specialEnable": "Sondertilgung aktivieren",
+        "specialAmount": "Sondertilgung Betrag (€)",
+        "specialFrequency": "Tilgungsintervall",
+        "monthly": "Monatlich",
+        "quarterly": "Vierteljährlich",
+        "annual": "Jährlich",
+        "maxAnnualPrepay": "Max. jährliche Sondertilgung %",
+        "maxAnnualPrepayHelper": "Maximaler Prozentsatz des Kapitals, der pro Jahr sondergetilgt werden darf",
+        "penaltyApplies": "Vorfälligkeitsentschädigung",
+        "penaltyRate": "Vorfälligkeitszins (%)",
+        "investSection": "Investieren nach Tilgung",
+        "investAfterPayoff": "Monatliche Rate nach Tilgung in Aktien investieren",
+        "investInfo": "In der Vermögensprognose auf dem Dashboard wird eine zweite Linie angezeigt, die das zusätzliche Investieren nach der vollständigen Tilgung berücksichtigt.",
+        "investInto": "Investieren in",
+        "investNoAssets": "Lege zuerst einen Investment-Topf unter Vermögen an",
+        "errors": {
+          "nameRequired": "Bitte gib einen Namen für die Schuld ein"
+        }
+      }
+    },
+    "backup": {
+      "title": "Backup & Wiederherstellung",
+      "subtitle": "Exportiere alle Daten als JSON zur Sicherung oder stelle sie aus einem Backup wieder her."
+    },
+    "checkIn": {
+      "title": "Monatlicher Check-in",
+      "subtitle": "Prüfe die vorgeschlagenen Werte, passe sie bei Bedarf an und bestätige anschließend. Das System schlägt Beträge anhand deines letzten Snapshots oder der aktuellen Werte vor — du gibst jede Speicherung frei.",
+      "steps": { "selectMonth": "Monat wählen", "reviewValues": "Werte prüfen", "confirm": "Bestätigen" },
+      "month": {
+        "pickTitle": "Für welchen Monat möchtest du speichern?",
+        "orEnter": "Oder Monat eingeben",
+        "caughtUp": "Du bist bis {{month}} aktuell. Du kannst diesen Monat erneut speichern, wenn sich Werte geändert haben.",
+        "missingLabel": "{{count}} Monat fehlt in deiner Snapshot-Historie",
+        "missingLabel_plural": "{{count}} Monate fehlen in deiner Snapshot-Historie",
+        "startEarliest": "Beginne mit der frühesten Lücke, damit die Historie konsistent bleibt.",
+        "lastSnapshot": "Letzter Snapshot: {{month}}"
+      },
+      "review": {
+        "previous": "Vorher",
+        "proposed": "Vorschlag",
+        "yourValue": "Dein Wert",
+        "change": "Änderung",
+        "basis": "Basis",
+        "basisSnapshot": "Vorschlag aus Snapshot {{baselineMonth}} ({{offsetMonths}} Monat vorwärts).",
+        "basisSnapshot_plural": "Vorschlag aus Snapshot {{baselineMonth}} ({{offsetMonths}} Monate vorwärts).",
+        "basisCurrent": "Vorschlag aus deinen aktuellen Vermögens- und Schuldenwerten.",
+        "backfillOnly": "Nur nachtragen — aktuelle Vermögens- und Schuldenwerte ändern sich für diesen historischen Monat nicht.",
+        "notes": "Notizen (optional)",
+        "noProposal": "Kein Vorschlag geladen. Gehe zurück und wähle einen Monat."
+      },
+      "confirm": {
+        "title": "Check-in für {{month}} bestätigen",
+        "updatesCurrent": "Das aktualisiert deine aktuellen Vermögens- und Schuldendaten und speichert einen Monats-Snapshot.",
+        "historicalOnly": "Das speichert nur einen historischen Snapshot. Deine aktuellen Daten bleiben unverändert.",
+        "notesPrefix": "Notizen: {{notes}}",
+        "save": "Check-in für {{month}} speichern"
+      },
+      "buttons": {
+        "reviewValues": "Werte prüfen",
+        "fillGaps": "Lücken füllen"
+      }
+    }
+  }
+}
+

@@ -4,6 +4,8 @@ import {
     Box,
     Drawer,
     IconButton,
+    Menu,
+    MenuItem,
     List,
     ListItem,
     ListItemButton,
@@ -25,11 +27,13 @@ import {
     ShowChart as InvestmentsIcon,
     EventNote as CheckInIcon,
     Backup as BackupIcon,
+    Translate as TranslateIcon,
     Brightness4 as DarkModeIcon,
     Brightness7 as LightModeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const drawerWidth = 240;
 
@@ -38,21 +42,23 @@ interface LayoutProps {
 }
 
 const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Check-in', icon: <CheckInIcon />, path: '/check-in' },
-    { text: 'Assets', icon: <AssetsIcon />, path: '/assets' },
-    { text: 'Liabilities', icon: <LiabilitiesIcon />, path: '/liabilities' },
-    { text: 'Income', icon: <IncomeIcon />, path: '/income' },
-    { text: 'Expenses', icon: <ExpensesIcon />, path: '/expenses' },
-    { text: 'Investments', icon: <InvestmentsIcon />, path: '/investments' },
-    { text: 'Backup', icon: <BackupIcon />, path: '/backup' },
-];
+    { key: 'nav.dashboard', icon: <DashboardIcon />, path: '/' },
+    { key: 'nav.checkIn', icon: <CheckInIcon />, path: '/check-in' },
+    { key: 'nav.assets', icon: <AssetsIcon />, path: '/assets' },
+    { key: 'nav.liabilities', icon: <LiabilitiesIcon />, path: '/liabilities' },
+    { key: 'nav.income', icon: <IncomeIcon />, path: '/income' },
+    { key: 'nav.expenses', icon: <ExpensesIcon />, path: '/expenses' },
+    { key: 'nav.investments', icon: <InvestmentsIcon />, path: '/investments' },
+    { key: 'nav.backup', icon: <BackupIcon />, path: '/backup' },
+] as const;
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const muiTheme = useMuiTheme();
     const { darkMode, toggleDarkMode } = useTheme();
+    const { t, i18n } = useTranslation();
     const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -61,6 +67,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const handleNavigation = (path: string) => {
         navigate(path);
         if (isMobile) setMobileOpen(false);
+    };
+
+    const openLangMenu = (e: React.MouseEvent<HTMLElement>) => setLangAnchorEl(e.currentTarget);
+    const closeLangMenu = () => setLangAnchorEl(null);
+    const setLanguage = (lng: 'en' | 'de') => {
+        void i18n.changeLanguage(lng);
+        closeLangMenu();
     };
 
     const drawer = (
@@ -78,13 +91,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         }}
                     />
                     <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: -0.2 }}>
-                        BudgetBuddy
+                        {t('app.name')}
                     </Typography>
                 </Box>
             </Toolbar>
             <List sx={{ px: 1 }}>
                 {menuItems.map((item) => (
-                    <ListItem key={item.text} disablePadding>
+                    <ListItem key={item.key} disablePadding>
                         <ListItemButton
                             selected={location.pathname === item.path}
                             onClick={() => handleNavigation(item.path)}
@@ -119,7 +132,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             }}
                         >
                             <ListItemIcon>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} />
+                            <ListItemText primary={t(item.key)} />
                         </ListItemButton>
                     </ListItem>
                 ))}
@@ -160,15 +173,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         sx={{ flexGrow: 1, fontWeight: 750, letterSpacing: -0.2 }}
                     >
                         <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                            Personal Finance Tracker
+                            {t('app.title')}
                         </Box>
                         <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                            Finance
+                            {t('app.titleShort')}
                         </Box>
                     </Typography>
+                    <IconButton color="inherit" onClick={openLangMenu} aria-label="language">
+                        <TranslateIcon />
+                    </IconButton>
                     <IconButton color="inherit" onClick={toggleDarkMode}>
                         {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
                     </IconButton>
+                    <Menu
+                        anchorEl={langAnchorEl}
+                        open={Boolean(langAnchorEl)}
+                        onClose={closeLangMenu}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        <MenuItem selected={i18n.language.startsWith('en')} onClick={() => setLanguage('en')}>
+                            English
+                        </MenuItem>
+                        <MenuItem selected={i18n.language.startsWith('de')} onClick={() => setLanguage('de')}>
+                            Deutsch
+                        </MenuItem>
+                    </Menu>
                 </Toolbar>
             </AppBar>
             <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>

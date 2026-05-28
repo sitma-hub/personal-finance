@@ -14,10 +14,12 @@ import { backupService, BackupPayload } from '../../services/backupService';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { GlassSurface } from '../../components/ui/GlassSurface';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 const LAST_EXPORT_KEY = 'networth_last_export';
 
 const Backup: React.FC = () => {
+    const { t } = useTranslation();
     const { refresh } = useFinancial();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -75,8 +77,8 @@ const Backup: React.FC = () => {
         <Box>
             <PageHeader
                 icon={<BackupIcon color="primary" />}
-                title="Backup & restore"
-                subtitle="Export all your data to a JSON file for safekeeping, or restore from a previous backup."
+                title={t('pages.backup.title')}
+                subtitle={t('pages.backup.subtitle')}
             />
             <Typography variant="body1" color="textSecondary" paragraph>
                 Export all your data to a JSON file for safekeeping, or restore from a previous backup.

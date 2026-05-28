@@ -29,6 +29,7 @@ import { GlassSurface } from '../../components/ui/GlassSurface';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
 import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
+import { useTranslation } from 'react-i18next';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -84,6 +85,7 @@ const BucketSparkline: React.FC<{ points: InvestableHistoryPoint[] }> = ({ point
 const Investments: React.FC = () => {
     const theme = useTheme();
     const smDown = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { state } = useFinancial();
     const { summary } = state;
@@ -170,10 +172,10 @@ const Investments: React.FC = () => {
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
             <PageHeader
                 icon={<ShowChartIcon color="primary" />}
-                title="Investments"
+                title={t('pages.investments.title')}
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/assets')}>
-                        Add investment bucket
+                        {t('actions.addInvestmentBucket')}
                     </Button>
                 }
             />
@@ -181,9 +183,9 @@ const Investments: React.FC = () => {
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Alert severity="info" sx={{ mb: 3 }}>
-                Track ETF buckets under <Link component={RouterLink} to="/assets">Assets</Link> (investment or retirement type).
-                Set monthly contribution and return scenarios here — not under Expenses. Update values over time to see how
-                market fluctuations affect your portfolio.
+                {t('pages.investments.help.intro')}{' '}
+                <Link component={RouterLink} to="/assets">{t('pages.assets.title')}</Link>{' '}
+                {t('pages.investments.help.introSuffix')}
             </Alert>
 
             {data && (
@@ -191,30 +193,30 @@ const Investments: React.FC = () => {
                     <Grid container spacing={3} mb={3}>
                         <Grid item xs={12} sm={6} md={3}>
                             <StatCard
-                                label="Investable value now"
+                                label={t('pages.investments.kpi.investableNow')}
                                 value={formatCurrency(data.totalCurrentValue)}
                                 sx={{ height: '100%' }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <StatCard
-                                label="Planned DCA / month"
+                                label={t('pages.investments.kpi.plannedDca')}
                                 value={formatCurrency(plannedDca)}
                                 sx={{ height: '100%' }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <StatCard
-                                label="Monthly surplus"
+                                label={t('pages.investments.kpi.surplus')}
                                 value={formatCurrency(surplus)}
                                 sx={{ height: '100%' }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <StatCard
-                                label="After planned DCA"
+                                label={t('pages.investments.kpi.afterDca')}
                                 value={formatCurrency(afterDca)}
-                                footer={afterDca < 0 ? 'DCA exceeds surplus — adjust plan or expenses' : undefined}
+                                footer={afterDca < 0 ? t('pages.investments.kpi.afterDcaWarning') : undefined}
                                 sx={{ height: '100%' }}
                             />
                         </Grid>
@@ -222,7 +224,7 @@ const Investments: React.FC = () => {
 
                     <GlassSurface sx={{ p: 2, mb: 3 }}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
-                            <Typography variant="h6">Investable value over time</Typography>
+                            <Typography variant="h6">{t('pages.investments.chart.title')}</Typography>
                             <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 {hasPayoffForecast && (
                                     <FormControlLabel
@@ -233,7 +235,7 @@ const Investments: React.FC = () => {
                                                 onChange={(_, checked) => setIncludePayoffInForecast(checked)}
                                             />
                                         }
-                                        label="Including investing after debt payoff"
+                                        label={t('pages.investments.chart.includePayoff')}
                                         sx={{ mr: 0 }}
                                     />
                                 )}
@@ -244,7 +246,7 @@ const Investments: React.FC = () => {
                                     onChange={(_, value: ForecastPreset | null) => {
                                         if (value) setForecastPreset(value);
                                     }}
-                                    aria-label="Forecast horizon"
+                                    aria-label={t('pages.investments.chart.forecastHorizon')}
                                     sx={{
                                         width: { xs: '100%', sm: 'auto' },
                                         '& .MuiToggleButton-root': { flex: { xs: 1, sm: 'initial' } },
@@ -259,7 +261,7 @@ const Investments: React.FC = () => {
                                     <TextField
                                         size="small"
                                         type="number"
-                                        label="Years"
+                                        label={t('pages.investments.chart.years')}
                                         value={customYearsInput}
                                         onChange={(e) => setCustomYearsInput(e.target.value)}
                                         onBlur={() => {
@@ -278,10 +280,11 @@ const Investments: React.FC = () => {
                         </Box>
                         {!hasChart ? (
                             <Alert severity="warning">
-                                No buckets in forecast. Add an investment account with expected return and enable
-                                &quot;Include in forecast&quot;. Update bucket values on{' '}
-                                <Link component={RouterLink} to="/assets">Assets</Link> or via{' '}
-                                <Link component={RouterLink} to="/check-in">monthly check-in</Link> to build history.
+                                {t('pages.investments.chart.noBuckets.prefix')}{' '}
+                                <Link component={RouterLink} to="/assets">{t('pages.assets.title')}</Link>{' '}
+                                {t('pages.investments.chart.noBuckets.middle')}{' '}
+                                <Link component={RouterLink} to="/check-in">{t('actions.monthlyCheckIn')}</Link>{' '}
+                                {t('pages.investments.chart.noBuckets.suffix')}
                             </Alert>
                         ) : (
                             <Box sx={{ width: '100%', height: chartHeight }}>
@@ -296,15 +299,17 @@ const Investments: React.FC = () => {
                         )}
                         {!hasHistory && hasForecast && (
                             <Alert severity="info" sx={{ mt: 2 }}>
-                                No recorded history yet. Update bucket values on{' '}
-                                <Link component={RouterLink} to="/assets">Assets</Link> or use{' '}
-                                <Link component={RouterLink} to="/check-in">monthly check-in</Link> to track how your
-                                investments move with the market.
+                                {t('pages.investments.chart.noHistory.prefix')}{' '}
+                                <Link component={RouterLink} to="/assets">{t('pages.assets.title')}</Link>{' '}
+                                {t('pages.investments.chart.noHistory.middle')}{' '}
+                                <Link component={RouterLink} to="/check-in">{t('actions.monthlyCheckIn')}</Link>{' '}
+                                {t('pages.investments.chart.noHistory.suffix')}
                             </Alert>
                         )}
                         <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
-                            Recorded values reflect updates you enter for investment buckets. Forecast scenarios are
-                            illustrative only{showPayoffForecast ? ', including investing after debt payoff' : ''} — not guaranteed returns.
+                            {t('pages.investments.chart.captionPrefix')}
+                            {showPayoffForecast ? t('pages.investments.chart.captionPayoffSuffix') : ''}
+                            {t('pages.investments.chart.captionSuffix')}
                         </Typography>
                         {showPayoffForecast && (
                             <Alert severity="info" sx={{ mt: 2 }}>
@@ -319,9 +324,9 @@ const Investments: React.FC = () => {
                     </GlassSurface>
 
                     <GlassSurface sx={{ p: 2 }}>
-                        <Typography variant="h6" gutterBottom>Investment buckets</Typography>
+                        <Typography variant="h6" gutterBottom>{t('pages.investments.table.title')}</Typography>
                         {data.assets.length === 0 ? (
-                            <Typography color="textSecondary">No investment buckets yet.</Typography>
+                            <Typography color="textSecondary">{t('pages.investments.table.empty')}</Typography>
                         ) : (
                             <ResponsiveDataView
                                 rows={data.assets}

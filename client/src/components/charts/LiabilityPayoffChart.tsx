@@ -12,6 +12,7 @@ import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
 import type { PayoffChartRow, PayoffScenario, PayoffScheduleResult } from '../../utils/liabilityPayoffProjection';
 import { ChartContainer } from './ChartContainer';
+import { useTranslation } from 'react-i18next';
 import {
     baseCartesianOptions,
     chartLegendLabels,
@@ -38,6 +39,7 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     height = 280,
 }) => {
     const muiTheme = useTheme();
+    const { t } = useTranslation();
     const amortizeWarnings = series.filter((s) => s.result.doesNotAmortize);
     const unpaidWarnings = series.filter(
         (s) => s.result.monthsToPayoff == null && s.result.startingBalance > 0
@@ -86,7 +88,11 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
                                 `${meta?.scenario.label ?? ctx.dataset.label}: ${formatCurrency(ctx.parsed.y ?? 0)}`,
                             ];
                             if (point && point.cumulativeInterest > 0) {
-                                lines.push(`Interest to date: ${formatCurrency(point.cumulativeInterest)}`);
+                                lines.push(
+                                    t('pages.liabilities.payoffChart.interestToDate', {
+                                        amount: formatCurrency(point.cumulativeInterest),
+                                    })
+                                );
                             }
                             return lines;
                         },
@@ -116,7 +122,7 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     if (series.length === 0) {
         return (
             <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
-                Select at least one scenario to display the payoff chart.
+                {t('pages.liabilities.payoffChart.selectScenario')}
             </Typography>
         );
     }
@@ -124,7 +130,7 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
     if (series.every((s) => s.result.startingBalance <= 0)) {
         return (
             <Alert severity="success" sx={{ mt: 1 }}>
-                This liability is already paid off.
+                {t('pages.liabilities.payoffChart.alreadyPaidOff')}
             </Alert>
         );
     }
@@ -133,13 +139,12 @@ export const LiabilityPayoffChart: React.FC<LiabilityPayoffChartProps> = ({
         <Box>
             {amortizeWarnings.length > 0 && (
                 <Alert severity="warning" sx={{ mb: 2 }}>
-                    Regular payment does not cover monthly interest — the balance may not decrease on the baseline
-                    plan.
+                    {t('pages.liabilities.payoffChart.warningNotAmortizing')}
                 </Alert>
             )}
             {unpaidWarnings.length > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                    Payoff extends beyond 50 years for some scenarios; chart shows the first 600 months.
+                    {t('pages.liabilities.payoffChart.warningBeyond50y')}
                 </Alert>
             )}
             <ChartContainer height={height}>

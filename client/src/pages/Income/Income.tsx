@@ -37,6 +37,7 @@ import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { SimpleBarChart } from '../../components/charts/SimpleBarChart';
 import { IncomeStream, IncomeFormData, IncomeType } from '../../types';
 import { useFinancial } from '../../contexts/FinancialContext';
+import { useTranslation } from 'react-i18next';
 import {
     annualRateToPercentInput,
     formatAnnualRatePercent,
@@ -53,6 +54,7 @@ import { getChartSeriesColors } from '../../theme/tokens';
 const Income: React.FC = () => {
     const theme = useTheme();
     const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
     const { state, createIncome, updateIncome, deleteIncome } = useFinancial();
     const { incomeStreams, loading, error } = state;
     const [openDialog, setOpenDialog] = useState(false);
@@ -69,14 +71,14 @@ const Income: React.FC = () => {
     });
 
     const incomeTypeLabels: Record<IncomeType, string> = {
-        salary: 'Salary',
-        hourly_wage: 'Hourly Wage',
-        freelance: 'Freelance',
-        investment_income: 'Investment Income',
-        rental_income: 'Rental Income',
-        pension: 'Pension',
-        social_security: 'Social Security',
-        other_income: 'Other Income',
+        salary: t('pages.income.types.salary'),
+        hourly_wage: t('pages.income.types.hourly_wage'),
+        freelance: t('pages.income.types.freelance'),
+        investment_income: t('pages.income.types.investment_income'),
+        rental_income: t('pages.income.types.rental_income'),
+        pension: t('pages.income.types.pension'),
+        social_security: t('pages.income.types.social_security'),
+        other_income: t('pages.income.types.other_income'),
     };
 
     const incomeTypeIcons: Record<IncomeType, React.ReactElement> = {
@@ -91,16 +93,16 @@ const Income: React.FC = () => {
     };
 
     const frequencyLabels = {
-        monthly: 'Monthly',
-        annual: 'Annual',
-        hourly: 'Hourly',
+        monthly: t('pages.income.frequency.monthly'),
+        annual: t('pages.income.frequency.annual'),
+        hourly: t('pages.income.frequency.hourly'),
     };
 
     const [formError, setFormError] = useState<string | null>(null);
 
     const handleSubmit = async () => {
         if (!formData.name.trim()) {
-            setFormError('Please enter an income stream name');
+            setFormError(t('pages.income.form.errors.nameRequired'));
             return;
         }
         setFormError(null);
@@ -136,7 +138,7 @@ const Income: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this income stream?')) {
+        if (!window.confirm(t('pages.income.confirmDelete'))) {
             return;
         }
         await deleteIncome(id);
@@ -194,10 +196,10 @@ const Income: React.FC = () => {
         <Box>
             <PageHeader
                 icon={<TrendingUpIcon color="success" />}
-                title="Income Streams"
+                title={t('pages.income.title')}
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
-                        Add Income Stream
+                        {t('actions.addIncomeStream')}
                     </Button>
                 }
             />
@@ -212,7 +214,7 @@ const Income: React.FC = () => {
                 <Grid item xs={12} sm={6} md={3}>
                     <StatCard
                         icon={<TrendingUpIcon color="success" />}
-                        label="Monthly Income"
+                        label={t('pages.income.kpi.monthlyIncome')}
                         value={formatCurrency(totalMonthlyIncome)}
                         sx={{ height: '100%' }}
                     />
@@ -221,7 +223,7 @@ const Income: React.FC = () => {
                 <Grid item xs={12} md={4}>
                     <StatCard
                         icon={<MoneyIcon color="primary" />}
-                        label="Annual Income"
+                        label={t('pages.income.kpi.annualIncome')}
                         value={formatCurrency(totalAnnualIncome)}
                         sx={{ height: '100%' }}
                     />
@@ -230,7 +232,7 @@ const Income: React.FC = () => {
                 <Grid item xs={12} md={4}>
                     <StatCard
                         icon={<WorkIcon color="info" />}
-                        label="Income Streams"
+                        label={t('pages.income.kpi.incomeStreams')}
                         value={incomeStreams.length}
                         sx={{ height: '100%' }}
                     />
@@ -240,7 +242,7 @@ const Income: React.FC = () => {
                 <Grid item xs={12} md={6}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            Income Distribution by Type
+                            {t('pages.income.charts.distribution')}
                         </Typography>
                         <CategoryPieChart
                             data={incomeTypeData.map((entry, index) => ({
@@ -249,8 +251,8 @@ const Income: React.FC = () => {
                             }))}
                             height={300}
                             formatValue={formatCurrency}
-                            tooltipLabel="Monthly Income"
-                            emptyMessage="No income to display"
+                            tooltipLabel={t('pages.income.charts.tooltipMonthlyIncome')}
+                            emptyMessage={t('pages.income.charts.empty')}
                         />
                     </GlassSurface>
                 </Grid>
@@ -258,12 +260,12 @@ const Income: React.FC = () => {
                 <Grid item xs={12} md={6}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            Income by Type (Monthly)
+                            {t('pages.income.charts.byTypeMonthly')}
                         </Typography>
                         <SimpleBarChart
                             data={incomeTypeData}
                             height={300}
-                            tooltipLabel="Monthly Income"
+                            tooltipLabel={t('pages.income.charts.tooltipMonthlyIncome')}
                             defaultColor="#4caf50"
                         />
                     </GlassSurface>
@@ -273,7 +275,7 @@ const Income: React.FC = () => {
                 <Grid item xs={12}>
                     <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
-                            All Income Streams
+                            {t('pages.income.table.title')}
                         </Typography>
                         {loading ? (
                             <Box display="flex" justifyContent="center" p={3}>
@@ -288,7 +290,7 @@ const Income: React.FC = () => {
                                     [
                                         {
                                             id: 'name',
-                                            label: 'Name',
+                                            label: t('pages.income.table.columns.name'),
                                             render: (i) => (
                                                 <Box display="flex" alignItems="center">
                                                     {incomeTypeIcons[i.type]}
@@ -298,20 +300,20 @@ const Income: React.FC = () => {
                                         },
                                         {
                                             id: 'type',
-                                            label: 'Type',
+                                            label: t('pages.income.table.columns.type'),
                                             render: (i) => (
                                                 <Chip label={incomeTypeLabels[i.type]} size="small" variant="outlined" />
                                             ),
                                         },
                                         {
                                             id: 'amount',
-                                            label: 'Amount',
+                                            label: t('pages.income.table.columns.amount'),
                                             align: 'right',
                                             render: (i) => formatCurrency(i.current_amount),
                                         },
                                         {
                                             id: 'frequency',
-                                            label: 'Frequency',
+                                            label: t('pages.income.table.columns.frequency'),
                                             align: 'center',
                                             render: (i) => (
                                                 <Chip
@@ -324,21 +326,21 @@ const Income: React.FC = () => {
                                         },
                                         {
                                             id: 'growth',
-                                            label: 'Growth Rate',
+                                            label: t('pages.income.table.columns.growthRate'),
                                             align: 'right',
                                             render: (i) => `${formatAnnualRatePercent(i.annual_growth_rate)}%`,
                                             hideOnMobile: true,
                                         },
                                         {
                                             id: 'start',
-                                            label: 'Start Date',
+                                            label: t('pages.income.table.columns.startDate'),
                                             align: 'center',
                                             render: (i) => formatLocaleDate(i.start_date, 'N/A'),
                                             hideOnMobile: true,
                                         },
                                         {
                                             id: 'end',
-                                            label: 'End Date',
+                                            label: t('pages.income.table.columns.endDate'),
                                             align: 'center',
                                             render: (i) => formatLocaleDate(i.end_date, 'N/A'),
                                             hideOnMobile: true,
@@ -375,14 +377,14 @@ const Income: React.FC = () => {
                 fullScreen={fullScreenDialog}
             >
                 <DialogTitle>
-                    {editingIncome ? 'Edit Income Stream' : 'Add New Income Stream'}
+                    {editingIncome ? t('pages.income.form.editTitle') : t('pages.income.form.addTitle')}
                 </DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Income Stream Name"
+                                label={t('pages.income.form.name')}
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                 required
@@ -390,11 +392,11 @@ const Income: React.FC = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <FormControl fullWidth required>
-                                <InputLabel>Type</InputLabel>
+                                <InputLabel>{t('pages.income.form.type')}</InputLabel>
                                 <Select
                                     value={formData.type}
                                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as IncomeType }))}
-                                    label="Type"
+                                    label={t('pages.income.form.type')}
                                 >
                                     {Object.entries(incomeTypeLabels).map(([value, label]) => (
                                         <MenuItem key={value} value={value}>
@@ -407,7 +409,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Current Amount (€)"
+                                label={t('pages.income.form.currentAmount')}
                                 type="number"
                                 value={formData.current_amount}
                                 onChange={(e) => setFormData(prev => ({ ...prev, current_amount: Number(e.target.value) }))}
@@ -416,11 +418,11 @@ const Income: React.FC = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <FormControl fullWidth required>
-                                <InputLabel>Frequency</InputLabel>
+                                <InputLabel>{t('pages.income.form.frequency')}</InputLabel>
                                 <Select
                                     value={formData.frequency}
                                     onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as 'monthly' | 'annual' | 'hourly' }))}
-                                    label="Frequency"
+                                    label={t('pages.income.form.frequency')}
                                 >
                                     {Object.entries(frequencyLabels).map(([value, label]) => (
                                         <MenuItem key={value} value={value}>
@@ -433,7 +435,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Annual Growth Rate (%)"
+                                label={t('pages.income.form.annualGrowth')}
                                 type="number"
                                 value={annualRateToPercentInput(formData.annual_growth_rate)}
                                 onChange={(e) =>
@@ -448,7 +450,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Start Date"
+                                label={t('pages.income.form.startDate')}
                                 type="date"
                                 value={formData.start_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
@@ -458,7 +460,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="End Date"
+                                label={t('pages.income.form.endDate')}
                                 type="date"
                                 value={formData.end_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
@@ -468,7 +470,7 @@ const Income: React.FC = () => {
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
-                                label="Notes"
+                                label={t('pages.income.form.notes')}
                                 multiline
                                 rows={3}
                                 value={formData.notes}
@@ -478,13 +480,13 @@ const Income: React.FC = () => {
                     </Grid>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
+                    <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
                     <Button
                         onClick={handleSubmit}
                         variant="contained"
                         disabled={loading}
                     >
-                        {loading ? <CircularProgress size={20} /> : (editingIncome ? 'Update' : 'Create')}
+                        {loading ? <CircularProgress size={20} /> : (editingIncome ? t('common.update') : t('common.create'))}
                     </Button>
                 </DialogActions>
             </Dialog>

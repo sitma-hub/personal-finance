@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
     formatChartMonthLabel,
@@ -72,6 +73,7 @@ const currentMonthLabel = (): string => {
 
 const UnifiedDashboard: React.FC = () => {
     const muiTheme = useTheme();
+    const { t } = useTranslation();
     const smDown = useMediaQuery(muiTheme.breakpoints.down('sm'));
     const mdDown = useMediaQuery(muiTheme.breakpoints.down('md'));
     const { state, refresh, saveSnapshot } = useFinancial();
@@ -246,15 +248,15 @@ const UnifiedDashboard: React.FC = () => {
             const now = new Date().toISOString().substring(0, 7);
             return m === now;
         });
-        if (existing && !window.confirm(`A snapshot for ${currentMonthLabel()} already exists. Overwrite?`)) {
+        if (existing && !window.confirm(t('pages.dashboard.snapshot.overwriteConfirm', { month: currentMonthLabel() }))) {
             return;
         }
         setSaving(true);
         try {
             await saveSnapshot();
-            setSnack(`Net worth recorded for ${currentMonthLabel()}`);
+            setSnack(t('pages.dashboard.snack.netWorthRecorded', { month: currentMonthLabel() }));
         } catch {
-            setSnack('Failed to save snapshot');
+            setSnack(t('pages.dashboard.snack.saveSnapshotFailed'));
         } finally {
             setSaving(false);
         }
@@ -264,7 +266,7 @@ const UnifiedDashboard: React.FC = () => {
         return (
             <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="400px" gap={2}>
                 <CircularProgress />
-                <Typography variant="body2" color="text.secondary">Loading financial data…</Typography>
+                <Typography variant="body2" color="text.secondary">{t('pages.dashboard.loading')}</Typography>
             </Box>
         );
     }
@@ -272,7 +274,7 @@ const UnifiedDashboard: React.FC = () => {
     if (!loading && !summary) {
         return (
             <Box sx={{ width: '100%' }}>
-                <Typography variant="h4" mb={2}>Dashboard</Typography>
+                <Typography variant="h4" mb={2}>{t('pages.dashboard.title')}</Typography>
                 <Alert
                     severity="error"
                     action={
@@ -304,11 +306,11 @@ const UnifiedDashboard: React.FC = () => {
                 <Grid item xs={12}>
                     <PageHeader
                         icon={<DashboardIcon color="primary" />}
-                        title="Dashboard"
+                        title={t('pages.dashboard.title')}
                         actions={
                             <>
                                 <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>
-                                    Refresh
+                                    {t('common.refresh')}
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -316,7 +318,7 @@ const UnifiedDashboard: React.FC = () => {
                                     onClick={handleSaveSnapshot}
                                     disabled={saving}
                                 >
-                                    {saving ? 'Saving…' : 'Quick save current month'}
+                                    {saving ? t('common.saving') : t('actions.quickSaveCurrentMonth')}
                                 </Button>
                                 <Button
                                     variant="contained"
@@ -328,7 +330,7 @@ const UnifiedDashboard: React.FC = () => {
                                     }
                                     startIcon={<CheckInIcon />}
                                 >
-                                    Monthly check-in
+                                    {t('actions.monthlyCheckIn')}
                                 </Button>
                             </>
                         }
@@ -363,7 +365,7 @@ const UnifiedDashboard: React.FC = () => {
                     <Grid item xs={12} sm={6} lg={2.4}>
                         <StatCard
                             icon={<MoneyIcon color="primary" />}
-                            label="Net worth"
+                            label={t('pages.dashboard.kpi.netWorth')}
                             value={formatCurrency(summary.netWorth)}
                             sx={{ height: '100%' }}
                         />
@@ -371,7 +373,7 @@ const UnifiedDashboard: React.FC = () => {
                     <Grid item xs={12} sm={6} lg={2.4}>
                         <StatCard
                             icon={<TrendingUpIcon color="success" />}
-                            label="Assets"
+                            label={t('pages.dashboard.kpi.assets')}
                             value={formatCurrency(summary.totalAssets)}
                             sx={{ height: '100%' }}
                         />
@@ -379,7 +381,7 @@ const UnifiedDashboard: React.FC = () => {
                     <Grid item xs={12} sm={6} lg={2.4}>
                         <StatCard
                             icon={<DebtIcon color="error" />}
-                            label="Liabilities"
+                            label={t('pages.dashboard.kpi.liabilities')}
                             value={formatCurrency(summary.totalLiabilities)}
                             sx={{ height: '100%' }}
                         />
@@ -387,7 +389,7 @@ const UnifiedDashboard: React.FC = () => {
                     <Grid item xs={12} sm={6} lg={2.4}>
                         <StatCard
                             icon={<SavingsIcon color={summary.monthlySavings >= 0 ? 'success' : 'error'} />}
-                            label="Monthly cash flow"
+                            label={t('pages.dashboard.kpi.monthlyCashFlow')}
                             value={formatCurrency(summary.monthlySavings)}
                             sx={{ height: '100%' }}
                         />
@@ -397,7 +399,7 @@ const UnifiedDashboard: React.FC = () => {
                             icon={<ShowChartIcon color="info" />}
                             label={
                                 <Link component={RouterLink} to="/investments" underline="hover">
-                                    Planned investing
+                                    {t('pages.dashboard.kpi.plannedInvesting')}
                                 </Link>
                             }
                             value={`${formatCurrency(plannedInvesting)}/mo`}
@@ -411,19 +413,18 @@ const UnifiedDashboard: React.FC = () => {
                 <Grid item xs={12}>
                     <GlassSurface sx={{ p: 2, width: '100%' }}>
                         <Typography variant="h6" gutterBottom>
-                            Where your money goes
+                            {t('pages.dashboard.cashFlow.title')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            Each income stream, expense category, and loan payment is shown separately.
-                            Edit data on{' '}
+                            {t('pages.dashboard.cashFlow.subtitlePrefix')}{' '}
                             <Link component={RouterLink} to="/income" underline="hover">
-                                Income
+                                {t('pages.income.title')}
                             </Link>
-                            {' '}and{' '}
+                            {t('pages.dashboard.cashFlow.subtitleMiddle')}{' '}
                             <Link component={RouterLink} to="/expenses" underline="hover">
-                                Expenses
+                                {t('pages.expenses.title')}
                             </Link>
-                            .
+                            {t('pages.dashboard.cashFlow.subtitleSuffix')}
                         </Typography>
                         <CashFlowSankeyChart
                             data={cashFlowSankeyData}
@@ -445,7 +446,7 @@ const UnifiedDashboard: React.FC = () => {
                             gap={1}
                             mb={1}
                         >
-                            <Typography variant="h6">Net worth over time</Typography>
+                            <Typography variant="h6">{t('pages.dashboard.netWorth.title')}</Typography>
                             <Box
                                 display="flex"
                                 alignItems="center"
@@ -460,7 +461,7 @@ const UnifiedDashboard: React.FC = () => {
                                     onChange={(_, value: ForecastPreset | null) => {
                                         if (value) setForecastPreset(value);
                                     }}
-                                    aria-label="Forecast horizon"
+                                    aria-label={t('pages.dashboard.netWorth.forecastHorizon')}
                                     sx={{
                                         width: { xs: '100%', sm: 'auto' },
                                         '& .MuiToggleButton-root': { flex: { xs: 1, sm: 'initial' } },
@@ -475,7 +476,7 @@ const UnifiedDashboard: React.FC = () => {
                                     <TextField
                                         size="small"
                                         type="number"
-                                        label="Years"
+                                        label={t('pages.dashboard.netWorth.years')}
                                         value={customYearsInput}
                                         onChange={(e) => setCustomYearsInput(e.target.value)}
                                         onBlur={() => {
@@ -499,7 +500,7 @@ const UnifiedDashboard: React.FC = () => {
                         )}
                         {!hasChart ? (
                             <Alert severity="info">
-                                Save monthly snapshots for history. Add investment buckets with return assumptions to see a forecast.
+                                {t('pages.dashboard.netWorth.empty')}
                             </Alert>
                         ) : !chartsReady || (forecastLoading && !chartData.some((d) => d.expected != null)) ? (
                             <Box display="flex" justifyContent="center" alignItems="center" height={netWorthChartHeight}>
@@ -516,9 +517,9 @@ const UnifiedDashboard: React.FC = () => {
                                     />
                                 </Box>
                                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
-                                    Forecast ({forecastYears}y) assumes planned contributions and return scenarios
-                                    {hasPayoffForecast ? ', including investing after debt payoff' : ''} — not guaranteed.
-                                    Click a point to see how that month&apos;s net worth step is calculated.
+                                    {t('pages.dashboard.netWorth.captionPrefix', { years: forecastYears })}
+                                    {hasPayoffForecast ? t('pages.dashboard.netWorth.captionPayoffSuffix') : ''}
+                                    {t('pages.dashboard.netWorth.captionSuffix')}
                                 </Typography>
                                 <NetWorthStepModal
                                     open={stepBreakdown != null}
@@ -541,9 +542,9 @@ const UnifiedDashboard: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} lg={6}>
                     <GlassSurface sx={{ p: 2, height: '100%', width: '100%' }}>
-                        <Typography variant="h6" gutterBottom>Asset allocation</Typography>
+                        <Typography variant="h6" gutterBottom>{t('pages.dashboard.allocation.title')}</Typography>
                         {pieData.length === 0 ? (
-                            <Typography variant="body2" color="textSecondary">Add assets to see breakdown</Typography>
+                            <Typography variant="body2" color="textSecondary">{t('pages.dashboard.allocation.empty')}</Typography>
                         ) : !chartsReady ? (
                             <Box display="flex" justifyContent="center" alignItems="center" height={pieChartHeight}>
                                 <CircularProgress size={28} />
@@ -554,8 +555,8 @@ const UnifiedDashboard: React.FC = () => {
                                     data={pieData}
                                     height={pieChartHeight}
                                     formatValue={formatCurrency}
-                                    tooltipLabel="Value"
-                                    emptyMessage="No assets"
+                                    tooltipLabel={t('pages.dashboard.allocation.tooltipValue')}
+                                    emptyMessage={t('pages.dashboard.allocation.emptyChart')}
                                 />
                             </Box>
                         )}
@@ -563,9 +564,9 @@ const UnifiedDashboard: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} lg={6}>
                     <GlassSurface sx={{ p: 2, height: '100%', width: '100%' }}>
-                        <Typography variant="h6" gutterBottom>Recent value updates</Typography>
+                        <Typography variant="h6" gutterBottom>{t('pages.dashboard.recentUpdates.title')}</Typography>
                         {recentUpdates.length === 0 ? (
-                            <Typography variant="body2" color="textSecondary">No updates yet</Typography>
+                            <Typography variant="body2" color="textSecondary">{t('pages.dashboard.recentUpdates.empty')}</Typography>
                         ) : (
                             <List dense sx={{ maxHeight: 320, overflow: 'auto' }}>
                                 {(Array.isArray(recentUpdates) ? recentUpdates : []).map((u) => (

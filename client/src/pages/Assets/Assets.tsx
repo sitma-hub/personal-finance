@@ -36,6 +36,7 @@ import { AssetValueHistory } from '../../types';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
 import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
+import { useTranslation } from 'react-i18next';
 
 const assetTypes: { value: AssetType; label: string }[] = [
     { value: 'savings_account', label: 'Savings Account' },
@@ -73,6 +74,7 @@ const toFormRates = (asset: Asset): Partial<AssetFormData> => ({
 const Assets: React.FC = () => {
     const theme = useTheme();
     const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
+    const { t } = useTranslation();
     const { state, createAsset, updateAsset, deleteAsset } = useFinancial();
     const { assets, loading, error } = state;
 
@@ -167,10 +169,10 @@ const Assets: React.FC = () => {
         <Box>
             <PageHeader
                 icon={<AccountBalance color="primary" />}
-                title="Assets"
+                title={t('pages.assets.title')}
                 actions={
                     <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-                        Add Asset
+                        {t('actions.addAsset')}
                     </Button>
                 }
             />
@@ -181,22 +183,22 @@ const Assets: React.FC = () => {
                 <Grid item xs={12} sm={6} md={4}>
                     <StatCard
                         icon={<AccountBalance color="primary" />}
-                        label="Total Assets"
+                        label={t('pages.assets.kpi.totalAssets')}
                         value={formatCurrency(totalValue)}
                         sx={{ height: '100%' }}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
-                    <StatCard label="Count" value={assets.length} sx={{ height: '100%' }} />
+                    <StatCard label={t('pages.assets.kpi.count')} value={assets.length} sx={{ height: '100%' }} />
                 </Grid>
             </Grid>
 
             {(() => {
                 const columns: ResponsiveColumn<Asset>[] = [
-                    { id: 'name', label: 'Name', render: (a) => a.name },
+                    { id: 'name', label: t('pages.assets.table.name'), render: (a) => a.name },
                     {
                         id: 'type',
-                        label: 'Type',
+                        label: t('pages.assets.table.type'),
                         render: (a) => (
                             <Chip
                                 label={assetTypes.find((t) => t.value === a.type)?.label}
@@ -207,14 +209,14 @@ const Assets: React.FC = () => {
                     },
                     {
                         id: 'value',
-                        label: 'Value',
+                        label: t('pages.assets.table.value'),
                         align: 'right',
                         render: (a) => formatCurrency(parseValue(a.current_value)),
                     },
-                    { id: 'asOf', label: 'As of', render: (a) => formatLocaleMonth(a.as_of_date) },
+                    { id: 'asOf', label: t('pages.assets.table.asOf'), render: (a) => formatLocaleMonth(a.as_of_date) },
                     {
                         id: 'plan',
-                        label: '€/mo plan',
+                        label: t('pages.assets.table.planPerMonth'),
                         align: 'right',
                         render: (a) =>
                             isInvestableType(a.type) && Number(a.monthly_contribution) > 0
@@ -248,7 +250,7 @@ const Assets: React.FC = () => {
                             <Box sx={{ py: 0.5 }}>
                                 {(history[a.id] || []).length === 0 ? (
                                     <Button size="small" onClick={() => toggleHistory(a.id)}>
-                                        Load value history
+                                        {t('pages.assets.history.load')}
                                     </Button>
                                 ) : (
                                     <>
@@ -289,13 +291,15 @@ const Assets: React.FC = () => {
                 fullWidth
                 fullScreen={fullScreenDialog}
             >
-                <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+                <DialogTitle>
+                    {editingAsset ? t('pages.assets.form.editTitle') : t('pages.assets.form.addTitle')}
+                </DialogTitle>
                 <DialogContent>
-                    <TextField fullWidth label="Name" value={formData.name}
+                    <TextField fullWidth label={t('pages.assets.form.name')} value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         margin="normal" required />
                     <FormControl fullWidth margin="normal">
-                        <InputLabel>Type</InputLabel>
+                        <InputLabel>{t('pages.assets.form.type')}</InputLabel>
                         <Select
                             value={formData.type}
                             onChange={(e) => {
@@ -314,21 +318,21 @@ const Assets: React.FC = () => {
                             ))}
                         </Select>
                     </FormControl>
-                    <TextField fullWidth label="Current value" type="number"
+                    <TextField fullWidth label={t('pages.assets.form.currentValue')} type="number"
                         value={formData.current_value}
                         onChange={(e) => setFormData({ ...formData, current_value: parseFloat(e.target.value) || 0 })}
                         margin="normal" required />
-                    <TextField fullWidth label="As of (YYYY-MM)" value={formData.as_of_date || ''}
+                    <TextField fullWidth label={t('pages.assets.form.asOfMonth')} value={formData.as_of_date || ''}
                         onChange={(e) => setFormData({ ...formData, as_of_date: e.target.value })}
-                        margin="normal" placeholder="2026-05" helperText="Month this value applies to" />
+                        margin="normal" placeholder="2026-05" helperText={t('pages.assets.form.asOfHelper')} />
                     {isInvestableType(formData.type) && (
                         <>
                             <Alert severity="info" sx={{ mt: 2 }}>
-                                Update current value when you get a statement. Monthly contribution is your plan (not an expense).
+                                {t('pages.assets.form.investableInfo')}
                             </Alert>
                             <TextField
                                 fullWidth
-                                label="Monthly contribution (€)"
+                                label={t('pages.assets.form.monthlyContribution')}
                                 type="number"
                                 value={formData.monthly_contribution ?? 0}
                                 onChange={(e) => setFormData({ ...formData, monthly_contribution: parseFloat(e.target.value) || 0 })}
@@ -338,7 +342,7 @@ const Assets: React.FC = () => {
                                 <Grid item xs={4}>
                                     <TextField
                                         fullWidth
-                                        label="Pessimistic %/yr"
+                                        label={t('pages.assets.form.pessimisticReturn')}
                                         type="number"
                                         value={((formData.pessimistic_annual_return ?? 0.04) * 100).toFixed(1)}
                                         onChange={(e) => setFormData({
@@ -352,7 +356,7 @@ const Assets: React.FC = () => {
                                 <Grid item xs={4}>
                                     <TextField
                                         fullWidth
-                                        label="Expected %/yr"
+                                        label={t('pages.assets.form.expectedReturn')}
                                         type="number"
                                         value={((formData.expected_annual_return ?? 0.07) * 100).toFixed(1)}
                                         onChange={(e) => setFormData({
@@ -366,7 +370,7 @@ const Assets: React.FC = () => {
                                 <Grid item xs={4}>
                                     <TextField
                                         fullWidth
-                                        label="Optimistic %/yr"
+                                        label={t('pages.assets.form.optimisticReturn')}
                                         type="number"
                                         value={((formData.optimistic_annual_return ?? 0.1) * 100).toFixed(1)}
                                         onChange={(e) => setFormData({
@@ -385,16 +389,16 @@ const Assets: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, include_in_projection: e.target.checked })}
                                     />
                                 }
-                                label="Include in investment forecast"
+                                label={t('pages.assets.form.includeInForecast')}
                             />
                         </>
                     )}
-                    <TextField fullWidth label="Notes" multiline rows={2} value={formData.notes || ''}
+                    <TextField fullWidth label={t('pages.assets.form.notes')} multiline rows={2} value={formData.notes || ''}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })} margin="normal" />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
-                    <Button onClick={handleSubmit} variant="contained">Save</Button>
+                    <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
+                    <Button onClick={handleSubmit} variant="contained">{t('common.save')}</Button>
                 </DialogActions>
             </Dialog>
         </Box>
