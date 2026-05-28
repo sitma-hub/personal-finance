@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import {
     Box,
     Typography,
-    Paper,
     Grid,
-    Card,
-    CardContent,
     Button,
     TextField,
     Select,
@@ -20,13 +17,9 @@ import {
     CircularProgress,
     Chip,
     IconButton,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -51,8 +44,15 @@ import {
 } from '../../utils/rateNormalization';
 import { formatCurrency } from '../../utils/currency';
 import { formatLocaleDate, toDateInputValue } from '../../utils/dateInput';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
+import { getChartSeriesColors } from '../../theme/tokens';
 
 const Income: React.FC = () => {
+    const theme = useTheme();
+    const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
     const { state, createIncome, updateIncome, deleteIncome } = useFinancial();
     const { incomeStreams, loading, error } = state;
     const [openDialog, setOpenDialog] = useState(false);
@@ -188,22 +188,18 @@ const Income: React.FC = () => {
         value: amount,
     }));
 
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+    const seriesColors = getChartSeriesColors(theme);
 
     return (
         <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h4" gutterBottom>
-                    Income Streams
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => setOpenDialog(true)}
-                >
-                    Add Income Stream
-                </Button>
-            </Box>
+            <PageHeader
+                title="Income Streams"
+                actions={
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+                        Add Income Stream
+                    </Button>
+                }
+            />
 
             {(error || formError) && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
@@ -213,68 +209,53 @@ const Income: React.FC = () => {
 
             <Grid container spacing={3} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Monthly Income</Typography>
-                            </Box>
-                            <Typography variant="h4" color="success.main">
-                                {formatCurrency(totalMonthlyIncome)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<TrendingUpIcon color="success" />}
+                        label="Monthly Income"
+                        value={formatCurrency(totalMonthlyIncome)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <MoneyIcon color="primary" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Annual Income</Typography>
-                            </Box>
-                            <Typography variant="h4" color="primary.main">
-                                {formatCurrency(totalAnnualIncome)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<MoneyIcon color="primary" />}
+                        label="Annual Income"
+                        value={formatCurrency(totalAnnualIncome)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <WorkIcon color="info" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Income Streams</Typography>
-                            </Box>
-                            <Typography variant="h4" color="info.main">
-                                {incomeStreams.length}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<WorkIcon color="info" />}
+                        label="Income Streams"
+                        value={incomeStreams.length}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 {/* Charts */}
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Income Distribution by Type
                         </Typography>
                         <CategoryPieChart
                             data={incomeTypeData.map((entry, index) => ({
                                 ...entry,
-                                color: COLORS[index % COLORS.length],
+                                color: seriesColors[index % seriesColors.length],
                             }))}
                             height={300}
                             formatValue={formatCurrency}
                             tooltipLabel="Monthly Income"
                             emptyMessage="No income to display"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Income by Type (Monthly)
                         </Typography>
@@ -284,12 +265,12 @@ const Income: React.FC = () => {
                             tooltipLabel="Monthly Income"
                             defaultColor="#4caf50"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 {/* Income Streams Table */}
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             All Income Streams
                         </Typography>
@@ -298,85 +279,100 @@ const Income: React.FC = () => {
                                 <CircularProgress />
                             </Box>
                         ) : (
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Type</TableCell>
-                                            <TableCell align="right">Amount</TableCell>
-                                            <TableCell align="center">Frequency</TableCell>
-                                            <TableCell align="right">Growth Rate</TableCell>
-                                            <TableCell align="center">Start Date</TableCell>
-                                            <TableCell align="center">End Date</TableCell>
-                                            <TableCell align="center">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {incomeStreams.map((income) => (
-                                            <TableRow key={income.id}>
-                                                <TableCell>
-                                                    <Box display="flex" alignItems="center">
-                                                        {incomeTypeIcons[income.type]}
-                                                        <Typography sx={{ ml: 1 }}>
-                                                            {income.name}
-                                                        </Typography>
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Chip
-                                                        label={incomeTypeLabels[income.type]}
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(income.current_amount)}
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Chip
-                                                        label={frequencyLabels[income.frequency]}
-                                                        size="small"
-                                                        color="primary"
-                                                        variant="outlined"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatAnnualRatePercent(income.annual_growth_rate)}%
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    {formatLocaleDate(income.start_date, 'N/A')}
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    {formatLocaleDate(income.end_date, 'N/A')}
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <IconButton
-                                                        onClick={() => handleEdit(income)}
-                                                        size="small"
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                    <IconButton
-                                                        onClick={() => handleDelete(income.id)}
-                                                        size="small"
-                                                        color="error"
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <ResponsiveDataView
+                                rows={incomeStreams}
+                                getRowId={(i) => i.id}
+                                mobilePrimary={(i) => i.name}
+                                columns={
+                                    [
+                                        {
+                                            id: 'name',
+                                            label: 'Name',
+                                            render: (i) => (
+                                                <Box display="flex" alignItems="center">
+                                                    {incomeTypeIcons[i.type]}
+                                                    <Typography sx={{ ml: 1 }}>{i.name}</Typography>
+                                                </Box>
+                                            ),
+                                        },
+                                        {
+                                            id: 'type',
+                                            label: 'Type',
+                                            render: (i) => (
+                                                <Chip label={incomeTypeLabels[i.type]} size="small" variant="outlined" />
+                                            ),
+                                        },
+                                        {
+                                            id: 'amount',
+                                            label: 'Amount',
+                                            align: 'right',
+                                            render: (i) => formatCurrency(i.current_amount),
+                                        },
+                                        {
+                                            id: 'frequency',
+                                            label: 'Frequency',
+                                            align: 'center',
+                                            render: (i) => (
+                                                <Chip
+                                                    label={frequencyLabels[i.frequency]}
+                                                    size="small"
+                                                    color="primary"
+                                                    variant="outlined"
+                                                />
+                                            ),
+                                        },
+                                        {
+                                            id: 'growth',
+                                            label: 'Growth Rate',
+                                            align: 'right',
+                                            render: (i) => `${formatAnnualRatePercent(i.annual_growth_rate)}%`,
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'start',
+                                            label: 'Start Date',
+                                            align: 'center',
+                                            render: (i) => formatLocaleDate(i.start_date, 'N/A'),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'end',
+                                            label: 'End Date',
+                                            align: 'center',
+                                            render: (i) => formatLocaleDate(i.end_date, 'N/A'),
+                                            hideOnMobile: true,
+                                        },
+                                    ] as ResponsiveColumn<IncomeStream>[]
+                                }
+                                actions={(i) => (
+                                    <>
+                                        <IconButton onClick={() => handleEdit(i)} size="small" aria-label="Edit income">
+                                            <EditIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleDelete(i.id)}
+                                            size="small"
+                                            color="error"
+                                            aria-label="Delete income"
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </>
+                                )}
+                            />
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
             </Grid>
 
             {/* Add/Edit Dialog */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="md"
+                fullWidth
+                fullScreen={fullScreenDialog}
+            >
                 <DialogTitle>
                     {editingIncome ? 'Edit Income Stream' : 'Add New Income Stream'}
                 </DialogTitle>

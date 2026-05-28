@@ -18,10 +18,13 @@ import {
     ListItem,
     ListItemText,
     Chip,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { formatCurrency } from '../../utils/currency';
 import type { NetWorthStepBreakdown, ScenarioEstimate } from '../../utils/netWorthStepBreakdown';
 import { SCENARIO_SHORT_LABELS } from '../../utils/netWorthStepBreakdown';
+import { GlassSurface } from '../ui/GlassSurface';
 
 type NetWorthStepModalProps = {
     open: boolean;
@@ -96,6 +99,8 @@ export const NetWorthStepModal: React.FC<NetWorthStepModalProps> = ({
     breakdown,
     onClose,
 }) => {
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     if (!breakdown) return null;
 
     const { estimates, clickedScenario, kind } = breakdown;
@@ -108,7 +113,7 @@ export const NetWorthStepModal: React.FC<NetWorthStepModalProps> = ({
         estimates.every((e) => e.liabilities === estimates[0].liabilities);
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen}>
             <DialogTitle>Net worth step — {breakdown.monthLabel}</DialogTitle>
             <DialogContent dividers>
                 <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
@@ -249,48 +254,52 @@ export const NetWorthStepModal: React.FC<NetWorthStepModalProps> = ({
                             Snapshot breakdown
                         </Typography>
                         {breakdown.assetBreakdown.length > 0 && (
-                            <TableContainer sx={{ mb: 2 }}>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Asset</TableCell>
-                                            <TableCell align="right">Value</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {breakdown.assetBreakdown.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{item.name}</TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(item.amount)}
-                                                </TableCell>
+                            <GlassSurface sx={{ p: 0, mb: 2 }}>
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Asset</TableCell>
+                                                <TableCell align="right">Value</TableCell>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                                        </TableHead>
+                                        <TableBody>
+                                            {breakdown.assetBreakdown.map((item) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell>{item.name}</TableCell>
+                                                    <TableCell align="right">
+                                                        {formatCurrency(item.amount)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </GlassSurface>
                         )}
                         {breakdown.liabilityBreakdown.length > 0 && (
-                            <TableContainer>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Liability</TableCell>
-                                            <TableCell align="right">Balance</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {breakdown.liabilityBreakdown.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{item.name}</TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(item.amount)}
-                                                </TableCell>
+                            <GlassSurface sx={{ p: 0 }}>
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Liability</TableCell>
+                                                <TableCell align="right">Balance</TableCell>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                                        </TableHead>
+                                        <TableBody>
+                                            {breakdown.liabilityBreakdown.map((item) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell>{item.name}</TableCell>
+                                                    <TableCell align="right">
+                                                        {formatCurrency(item.amount)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </GlassSurface>
                         )}
                     </>
                 )}

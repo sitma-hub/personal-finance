@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
     AppBar,
     Box,
-    CssBaseline,
     Drawer,
     IconButton,
     List,
@@ -15,6 +14,7 @@ import {
     useTheme as useMuiTheme,
     useMediaQuery,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
     Menu as MenuIcon,
     Dashboard as DashboardIcon,
@@ -64,24 +64,57 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
 
     const drawer = (
-        <Box>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Toolbar>
-                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-                    BudgetBuddy
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                        sx={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 999,
+                            background: `linear-gradient(135deg, ${muiTheme.palette.primary.main}, ${muiTheme.palette.info.main})`,
+                            boxShadow: `0 0 0 6px ${alpha(muiTheme.palette.primary.main, 0.12)}`,
+                            flex: '0 0 auto',
+                        }}
+                    />
+                    <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: -0.2 }}>
+                        BudgetBuddy
+                    </Typography>
+                </Box>
             </Toolbar>
-            <List>
+            <List sx={{ px: 1 }}>
                 {menuItems.map((item) => (
                     <ListItem key={item.text} disablePadding>
                         <ListItemButton
                             selected={location.pathname === item.path}
                             onClick={() => handleNavigation(item.path)}
                             sx={{
+                                position: 'relative',
+                                borderRadius: 2,
                                 '&.Mui-selected': {
-                                    backgroundColor: muiTheme.palette.primary.main,
-                                    color: 'white',
-                                    '&:hover': { backgroundColor: muiTheme.palette.primary.dark },
-                                    '& .MuiListItemIcon-root': { color: 'white' },
+                                    backgroundColor: alpha(
+                                        muiTheme.palette.primary.main,
+                                        muiTheme.palette.mode === 'dark' ? 0.18 : 0.12
+                                    ),
+                                    color: muiTheme.palette.text.primary,
+                                    '&:hover': {
+                                        backgroundColor: alpha(
+                                            muiTheme.palette.primary.main,
+                                            muiTheme.palette.mode === 'dark' ? 0.24 : 0.16
+                                        ),
+                                    },
+                                    '& .MuiListItemIcon-root': { color: muiTheme.palette.primary.main },
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        left: 8,
+                                        top: 10,
+                                        bottom: 10,
+                                        width: 3,
+                                        borderRadius: 999,
+                                        backgroundColor: muiTheme.palette.primary.main,
+                                        boxShadow: `0 0 0 6px ${alpha(muiTheme.palette.primary.main, 0.10)}`,
+                                    },
                                 },
                             }}
                         >
@@ -96,12 +129,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <Box sx={{ display: 'flex' }}>
-            <CssBaseline />
             <AppBar
                 position="fixed"
                 sx={{
                     width: { md: `calc(100% - ${drawerWidth}px)` },
                     ml: { md: `${drawerWidth}px` },
+                    backgroundColor: alpha(
+                        muiTheme.palette.background.paper,
+                        muiTheme.palette.mode === 'dark' ? 0.65 : 0.8
+                    ),
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    borderBottom: `1px solid ${muiTheme.palette.divider}`,
                 }}
             >
                 <Toolbar>
@@ -114,8 +153,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Personal Finance Tracker
+                    <Typography
+                        variant="h6"
+                        noWrap
+                        component="div"
+                        sx={{ flexGrow: 1, fontWeight: 750, letterSpacing: -0.2 }}
+                    >
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                            Personal Finance Tracker
+                        </Box>
+                        <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                            Finance
+                        </Box>
                     </Typography>
                     <IconButton color="inherit" onClick={toggleDarkMode}>
                         {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
@@ -130,7 +179,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     ModalProps={{ keepMounted: true }}
                     sx={{
                         display: { xs: 'block', md: 'none' },
-                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                        '& .MuiDrawer-paper': {
+                            boxSizing: 'border-box',
+                            width: drawerWidth,
+                            backgroundImage: 'none',
+                            backgroundColor: alpha(
+                                muiTheme.palette.background.paper,
+                                muiTheme.palette.mode === 'dark' ? 0.75 : 0.92
+                            ),
+                            backdropFilter: 'blur(14px)',
+                            WebkitBackdropFilter: 'blur(14px)',
+                            borderRight: `1px solid ${muiTheme.palette.divider}`,
+                        },
                     }}
                 >
                     {drawer}
@@ -139,7 +199,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     variant="permanent"
                     sx={{
                         display: { xs: 'none', md: 'block' },
-                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+                        '& .MuiDrawer-paper': {
+                            boxSizing: 'border-box',
+                            width: drawerWidth,
+                            backgroundImage: 'none',
+                            backgroundColor: alpha(
+                                muiTheme.palette.background.paper,
+                                muiTheme.palette.mode === 'dark' ? 0.70 : 0.92
+                            ),
+                            backdropFilter: 'blur(14px)',
+                            WebkitBackdropFilter: 'blur(14px)',
+                            borderRight: `1px solid ${muiTheme.palette.divider}`,
+                        },
                     }}
                     open
                 >
@@ -151,14 +222,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 sx={{
                     flexGrow: 1,
                     minWidth: 0,
-                    p: { xs: 2, sm: 3 },
+                    p: { xs: 2, sm: 3, lg: 4 },
                     width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
                     maxWidth: '100%',
                     mt: 8,
                     boxSizing: 'border-box',
                 }}
             >
-                {children}
+                <Box sx={{ width: '100%', maxWidth: 1400, mx: 'auto' }}>{children}</Box>
             </Box>
         </Box>
     );

@@ -1,18 +1,18 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 import { Doughnut } from 'react-chartjs-2';
 import type { Chart, ChartData, ChartOptions } from 'chart.js';
 import '../../chartjs/register';
 import { formatCurrency } from '../../utils/currency';
 import { ChartContainer } from './ChartContainer';
+import { getChartSeriesColors } from '../../theme/tokens';
 
 export type PieDatum = {
     name: string;
     value: number;
     color?: string;
 };
-
-const DEFAULT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
 export type PieLegendMode = 'percent' | 'amount';
 
@@ -35,6 +35,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
     legendMode = 'percent',
 }) => {
     const muiTheme = useTheme();
+    const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
     const labelColor = muiTheme.palette.text.primary;
     const tooltipColors = useMemo(
         () => ({
@@ -50,8 +51,9 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
         () => data.filter((d) => d.value > 0).sort((a, b) => b.value - a.value),
         [data],
     );
+    const seriesColors = useMemo(() => getChartSeriesColors(muiTheme), [muiTheme]);
     const colors = slices.map(
-        (entry, index) => entry.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+        (entry, index) => entry.color ?? seriesColors[index % seriesColors.length],
     );
 
     const chartData: ChartData<'doughnut'> = useMemo(
@@ -77,7 +79,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
             },
             plugins: {
                 legend: {
-                    position: 'right',
+                    position: isMobile ? 'bottom' : 'right',
                     align: 'center',
                     labels: {
                         color: labelColor,
@@ -127,7 +129,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
                 },
             },
         }),
-        [formatValue, labelColor, legendMode, tooltipColors, tooltipLabel],
+        [formatValue, isMobile, labelColor, legendMode, tooltipColors, tooltipLabel],
     );
 
     if (slices.length === 0) {

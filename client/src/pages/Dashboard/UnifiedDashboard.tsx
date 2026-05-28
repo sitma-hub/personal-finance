@@ -3,9 +3,6 @@ import {
     Box,
     Typography,
     Grid,
-    Card,
-    CardContent,
-    Paper,
     Alert,
     Button,
     List,
@@ -17,6 +14,7 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     TextField,
+    useMediaQuery,
 } from '@mui/material';
 import {
     TrendingUp as TrendingUpIcon,
@@ -29,6 +27,7 @@ import {
     EventNote as CheckInIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import { useFinancial } from '../../contexts/FinancialContext';
 import {
     formatChartMonthLabel,
@@ -52,6 +51,10 @@ import {
     type NetWorthStepBreakdown,
 } from '../../utils/netWorthStepBreakdown';
 import { buildCashFlowSankeyData } from '../../utils/cashFlowSankey';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { getChartSeriesColors } from '../../theme/tokens';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -61,14 +64,15 @@ type ForecastPreset = '5' | '10' | '20' | 'custom';
 const clampForecastYears = (years: number): number =>
     Math.min(MAX_FORECAST_YEARS, Math.max(MIN_FORECAST_YEARS, years));
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
-
 const currentMonthLabel = (): string => {
     const d = new Date();
     return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 };
 
 const UnifiedDashboard: React.FC = () => {
+    const muiTheme = useTheme();
+    const smDown = useMediaQuery(muiTheme.breakpoints.down('sm'));
+    const mdDown = useMediaQuery(muiTheme.breakpoints.down('md'));
     const { state, refresh, saveSnapshot } = useFinancial();
     const {
         summary,
@@ -225,6 +229,8 @@ const UnifiedDashboard: React.FC = () => {
     };
 
     const plannedInvesting = netWorthProjections?.plannedMonthlyContributions ?? 0;
+    const netWorthChartHeight = smDown ? 280 : mdDown ? 340 : 360;
+    const pieChartHeight = smDown ? 260 : 320;
 
     const cashFlowSankeyData = useMemo(
         () => buildCashFlowSankeyData(incomeStreams, expenses, liabilities, assets),
@@ -280,10 +286,11 @@ const UnifiedDashboard: React.FC = () => {
         );
     }
 
+    const seriesColors = getChartSeriesColors(muiTheme);
     const pieData = allocation.map((a, i) => ({
         name: a.type.replace(/_/g, ' '),
         value: a.value,
-        color: COLORS[i % COLORS.length],
+        color: seriesColors[i % seriesColors.length],
     }));
 
     const hasChart = chartData.some((d) => d.actual != null)
@@ -291,32 +298,36 @@ const UnifiedDashboard: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-                <Typography variant="h4">Dashboard</Typography>
-                <Box display="flex" gap={1} flexWrap="wrap">
-                    <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>Refresh</Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<SnapshotIcon />}
-                        onClick={handleSaveSnapshot}
-                        disabled={saving}
-                    >
-                        {saving ? 'Saving…' : 'Quick save current month'}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        component={RouterLink}
-                        to={
-                            checkInStatus?.missingMonths.length
-                                ? `/check-in?month=${checkInStatus.missingMonths[0]}`
-                                : '/check-in'
-                        }
-                        startIcon={<CheckInIcon />}
-                    >
-                        Monthly check-in
-                    </Button>
-                </Box>
-            </Box>
+            <PageHeader
+                title="Dashboard"
+                actions={
+                    <>
+                        <Button startIcon={<RefreshIcon />} onClick={() => refresh()}>
+                            Refresh
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<SnapshotIcon />}
+                            onClick={handleSaveSnapshot}
+                            disabled={saving}
+                        >
+                            {saving ? 'Saving…' : 'Quick save current month'}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            component={RouterLink}
+                            to={
+                                checkInStatus?.missingMonths.length
+                                    ? `/check-in?month=${checkInStatus.missingMonths[0]}`
+                                    : '/check-in'
+                            }
+                            startIcon={<CheckInIcon />}
+                        >
+                            Monthly check-in
+                        </Button>
+                    </>
+                }
+            />
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -343,82 +354,55 @@ const UnifiedDashboard: React.FC = () => {
             {summary && (
                 <Grid container spacing={3} mb={3} sx={{ width: '100%' }}>
                     <Grid item xs={12} sm={6} lg={2.4}>
-                        <Card sx={{ height: '100%' }}>
-                            <CardContent>
-                                <Box display="flex" alignItems="center">
-                                    <MoneyIcon color="primary" sx={{ mr: 2 }} />
-                                    <Box>
-                                        <Typography color="textSecondary" variant="body2">Net worth</Typography>
-                                        <Typography variant="h5">{formatCurrency(summary.netWorth)}</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                        <StatCard
+                            icon={<MoneyIcon color="primary" />}
+                            label="Net worth"
+                            value={formatCurrency(summary.netWorth)}
+                            sx={{ height: '100%' }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6} lg={2.4}>
-                        <Card sx={{ height: '100%' }}>
-                            <CardContent>
-                                <Box display="flex" alignItems="center">
-                                    <TrendingUpIcon color="success" sx={{ mr: 2 }} />
-                                    <Box>
-                                        <Typography color="textSecondary" variant="body2">Assets</Typography>
-                                        <Typography variant="h5">{formatCurrency(summary.totalAssets)}</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                        <StatCard
+                            icon={<TrendingUpIcon color="success" />}
+                            label="Assets"
+                            value={formatCurrency(summary.totalAssets)}
+                            sx={{ height: '100%' }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6} lg={2.4}>
-                        <Card sx={{ height: '100%' }}>
-                            <CardContent>
-                                <Box display="flex" alignItems="center">
-                                    <DebtIcon color="error" sx={{ mr: 2 }} />
-                                    <Box>
-                                        <Typography color="textSecondary" variant="body2">Liabilities</Typography>
-                                        <Typography variant="h5">{formatCurrency(summary.totalLiabilities)}</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                        <StatCard
+                            icon={<DebtIcon color="error" />}
+                            label="Liabilities"
+                            value={formatCurrency(summary.totalLiabilities)}
+                            sx={{ height: '100%' }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6} lg={2.4}>
-                        <Card sx={{ height: '100%' }}>
-                            <CardContent>
-                                <Box display="flex" alignItems="center">
-                                    <SavingsIcon sx={{ mr: 2 }} />
-                                    <Box>
-                                        <Typography color="textSecondary" variant="body2">Monthly cash flow</Typography>
-                                        <Typography variant="h5" color={summary.monthlySavings >= 0 ? 'success.main' : 'error.main'}>
-                                            {formatCurrency(summary.monthlySavings)}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                        <StatCard
+                            icon={<SavingsIcon color={summary.monthlySavings >= 0 ? 'success' : 'error'} />}
+                            label="Monthly cash flow"
+                            value={formatCurrency(summary.monthlySavings)}
+                            sx={{ height: '100%' }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6} lg={2.4}>
-                        <Card sx={{ height: '100%' }}>
-                            <CardContent>
-                                <Box display="flex" alignItems="center">
-                                    <ShowChartIcon sx={{ mr: 2 }} color="info" />
-                                    <Box>
-                                        <Typography color="textSecondary" variant="body2">
-                                            <Link component={RouterLink} to="/investments" underline="hover">
-                                                Planned investing
-                                            </Link>
-                                        </Typography>
-                                        <Typography variant="h5">{formatCurrency(plannedInvesting)}/mo</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                        <StatCard
+                            icon={<ShowChartIcon color="info" />}
+                            label={
+                                <Link component={RouterLink} to="/investments" underline="hover">
+                                    Planned investing
+                                </Link>
+                            }
+                            value={`${formatCurrency(plannedInvesting)}/mo`}
+                            sx={{ height: '100%' }}
+                        />
                     </Grid>
                 </Grid>
             )}
 
             <Grid container spacing={3} sx={{ width: '100%', mb: 3 }}>
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 2, width: '100%' }}>
+                    <GlassSurface sx={{ p: 2, width: '100%' }}>
                         <Typography variant="h6" gutterBottom>
                             Where your money goes
                         </Typography>
@@ -439,13 +423,13 @@ const UnifiedDashboard: React.FC = () => {
                             loading={loading}
                             ready={chartsReady}
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
             </Grid>
 
             <Grid container spacing={3} sx={{ width: '100%' }}>
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 2, width: '100%' }}>
+                    <GlassSurface sx={{ p: 2, width: '100%' }}>
                         <Box
                             display="flex"
                             justifyContent="space-between"
@@ -455,7 +439,13 @@ const UnifiedDashboard: React.FC = () => {
                             mb={1}
                         >
                             <Typography variant="h6">Net worth over time</Typography>
-                            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                            <Box
+                                display="flex"
+                                alignItems="center"
+                                gap={1}
+                                flexWrap="wrap"
+                                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                            >
                                 <ToggleButtonGroup
                                     size="small"
                                     exclusive
@@ -464,6 +454,10 @@ const UnifiedDashboard: React.FC = () => {
                                         if (value) setForecastPreset(value);
                                     }}
                                     aria-label="Forecast horizon"
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '& .MuiToggleButton-root': { flex: { xs: 1, sm: 'initial' } },
+                                    }}
                                 >
                                     <ToggleButton value="5">5y</ToggleButton>
                                     <ToggleButton value="10">10y</ToggleButton>
@@ -485,7 +479,7 @@ const UnifiedDashboard: React.FC = () => {
                                             max: MAX_FORECAST_YEARS,
                                             step: 1,
                                         }}
-                                        sx={{ width: 88 }}
+                                        sx={{ width: { xs: '100%', sm: 88 } }}
                                     />
                                 )}
                                 {forecastLoading && <CircularProgress size={20} />}
@@ -501,15 +495,15 @@ const UnifiedDashboard: React.FC = () => {
                                 Save monthly snapshots for history. Add investment buckets with return assumptions to see a forecast.
                             </Alert>
                         ) : !chartsReady || (forecastLoading && !chartData.some((d) => d.expected != null)) ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" height={360}>
+                            <Box display="flex" justifyContent="center" alignItems="center" height={netWorthChartHeight}>
                                 <CircularProgress size={28} />
                             </Box>
                         ) : (
                             <>
-                                <Box sx={{ width: '100%', height: 360, minHeight: 280, cursor: 'pointer' }}>
+                                <Box sx={{ width: '100%', height: netWorthChartHeight, minHeight: 260, cursor: 'pointer' }}>
                                     <ForecastRangeChart
                                         data={chartData}
-                                        height={360}
+                                        height={netWorthChartHeight}
                                         onPointClick={handleChartClick}
                                         showAssetLiabilityFooter
                                     />
@@ -536,32 +530,32 @@ const UnifiedDashboard: React.FC = () => {
                                 )}
                             </>
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                    <Paper sx={{ p: 2, height: '100%', width: '100%' }}>
+                    <GlassSurface sx={{ p: 2, height: '100%', width: '100%' }}>
                         <Typography variant="h6" gutterBottom>Asset allocation</Typography>
                         {pieData.length === 0 ? (
                             <Typography variant="body2" color="textSecondary">Add assets to see breakdown</Typography>
                         ) : !chartsReady ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" height={320}>
+                            <Box display="flex" justifyContent="center" alignItems="center" height={pieChartHeight}>
                                 <CircularProgress size={28} />
                             </Box>
                         ) : (
-                            <Box sx={{ width: '100%', height: 320, minHeight: 260 }}>
+                            <Box sx={{ width: '100%', height: pieChartHeight, minHeight: 240 }}>
                                 <CategoryPieChart
                                     data={pieData}
-                                    height={320}
+                                    height={pieChartHeight}
                                     formatValue={formatCurrency}
                                     tooltipLabel="Value"
                                     emptyMessage="No assets"
                                 />
                             </Box>
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                    <Paper sx={{ p: 2, height: '100%', width: '100%' }}>
+                    <GlassSurface sx={{ p: 2, height: '100%', width: '100%' }}>
                         <Typography variant="h6" gutterBottom>Recent value updates</Typography>
                         {recentUpdates.length === 0 ? (
                             <Typography variant="body2" color="textSecondary">No updates yet</Typography>
@@ -577,7 +571,7 @@ const UnifiedDashboard: React.FC = () => {
                                 ))}
                             </List>
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
             </Grid>
 

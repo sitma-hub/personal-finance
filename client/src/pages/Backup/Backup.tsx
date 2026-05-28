@@ -3,7 +3,6 @@ import {
     Box,
     Typography,
     Button,
-    Paper,
     Alert,
     List,
     ListItem,
@@ -13,6 +12,8 @@ import {
 import { Download as DownloadIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { backupService, BackupPayload } from '../../services/backupService';
 import { useFinancial } from '../../contexts/FinancialContext';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 const LAST_EXPORT_KEY = 'networth_last_export';
 
@@ -72,7 +73,10 @@ const Backup: React.FC = () => {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>Backup &amp; restore</Typography>
+            <PageHeader
+                title="Backup & restore"
+                subtitle="Export all your data to a JSON file for safekeeping, or restore from a previous backup."
+            />
             <Typography variant="body1" color="textSecondary" paragraph>
                 Export all your data to a JSON file for safekeeping, or restore from a previous backup.
                 Data lives in the Docker Postgres volume — export regularly if you reset the database.
@@ -90,7 +94,7 @@ const Backup: React.FC = () => {
                 </Alert>
             )}
 
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <GlassSurface sx={{ p: 3, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Export</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
                     Downloads assets (including investment buckets and return scenarios), liabilities
@@ -104,9 +108,9 @@ const Backup: React.FC = () => {
                 >
                     Download JSON backup
                 </Button>
-            </Paper>
+            </GlassSurface>
 
-            <Paper sx={{ p: 3 }}>
+            <GlassSurface sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>Import</Typography>
                 <Typography variant="body2" color="textSecondary" paragraph>
                     Replaces all existing data with the contents of a backup file (version 1 or 2 JSON).
@@ -133,7 +137,7 @@ const Backup: React.FC = () => {
                         ))}
                     </List>
                 )}
-            </Paper>
+            </GlassSurface>
         </Box>
     );
 };

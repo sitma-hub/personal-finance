@@ -2,10 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
     Box,
     Typography,
-    Paper,
     Grid,
-    Card,
-    CardContent,
     Button,
     TextField,
     Select,
@@ -21,15 +18,11 @@ import {
     Chip,
     IconButton,
     Divider,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Switch,
     FormControlLabel,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -64,10 +57,17 @@ import {
     defaultPayoffScenarioState,
     LiabilityPayoffScenarioState,
 } from './LiabilityPayoffCard';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
+import { getChartSeriesColors } from '../../theme/tokens';
 
 type LiabilityFormData = Partial<Liability>;
 
 const Liabilities: React.FC = () => {
+    const theme = useTheme();
+    const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
     const { state, createLiability, updateLiability, deleteLiability } = useFinancial();
     const { liabilities, assets, loading, error } = state;
     const [formError, setFormError] = useState<string | null>(null);
@@ -236,22 +236,18 @@ const Liabilities: React.FC = () => {
         value: amount,
     }));
 
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+    const seriesColors = getChartSeriesColors(theme);
 
     return (
         <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h4" gutterBottom>
-                    Liabilities
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => setOpenDialog(true)}
-                >
-                    Add Liability
-                </Button>
-            </Box>
+            <PageHeader
+                title="Liabilities"
+                actions={
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+                        Add Liability
+                    </Button>
+                }
+            />
 
             <Box display="flex" alignItems="center" gap={2} mb={2}>
                 <TextField
@@ -273,85 +269,63 @@ const Liabilities: React.FC = () => {
             <Grid container spacing={3}>
                 {/* Summary Cards */}
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Total Balance</Typography>
-                            </Box>
-                            <Typography variant="h4" color="error">
-                                {formatCurrency(totalBalance)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<TrendingDownIcon color="error" />}
+                        label="Total Balance"
+                        value={formatCurrency(totalBalance)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <MoneyIcon color="warning" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Monthly Payments</Typography>
-                            </Box>
-                            <Typography variant="h4" color="warning.main">
-                                {formatCurrency(totalMonthlyPayments)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<MoneyIcon color="warning" />}
+                        label="Monthly Payments"
+                        value={formatCurrency(totalMonthlyPayments)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <AddIcon color="success" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Special Repayments</Typography>
-                            </Box>
-                            <Typography variant="h4" color="success.main">
-                                {formatCurrency(totalMonthlySpecialRepayments)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Monthly average
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<AddIcon color="success" />}
+                        label="Special Repayments"
+                        value={formatCurrency(totalMonthlySpecialRepayments)}
+                        footer="Monthly average"
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <CreditCardIcon color="info" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Total Liabilities</Typography>
-                            </Box>
-                            <Typography variant="h4" color="info.main">
-                                {liabilities.length}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<CreditCardIcon color="info" />}
+                        label="Total Liabilities"
+                        value={liabilities.length}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 {/* Charts */}
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Liability Distribution by Type
                         </Typography>
                         <CategoryPieChart
                             data={liabilityTypeData.map((entry, index) => ({
                                 ...entry,
-                                color: COLORS[index % COLORS.length],
+                                color: seriesColors[index % seriesColors.length],
                             }))}
                             height={300}
                             formatValue={formatCurrency}
                             tooltipLabel="Balance"
                             emptyMessage="No liabilities to display"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Payment Breakdown
                         </Typography>
@@ -364,13 +338,13 @@ const Liabilities: React.FC = () => {
                             tooltipLabel="Monthly Amount"
                             defaultColor="#8884d8"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 {/* Debt payoff timeline */}
                 {liabilities.length > 0 && (
                     <Grid item xs={12}>
-                        <Paper sx={{ p: 3 }}>
+                        <GlassSurface sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom>
                                 Debt Payoff Timeline
                             </Typography>
@@ -389,13 +363,13 @@ const Liabilities: React.FC = () => {
                                     defaultExpanded={index === 0}
                                 />
                             ))}
-                        </Paper>
+                        </GlassSurface>
                     </Grid>
                 )}
 
                 {/* Liabilities Table */}
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             All Liabilities
                         </Typography>
@@ -404,121 +378,146 @@ const Liabilities: React.FC = () => {
                                 <CircularProgress />
                             </Box>
                         ) : (
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Type</TableCell>
-                                            <TableCell align="right">Balance</TableCell>
-                                            <TableCell align="right">Interest Rate</TableCell>
-                                            <TableCell align="right">Monthly Payment</TableCell>
-                                            <TableCell align="right">Special Repayment</TableCell>
-                                            <TableCell align="right">Due Date</TableCell>
-                                            <TableCell align="right">As of Month</TableCell>
-                                            <TableCell align="right">Staleness</TableCell>
-                                            <TableCell align="right">Balance Today</TableCell>
-                                            <TableCell align="right">Projected (+N mo)</TableCell>
-                                            <TableCell align="center">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {liabilities.map((liability) => (
-                                            <TableRow key={liability.id}>
-                                                <TableCell>
-                                                    <Box display="flex" alignItems="center">
-                                                        {liabilityTypeIcons[liability.type]}
-                                                        <Typography sx={{ ml: 1 }}>
-                                                            {liability.name}
+                            <ResponsiveDataView
+                                rows={liabilities}
+                                getRowId={(l) => l.id}
+                                mobilePrimary={(l) => l.name}
+                                columns={
+                                    [
+                                        {
+                                            id: 'name',
+                                            label: 'Name',
+                                            render: (l) => (
+                                                <Box display="flex" alignItems="center">
+                                                    {liabilityTypeIcons[l.type]}
+                                                    <Typography sx={{ ml: 1 }}>{l.name}</Typography>
+                                                </Box>
+                                            ),
+                                        },
+                                        {
+                                            id: 'type',
+                                            label: 'Type',
+                                            render: (l) => (
+                                                <Chip label={liabilityTypeLabels[l.type]} size="small" variant="outlined" />
+                                            ),
+                                        },
+                                        {
+                                            id: 'balance',
+                                            label: 'Balance',
+                                            align: 'right',
+                                            render: (l) => formatCurrency(l.current_balance),
+                                        },
+                                        {
+                                            id: 'interest',
+                                            label: 'Interest Rate',
+                                            align: 'right',
+                                            render: (l) => (l.interest_rate ? `${l.interest_rate}%` : 'N/A'),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'monthly',
+                                            label: 'Monthly Payment',
+                                            align: 'right',
+                                            render: (l) => formatCurrency(l.monthly_payment || 0),
+                                        },
+                                        {
+                                            id: 'special',
+                                            label: 'Special Repayment',
+                                            align: 'right',
+                                            render: (l) =>
+                                                l.special_repayment_enabled && l.special_repayment_amount ? (
+                                                    <Box>
+                                                        <Typography variant="body2">
+                                                            {formatCurrency(l.special_repayment_amount)}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {l.special_repayment_frequency}
                                                         </Typography>
                                                     </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Chip
-                                                        label={liabilityTypeLabels[liability.type]}
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(liability.current_balance)}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {liability.interest_rate ? `${liability.interest_rate}%` : 'N/A'}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(liability.monthly_payment || 0)}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {liability.special_repayment_enabled && liability.special_repayment_amount ? (
-                                                        <Box>
-                                                            <Typography variant="body2">
-                                                                {formatCurrency(liability.special_repayment_amount)}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                {liability.special_repayment_frequency}
-                                                            </Typography>
-                                                        </Box>
-                                                    ) : (
-                                                        'N/A'
-                                                    )}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatLocaleDate(liability.due_date, 'N/A')}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatLocaleMonth(liability.as_of_month, 'N/A')}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {(() => {
-                                                        if (!liability.as_of_month) return 'N/A';
-                                                        const now = new Date();
-                                                        const asOf = parseLocalCalendarDate(liability.as_of_month);
-                                                        if (!asOf) return 'N/A';
-                                                        const months = (now.getFullYear() - asOf.getFullYear()) * 12 + (now.getMonth() - asOf.getMonth());
-                                                        if (months <= 1) return 'Current';
-                                                        return `${months} mo old`;
-                                                    })()}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(
-                                                        Math.round(resolveLiabilityStartingBalance(liability))
-                                                    )}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {(() => {
-                                                        const monthsAhead = monthsFromAsOfTo(liability) + Number(projectionMonths || 0);
-                                                        const projected = projectLiabilityBalanceAtMonths(liability, monthsAhead);
-                                                        return formatCurrency(Math.round(projected));
-                                                    })()}
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <IconButton
-                                                        onClick={() => handleEdit(liability)}
-                                                        size="small"
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                    <IconButton
-                                                        onClick={() => handleDelete(liability.id)}
-                                                        size="small"
-                                                        color="error"
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                                                ) : (
+                                                    'N/A'
+                                                ),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'due',
+                                            label: 'Due Date',
+                                            align: 'right',
+                                            render: (l) => formatLocaleDate(l.due_date, 'N/A'),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'asOf',
+                                            label: 'As of Month',
+                                            align: 'right',
+                                            render: (l) => formatLocaleMonth(l.as_of_month, 'N/A'),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'stale',
+                                            label: 'Staleness',
+                                            align: 'right',
+                                            render: (l) => {
+                                                if (!l.as_of_month) return 'N/A';
+                                                const now = new Date();
+                                                const asOf = parseLocalCalendarDate(l.as_of_month);
+                                                if (!asOf) return 'N/A';
+                                                const months =
+                                                    (now.getFullYear() - asOf.getFullYear()) * 12 + (now.getMonth() - asOf.getMonth());
+                                                if (months <= 1) return 'Current';
+                                                return `${months} mo old`;
+                                            },
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'today',
+                                            label: 'Balance Today',
+                                            align: 'right',
+                                            render: (l) => formatCurrency(Math.round(resolveLiabilityStartingBalance(l))),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'projected',
+                                            label: 'Projected (+N mo)',
+                                            align: 'right',
+                                            render: (l) => {
+                                                const monthsAhead = monthsFromAsOfTo(l) + Number(projectionMonths || 0);
+                                                const projected = projectLiabilityBalanceAtMonths(l, monthsAhead);
+                                                return formatCurrency(Math.round(projected));
+                                            },
+                                            hideOnMobile: true,
+                                        },
+                                    ] as ResponsiveColumn<Liability>[]
+                                }
+                                actions={(l) => (
+                                    <>
+                                        <IconButton onClick={() => handleEdit(l)} size="small" aria-label="Edit liability">
+                                            <EditIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleDelete(l.id)}
+                                            size="small"
+                                            color="error"
+                                            aria-label="Delete liability"
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </>
+                                )}
+                            />
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
             </Grid>
 
             {/* Add/Edit Dialog */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="md"
+                fullWidth
+                fullScreen={fullScreenDialog}
+            >
                 <DialogTitle>
                     {editingLiability ? 'Edit Liability' : 'Add New Liability'}
                 </DialogTitle>

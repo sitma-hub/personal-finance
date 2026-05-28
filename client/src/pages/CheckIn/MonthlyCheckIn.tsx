@@ -7,7 +7,6 @@ import {
     Stepper,
     Step,
     StepLabel,
-    Paper,
     Alert,
     Chip,
     CircularProgress,
@@ -19,10 +18,10 @@ import {
     TableRow,
     TextField,
     Grid,
-    Card,
-    CardContent,
     Snackbar,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     ArrowBack as BackIcon,
     ArrowForward as NextIcon,
@@ -33,6 +32,9 @@ import { useFinancial } from '../../contexts/FinancialContext';
 import { CheckInProposal, CheckInProposalLineItem, CheckInStatus } from '../../types';
 import { formatChartMonthLabel, normalizeMonth, clampMonthToCurrent, compareMonths } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
 
 const STEPS = ['Select month', 'Review values', 'Confirm'];
 
@@ -46,6 +48,8 @@ interface EditableLineItem extends CheckInProposalLineItem {
 }
 
 const MonthlyCheckIn: React.FC = () => {
+    const theme = useTheme();
+    const smDown = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { getCheckInStatus, getCheckInProposal, applyCheckIn, state } = useFinancial();
@@ -199,53 +203,55 @@ const MonthlyCheckIn: React.FC = () => {
             {items.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">None</Typography>
             ) : (
-                <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell align="right">Previous</TableCell>
-                                <TableCell align="right">Proposed</TableCell>
-                                <TableCell align="right">Your value</TableCell>
-                                <TableCell align="right">Change</TableCell>
-                                <TableCell>Basis</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {items.map((item) => {
-                                const change = item.userAmount - item.previousAmount;
-                                return (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell align="right">{formatCurrency(item.previousAmount)}</TableCell>
-                                        <TableCell align="right">{formatCurrency(item.proposedAmount)}</TableCell>
-                                        <TableCell align="right" sx={{ minWidth: 120 }}>
-                                            <TextField
-                                                type="number"
-                                                size="small"
-                                                value={item.userAmount}
-                                                onChange={(e) => onChange(item.id, e.target.value)}
-                                                inputProps={{ step: 100, min: 0 }}
-                                                sx={{ maxWidth: 140 }}
-                                            />
-                                        </TableCell>
-                                        <TableCell
-                                            align="right"
-                                            sx={{ color: change >= 0 ? 'success.main' : 'error.main' }}
-                                        >
-                                            {formatDelta(change)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {item.explanation}
-                                            </Typography>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                <GlassSurface sx={{ p: 0 }}>
+                    <TableContainer>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Name</TableCell>
+                                    <TableCell align="right">Previous</TableCell>
+                                    <TableCell align="right">Proposed</TableCell>
+                                    <TableCell align="right">Your value</TableCell>
+                                    <TableCell align="right">Change</TableCell>
+                                    <TableCell>Basis</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {items.map((item) => {
+                                    const change = item.userAmount - item.previousAmount;
+                                    return (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell align="right">{formatCurrency(item.previousAmount)}</TableCell>
+                                            <TableCell align="right">{formatCurrency(item.proposedAmount)}</TableCell>
+                                            <TableCell align="right" sx={{ minWidth: 120 }}>
+                                                <TextField
+                                                    type="number"
+                                                    size="small"
+                                                    value={item.userAmount}
+                                                    onChange={(e) => onChange(item.id, e.target.value)}
+                                                    inputProps={{ step: 100, min: 0 }}
+                                                    sx={{ maxWidth: 140 }}
+                                                />
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                sx={{ color: change >= 0 ? 'success.main' : 'error.main' }}
+                                            >
+                                                {formatDelta(change)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {item.explanation}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </GlassSurface>
             )}
         </Box>
     );
@@ -282,20 +288,20 @@ const MonthlyCheckIn: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', maxWidth: 1200 }}>
-            <Box display="flex" alignItems="center" gap={2} mb={3}>
-                <EventNoteIcon color="primary" fontSize="large" />
-                <Typography variant="h4">Monthly check-in</Typography>
-            </Box>
-
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your
-                last snapshot or current records — you supervise every save.
-            </Typography>
+            <PageHeader
+                title={
+                    <Box display="flex" alignItems="center" gap={1.25}>
+                        <EventNoteIcon color="primary" fontSize="large" />
+                        <Box component="span">Monthly check-in</Box>
+                    </Box>
+                }
+                subtitle="Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your last snapshot or current records — you supervise every save."
+            />
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             {state.error && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
 
-            <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+            <Stepper activeStep={activeStep} sx={{ mb: 4 }} orientation={smDown ? 'vertical' : 'horizontal'}>
                 {STEPS.map((label) => (
                     <Step key={label}>
                         <StepLabel>{label}</StepLabel>
@@ -304,7 +310,7 @@ const MonthlyCheckIn: React.FC = () => {
             </Stepper>
 
             {activeStep === 0 && status && (
-                <Paper sx={{ p: 3 }}>
+                <GlassSurface sx={{ p: 3 }}>
                     <Typography variant="h6" gutterBottom>Which month are you recording?</Typography>
 
                     {isCaughtUp && (
@@ -354,11 +360,11 @@ const MonthlyCheckIn: React.FC = () => {
                             Last snapshot: {formatChartMonthLabel(status.lastSnapshotMonth)}
                         </Typography>
                     )}
-                </Paper>
+                </GlassSurface>
             )}
 
             {activeStep === 1 && (
-                <Paper sx={{ p: 3 }}>
+                <GlassSurface sx={{ p: 3 }}>
                     {loadingProposal ? (
                         <Box display="flex" justifyContent="center" py={4}>
                             <CircularProgress />
@@ -383,28 +389,13 @@ const MonthlyCheckIn: React.FC = () => {
 
                             <Grid container spacing={2} sx={{ mb: 2 }}>
                                 <Grid item xs={12} sm={4}>
-                                    <Card variant="outlined">
-                                        <CardContent>
-                                            <Typography color="textSecondary" variant="body2">Total assets</Typography>
-                                            <Typography variant="h6">{formatCurrency(totals.assets)}</Typography>
-                                        </CardContent>
-                                    </Card>
+                                    <StatCard label="Total assets" value={formatCurrency(totals.assets)} sx={{ height: '100%' }} />
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
-                                    <Card variant="outlined">
-                                        <CardContent>
-                                            <Typography color="textSecondary" variant="body2">Total liabilities</Typography>
-                                            <Typography variant="h6">{formatCurrency(totals.liabilities)}</Typography>
-                                        </CardContent>
-                                    </Card>
+                                    <StatCard label="Total liabilities" value={formatCurrency(totals.liabilities)} sx={{ height: '100%' }} />
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
-                                    <Card variant="outlined">
-                                        <CardContent>
-                                            <Typography color="textSecondary" variant="body2">Net worth</Typography>
-                                            <Typography variant="h6">{formatCurrency(totals.netWorth)}</Typography>
-                                        </CardContent>
-                                    </Card>
+                                    <StatCard label="Net worth" value={formatCurrency(totals.netWorth)} sx={{ height: '100%' }} />
                                 </Grid>
                             </Grid>
 
@@ -420,39 +411,24 @@ const MonthlyCheckIn: React.FC = () => {
                     ) : (
                         <Alert severity="warning">No proposal loaded. Go back and select a month.</Alert>
                     )}
-                </Paper>
+                </GlassSurface>
             )}
 
             {activeStep === 2 && proposal && (
-                <Paper sx={{ p: 3 }}>
+                <GlassSurface sx={{ p: 3 }}>
                     <Typography variant="h6" gutterBottom>
                         Confirm check-in for {formatChartMonthLabel(proposal.targetMonth)}
                     </Typography>
 
                     <Grid container spacing={2} sx={{ mb: 3 }}>
                         <Grid item xs={12} sm={4}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Assets</Typography>
-                                    <Typography variant="h5">{formatCurrency(totals.assets)}</Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard label="Assets" value={formatCurrency(totals.assets)} sx={{ height: '100%' }} />
                         </Grid>
                         <Grid item xs={12} sm={4}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Liabilities</Typography>
-                                    <Typography variant="h5">{formatCurrency(totals.liabilities)}</Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard label="Liabilities" value={formatCurrency(totals.liabilities)} sx={{ height: '100%' }} />
                         </Grid>
                         <Grid item xs={12} sm={4}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Net worth</Typography>
-                                    <Typography variant="h5">{formatCurrency(totals.netWorth)}</Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard label="Net worth" value={formatCurrency(totals.netWorth)} sx={{ height: '100%' }} />
                         </Grid>
                     </Grid>
 
@@ -467,7 +443,7 @@ const MonthlyCheckIn: React.FC = () => {
                             Notes: {notes}
                         </Typography>
                     )}
-                </Paper>
+                </GlassSurface>
             )}
 
             <Box display="flex" justifyContent="space-between" mt={3}>

@@ -1,18 +1,8 @@
 import React, { useState } from 'react';
 import {
     Box,
-    Typography,
     Button,
-    Card,
-    CardContent,
     Grid,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
     IconButton,
     Chip,
     CircularProgress,
@@ -26,17 +16,16 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Collapse,
     Switch,
     FormControlLabel,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     Add as AddIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
     AccountBalance,
-    ExpandMore as ExpandMoreIcon,
-    ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { Asset, AssetFormData, AssetType, INVESTABLE_ASSET_TYPES } from '../../types';
@@ -44,6 +33,9 @@ import { assetService } from '../../services/assetService';
 import { formatLocaleDate, formatLocaleMonth } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
 import { AssetValueHistory } from '../../types';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
 
 const assetTypes: { value: AssetType; label: string }[] = [
     { value: 'savings_account', label: 'Savings Account' },
@@ -79,6 +71,8 @@ const toFormRates = (asset: Asset): Partial<AssetFormData> => ({
 });
 
 const Assets: React.FC = () => {
+    const theme = useTheme();
+    const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
     const { state, createAsset, updateAsset, deleteAsset } = useFinancial();
     const { assets, loading, error } = state;
 
@@ -171,116 +165,129 @@ const Assets: React.FC = () => {
 
     return (
         <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h4">Assets</Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-                    Add Asset
-                </Button>
-            </Box>
+            <PageHeader
+                title="Assets"
+                actions={
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+                        Add Asset
+                    </Button>
+                }
+            />
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Grid container spacing={3} mb={3}>
                 <Grid item xs={12} sm={6} md={4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center">
-                                <AccountBalance color="primary" sx={{ mr: 2 }} />
-                                <Box>
-                                    <Typography color="textSecondary" variant="body2">Total Assets</Typography>
-                                    <Typography variant="h5">
-                                        {formatCurrency(totalValue)}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<AccountBalance color="primary" />}
+                        label="Total Assets"
+                        value={formatCurrency(totalValue)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
-                    <Card>
-                        <CardContent>
-                            <Typography color="textSecondary" variant="body2">Count</Typography>
-                            <Typography variant="h5">{assets.length}</Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard label="Count" value={assets.length} sx={{ height: '100%' }} />
                 </Grid>
             </Grid>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell width={40} />
-                            <TableCell>Name</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell align="right">Value</TableCell>
-                            <TableCell>As of</TableCell>
-                            <TableCell align="right">€/mo plan</TableCell>
-                            <TableCell align="center">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {assets.map((asset) => (
-                            <React.Fragment key={asset.id}>
-                                <TableRow>
-                                    <TableCell>
-                                        <IconButton size="small" onClick={() => toggleHistory(asset.id)}>
-                                            {expandedId === asset.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                                        </IconButton>
-                                    </TableCell>
-                                    <TableCell>{asset.name}</TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={assetTypes.find((t) => t.value === asset.type)?.label}
-                                            size="small"
-                                            variant="outlined"
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {formatCurrency(parseValue(asset.current_value))}
-                                    </TableCell>
-                                    <TableCell>
-                                        {formatLocaleMonth(asset.as_of_date)}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {isInvestableType(asset.type) && Number(asset.monthly_contribution) > 0
-                                            ? formatCurrency(Number(asset.monthly_contribution))
-                                            : '—'}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <IconButton size="small" onClick={() => handleOpenDialog(asset)}>
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton size="small" color="error" onClick={() => handleDelete(asset.id)}>
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell colSpan={7} sx={{ py: 0 }}>
-                                        <Collapse in={expandedId === asset.id}>
-                                            <Box sx={{ py: 2, pl: 6 }}>
-                                                <Typography variant="subtitle2" gutterBottom>Value history</Typography>
-                                                {(history[asset.id] || []).length === 0 ? (
-                                                    <Typography variant="body2" color="textSecondary">No history yet</Typography>
-                                                ) : (
-                                                    history[asset.id].map((h) => (
-                                                        <Typography key={h.id} variant="body2">
-                                                            {formatLocaleDate(h.as_of_date)} — {formatCurrency(parseValue(h.value))}
-                                                        </Typography>
-                                                    ))
-                                                )}
-                                            </Box>
-                                        </Collapse>
-                                    </TableCell>
-                                </TableRow>
-                            </React.Fragment>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            {(() => {
+                const columns: ResponsiveColumn<Asset>[] = [
+                    { id: 'name', label: 'Name', render: (a) => a.name },
+                    {
+                        id: 'type',
+                        label: 'Type',
+                        render: (a) => (
+                            <Chip
+                                label={assetTypes.find((t) => t.value === a.type)?.label}
+                                size="small"
+                                variant="outlined"
+                            />
+                        ),
+                    },
+                    {
+                        id: 'value',
+                        label: 'Value',
+                        align: 'right',
+                        render: (a) => formatCurrency(parseValue(a.current_value)),
+                    },
+                    { id: 'asOf', label: 'As of', render: (a) => formatLocaleMonth(a.as_of_date) },
+                    {
+                        id: 'plan',
+                        label: '€/mo plan',
+                        align: 'right',
+                        render: (a) =>
+                            isInvestableType(a.type) && Number(a.monthly_contribution) > 0
+                                ? formatCurrency(Number(a.monthly_contribution))
+                                : '—',
+                    },
+                ];
 
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+                return (
+                    <ResponsiveDataView
+                        rows={assets}
+                        getRowId={(a) => a.id}
+                        columns={columns}
+                        mobilePrimary={(a) => a.name}
+                        actions={(a) => (
+                            <>
+                                <IconButton size="small" onClick={() => handleOpenDialog(a)} aria-label="Edit asset">
+                                    <EditIcon />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleDelete(a.id)}
+                                    aria-label="Delete asset"
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
+                            </>
+                        )}
+                        renderExpanded={(a) => (
+                            <Box sx={{ py: 0.5 }}>
+                                {(history[a.id] || []).length === 0 ? (
+                                    <Button size="small" onClick={() => toggleHistory(a.id)}>
+                                        Load value history
+                                    </Button>
+                                ) : (
+                                    <>
+                                        {history[a.id].map((h) => (
+                                            <Box
+                                                key={h.id}
+                                                sx={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    gap: 2,
+                                                    py: 0.25,
+                                                }}
+                                            >
+                                                <Box sx={{ color: 'text.secondary', fontSize: 12 }}>
+                                                    {formatLocaleDate(h.as_of_date)}
+                                                </Box>
+                                                <Box sx={{ fontSize: 13 }}>
+                                                    {formatCurrency(parseValue(h.value))}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </>
+                                )}
+                            </Box>
+                        )}
+                        isRowExpanded={(a) => expandedId === a.id}
+                        onToggleRowExpanded={(a) => {
+                            void toggleHistory(a.id);
+                        }}
+                    />
+                );
+            })()}
+
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="sm"
+                fullWidth
+                fullScreen={fullScreenDialog}
+            >
                 <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
                 <DialogContent>
                     <TextField fullWidth label="Name" value={formData.name}

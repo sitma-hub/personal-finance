@@ -11,7 +11,9 @@ import {
     Chip,
     Stack,
     Alert,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { Liability } from '../../types';
 import { formatCurrency } from '../../utils/currency';
@@ -84,6 +86,8 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
     onScenarioStateChange,
     defaultExpanded = false,
 }) => {
+    const theme = useTheme();
+    const smDown = useMediaQuery(theme.breakpoints.down('sm'));
     const activeScenarios = useMemo(
         () => buildActiveScenarios(scenarioState),
         [scenarioState]
@@ -198,7 +202,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                     }
                                     disabled={!scenarioState.extraMonthlyEnabled}
                                     inputProps={{ min: 0, step: 50 }}
-                                    sx={{ width: 120 }}
+                                    sx={{ width: smDown ? '100%' : 120 }}
                                 />
                             </Box>
                             <Box display="flex" alignItems="center" flexWrap="wrap" gap={1}>
@@ -221,7 +225,7 @@ export const LiabilityPayoffCard: React.FC<LiabilityPayoffCardProps> = ({
                                     }
                                     disabled={!scenarioState.lumpSumEnabled}
                                     inputProps={{ min: 0, step: 500 }}
-                                    sx={{ width: 120 }}
+                                    sx={{ width: smDown ? '100%' : 120 }}
                                 />
                             </Box>
                         </Stack>

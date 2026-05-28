@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import {
     Box,
     Typography,
-    Paper,
     Grid,
-    Card,
-    CardContent,
     Button,
     TextField,
     Select,
@@ -20,17 +17,13 @@ import {
     CircularProgress,
     Chip,
     IconButton,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Switch,
     FormControlLabel,
     ToggleButton,
     ToggleButtonGroup,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -60,8 +53,14 @@ import { getLiabilityMonthlyPayment } from '../../utils/liabilityCashFlow';
 import { formatCurrency } from '../../utils/currency';
 import { Link as RouterLink } from 'react-router-dom';
 import { Link } from '@mui/material';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
 
 const Expenses: React.FC = () => {
+    const theme = useTheme();
+    const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
     const { state, createExpense, updateExpense, deleteExpense } = useFinancial();
     const { expenses, liabilities, loading, error } = state;
     const [openDialog, setOpenDialog] = useState(false);
@@ -222,18 +221,14 @@ const Expenses: React.FC = () => {
 
     return (
         <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h4" gutterBottom>
-                    Expenses
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => setOpenDialog(true)}
-                >
-                    Add Expense
-                </Button>
-            </Box>
+            <PageHeader
+                title="Expenses"
+                actions={
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+                        Add Expense
+                    </Button>
+                }
+            />
 
             {(error || formError) && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
@@ -250,62 +245,40 @@ const Expenses: React.FC = () => {
             <Grid container spacing={3}>
                 {/* Summary Cards */}
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Total monthly outflow</Typography>
-                            </Box>
-                            <Typography variant="h4" color="error.main">
-                                {formatCurrency(totalMonthlyOutflow)}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                                Living {formatCurrency(livingExpenses)} + debt {formatCurrency(debtPayments)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<TrendingDownIcon color="error" />}
+                        label="Total monthly outflow"
+                        value={formatCurrency(totalMonthlyOutflow)}
+                        footer={`Living ${formatCurrency(livingExpenses)} + debt ${formatCurrency(debtPayments)}`}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <MoneyIcon color="warning" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Annual outflow</Typography>
-                            </Box>
-                            <Typography variant="h4" color="warning.main">
-                                {formatCurrency(totalAnnualOutflow)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<MoneyIcon color="warning" />}
+                        label="Annual outflow"
+                        value={formatCurrency(totalAnnualOutflow)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <ShoppingCartIcon color="success" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Essential</Typography>
-                            </Box>
-                            <Typography variant="h4" color="success.main">
-                                {formatCurrency(essentialLiving)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<ShoppingCartIcon color="success" />}
+                        label="Essential"
+                        value={formatCurrency(essentialLiving)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 <Grid item xs={12} md={3}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <EntertainmentIcon color="info" sx={{ mr: 1 }} />
-                                <Typography variant="h6">Discretionary</Typography>
-                            </Box>
-                            <Typography variant="h4" color="info.main">
-                                {formatCurrency(discretionaryExpenses)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        icon={<EntertainmentIcon color="info" />}
+                        label="Discretionary"
+                        value={formatCurrency(discretionaryExpenses)}
+                        sx={{ height: '100%' }}
+                    />
                 </Grid>
 
                 {/* Charts */}
@@ -330,7 +303,7 @@ const Expenses: React.FC = () => {
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Expenses by Category
                         </Typography>
@@ -342,11 +315,11 @@ const Expenses: React.FC = () => {
                             tooltipLabel="Monthly Amount"
                             emptyMessage="No expenses to display"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Living vs debt payments
                         </Typography>
@@ -358,12 +331,12 @@ const Expenses: React.FC = () => {
                             tooltipLabel="Monthly Amount"
                             emptyMessage="No outflow data"
                         />
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 {/* Debt payments from liabilities */}
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Debt payments (from Liabilities)
                         </Typography>
@@ -373,41 +346,50 @@ const Expenses: React.FC = () => {
                                 <Link component={RouterLink} to="/liabilities">Liabilities</Link> page.
                             </Typography>
                         ) : (
-                            <TableContainer>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Type</TableCell>
-                                            <TableCell align="right">Monthly payment</TableCell>
-                                            <TableCell>Special repayment</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {debtPaymentRows.map(({ liability, monthly }) => (
-                                            <TableRow key={liability.id}>
-                                                <TableCell>{liability.name}</TableCell>
-                                                <TableCell>
-                                                    <Chip label={liability.type.replace(/_/g, ' ')} size="small" variant="outlined" />
-                                                </TableCell>
-                                                <TableCell align="right">{formatCurrency(monthly)}</TableCell>
-                                                <TableCell>
-                                                    {liability.special_repayment_enabled
-                                                        ? `${formatCurrency(Number(liability.special_repayment_amount || 0))} / ${liability.special_repayment_frequency || 'monthly'}`
-                                                        : '—'}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <ResponsiveDataView
+                                rows={debtPaymentRows}
+                                getRowId={(r) => r.liability.id}
+                                mobilePrimary={(r) => r.liability.name}
+                                columns={
+                                    [
+                                        { id: 'name', label: 'Name', render: (r) => r.liability.name },
+                                        {
+                                            id: 'type',
+                                            label: 'Type',
+                                            render: (r) => (
+                                                <Chip
+                                                    label={r.liability.type.replace(/_/g, ' ')}
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            ),
+                                        },
+                                        {
+                                            id: 'monthly',
+                                            label: 'Monthly payment',
+                                            align: 'right',
+                                            render: (r) => formatCurrency(r.monthly),
+                                        },
+                                        {
+                                            id: 'special',
+                                            label: 'Special repayment',
+                                            render: (r) =>
+                                                r.liability.special_repayment_enabled
+                                                    ? `${formatCurrency(Number(r.liability.special_repayment_amount || 0))} / ${
+                                                          r.liability.special_repayment_frequency || 'monthly'
+                                                      }`
+                                                    : '—',
+                                        },
+                                    ] as ResponsiveColumn<(typeof debtPaymentRows)[number]>[]
+                                }
+                            />
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
 
                 {/* Living expenses table */}
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
+                    <GlassSurface sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>
                             Living expenses
                         </Typography>
@@ -416,78 +398,91 @@ const Expenses: React.FC = () => {
                                 <CircularProgress />
                             </Box>
                         ) : (
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Category</TableCell>
-                                            <TableCell align="right">Monthly Amount</TableCell>
-                                            <TableCell align="right">Annual Inflation</TableCell>
-                                            <TableCell align="center">Type</TableCell>
-                                            <TableCell align="center">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {expenses.map((expense) => (
-                                            <TableRow key={expense.id}>
-                                                <TableCell>
-                                                    <Box display="flex" alignItems="center">
-                                                        {categoryIcons[expense.category]}
-                                                        <Typography sx={{ ml: 1 }}>
-                                                            {expense.name}
-                                                        </Typography>
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Chip
-                                                        label={expense.category}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        sx={{ backgroundColor: categoryColors[expense.category] + '20' }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatCurrency(expense.monthly_amount)}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {formatAnnualRatePercent(expense.annual_inflation_rate)}%
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Chip
-                                                        label={expense.is_discretionary ? 'Discretionary' : 'Essential'}
-                                                        size="small"
-                                                        color={expense.is_discretionary ? 'warning' : 'success'}
-                                                        variant="outlined"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <IconButton
-                                                        onClick={() => handleEdit(expense)}
-                                                        size="small"
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                    <IconButton
-                                                        onClick={() => handleDelete(expense.id)}
-                                                        size="small"
-                                                        color="error"
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <ResponsiveDataView
+                                rows={expenses}
+                                getRowId={(e) => e.id}
+                                mobilePrimary={(e) => e.name}
+                                columns={
+                                    [
+                                        {
+                                            id: 'name',
+                                            label: 'Name',
+                                            render: (e) => (
+                                                <Box display="flex" alignItems="center">
+                                                    {categoryIcons[e.category]}
+                                                    <Typography sx={{ ml: 1 }}>{e.name}</Typography>
+                                                </Box>
+                                            ),
+                                        },
+                                        {
+                                            id: 'category',
+                                            label: 'Category',
+                                            render: (e) => (
+                                                <Chip
+                                                    label={e.category}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ backgroundColor: categoryColors[e.category] + '20' }}
+                                                />
+                                            ),
+                                        },
+                                        {
+                                            id: 'monthly',
+                                            label: 'Monthly Amount',
+                                            align: 'right',
+                                            render: (e) => formatCurrency(e.monthly_amount),
+                                        },
+                                        {
+                                            id: 'inflation',
+                                            label: 'Annual Inflation',
+                                            align: 'right',
+                                            render: (e) => `${formatAnnualRatePercent(e.annual_inflation_rate)}%`,
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'type',
+                                            label: 'Type',
+                                            align: 'center',
+                                            render: (e) => (
+                                                <Chip
+                                                    label={e.is_discretionary ? 'Discretionary' : 'Essential'}
+                                                    size="small"
+                                                    color={e.is_discretionary ? 'warning' : 'success'}
+                                                    variant="outlined"
+                                                />
+                                            ),
+                                        },
+                                    ] as ResponsiveColumn<Expense>[]
+                                }
+                                actions={(e) => (
+                                    <>
+                                        <IconButton onClick={() => handleEdit(e)} size="small" aria-label="Edit expense">
+                                            <EditIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleDelete(e.id)}
+                                            size="small"
+                                            color="error"
+                                            aria-label="Delete expense"
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </>
+                                )}
+                            />
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </Grid>
             </Grid>
 
             {/* Add/Edit Dialog */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="md"
+                fullWidth
+                fullScreen={fullScreenDialog}
+            >
                 <DialogTitle>
                     {editingExpense ? 'Edit Expense' : 'Add New Expense'}
                 </DialogTitle>

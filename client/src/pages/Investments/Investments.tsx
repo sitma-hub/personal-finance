@@ -3,25 +3,18 @@ import {
     Box,
     Typography,
     Grid,
-    Card,
-    CardContent,
-    Paper,
     Button,
     Alert,
     CircularProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     ToggleButton,
     ToggleButtonGroup,
     Chip,
     FormControlLabel,
     Switch,
     TextField,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Link } from '@mui/material';
@@ -32,6 +25,10 @@ import { ForecastRangeChart } from '../../components/charts/ForecastRangeChart';
 import { SparklineChart } from '../../components/charts/SparklineChart';
 import { formatCurrency } from '../../utils/currency';
 import { formatChartMonthLabel } from '../../utils/dateInput';
+import { GlassSurface } from '../../components/ui/GlassSurface';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatCard } from '../../components/ui/StatCard';
+import { ResponsiveDataView, type ResponsiveColumn } from '../../components/ui/ResponsiveDataView';
 
 const MIN_FORECAST_YEARS = 1;
 const MAX_FORECAST_YEARS = 40;
@@ -85,6 +82,8 @@ const BucketSparkline: React.FC<{ points: InvestableHistoryPoint[] }> = ({ point
 };
 
 const Investments: React.FC = () => {
+    const theme = useTheme();
+    const smDown = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const { state } = useFinancial();
     const { summary } = state;
@@ -129,6 +128,7 @@ const Investments: React.FC = () => {
     const hasPayoffForecast =
         payoffEvents.length > 0 && (data?.payoffInvestingTotalsSeries?.length ?? 0) > 0;
     const showPayoffForecast = includePayoffInForecast && hasPayoffForecast;
+    const chartHeight = smDown ? 300 : 400;
 
     const chartData = useMemo((): InvestmentChartRow[] => {
         const historical: InvestmentChartRow[] = (data?.historySeries || []).map((point) => ({
@@ -168,16 +168,14 @@ const Investments: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', maxWidth: '100%' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-                <Typography variant="h4">Investments</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate('/assets')}
-                >
-                    Add investment bucket
-                </Button>
-            </Box>
+            <PageHeader
+                title="Investments"
+                actions={
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/assets')}>
+                        Add investment bucket
+                    </Button>
+                }
+            />
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -191,52 +189,40 @@ const Investments: React.FC = () => {
                 <>
                     <Grid container spacing={3} mb={3}>
                         <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Investable value now</Typography>
-                                    <Typography variant="h5">{formatCurrency(data.totalCurrentValue)}</Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard
+                                label="Investable value now"
+                                value={formatCurrency(data.totalCurrentValue)}
+                                sx={{ height: '100%' }}
+                            />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Planned DCA / month</Typography>
-                                    <Typography variant="h5">{formatCurrency(plannedDca)}</Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard
+                                label="Planned DCA / month"
+                                value={formatCurrency(plannedDca)}
+                                sx={{ height: '100%' }}
+                            />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">Monthly surplus</Typography>
-                                    <Typography variant="h5" color={surplus >= 0 ? 'success.main' : 'error.main'}>
-                                        {formatCurrency(surplus)}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
+                            <StatCard
+                                label="Monthly surplus"
+                                value={formatCurrency(surplus)}
+                                sx={{ height: '100%' }}
+                            />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Typography color="textSecondary" variant="body2">After planned DCA</Typography>
-                                    <Typography variant="h5" color={afterDca >= 0 ? 'success.main' : 'error.main'}>
-                                        {formatCurrency(afterDca)}
-                                    </Typography>
-                                    {afterDca < 0 && (
-                                        <Typography variant="caption" color="error">
-                                            DCA exceeds surplus — adjust plan or expenses
-                                        </Typography>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            <StatCard
+                                label="After planned DCA"
+                                value={formatCurrency(afterDca)}
+                                footer={afterDca < 0 ? 'DCA exceeds surplus — adjust plan or expenses' : undefined}
+                                sx={{ height: '100%' }}
+                            />
                         </Grid>
                     </Grid>
 
-                    <Paper sx={{ p: 2, mb: 3 }}>
+                    <GlassSurface sx={{ p: 2, mb: 3 }}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
                             <Typography variant="h6">Investable value over time</Typography>
-                            <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                            <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 {hasPayoffForecast && (
                                     <FormControlLabel
                                         control={
@@ -258,6 +244,10 @@ const Investments: React.FC = () => {
                                         if (value) setForecastPreset(value);
                                     }}
                                     aria-label="Forecast horizon"
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '& .MuiToggleButton-root': { flex: { xs: 1, sm: 'initial' } },
+                                    }}
                                 >
                                     <ToggleButton value="5">5y</ToggleButton>
                                     <ToggleButton value="10">10y</ToggleButton>
@@ -279,7 +269,7 @@ const Investments: React.FC = () => {
                                             max: MAX_FORECAST_YEARS,
                                             step: 1,
                                         }}
-                                        sx={{ width: 88 }}
+                                        sx={{ width: { xs: '100%', sm: 88 } }}
                                     />
                                 )}
                                 {loading && data && <CircularProgress size={20} />}
@@ -293,7 +283,7 @@ const Investments: React.FC = () => {
                                 <Link component={RouterLink} to="/check-in">monthly check-in</Link> to build history.
                             </Alert>
                         ) : (
-                            <Box sx={{ width: '100%', height: { xs: 300, lg: 400 } }}>
+                            <Box sx={{ width: '100%', height: chartHeight }}>
                                 <ForecastRangeChart
                                     data={chartData}
                                     height="100%"
@@ -325,54 +315,72 @@ const Investments: React.FC = () => {
                                 ))}
                             </Alert>
                         )}
-                    </Paper>
+                    </GlassSurface>
 
-                    <Paper sx={{ p: 2 }}>
+                    <GlassSurface sx={{ p: 2 }}>
                         <Typography variant="h6" gutterBottom>Investment buckets</Typography>
                         {data.assets.length === 0 ? (
                             <Typography color="textSecondary">No investment buckets yet.</Typography>
                         ) : (
-                            <TableContainer>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Type</TableCell>
-                                            <TableCell align="right">Value</TableCell>
-                                            <TableCell>History</TableCell>
-                                            <TableCell align="right">€/mo</TableCell>
-                                            <TableCell align="right">Expected return</TableCell>
-                                            <TableCell align="right">{data.years}y range</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {data.assets.map((a) => {
-                                            const projected = projectionAtHorizon(a, showPayoffForecast);
-                                            return (
-                                                <TableRow key={a.id}>
-                                                    <TableCell>{a.name}</TableCell>
-                                                    <TableCell>
-                                                        <Chip size="small" label={a.type.replace(/_/g, ' ')} variant="outlined" />
-                                                    </TableCell>
-                                                    <TableCell align="right">{formatCurrency(a.currentValue)}</TableCell>
-                                                    <TableCell>
-                                                        <BucketSparkline points={data.assetHistories?.[a.id] ?? []} />
-                                                    </TableCell>
-                                                    <TableCell align="right">{formatCurrency(a.monthlyContribution)}</TableCell>
-                                                    <TableCell align="right">{formatPct(a.expectedAnnualReturn)}</TableCell>
-                                                    <TableCell align="right">
+                            <ResponsiveDataView
+                                rows={data.assets}
+                                getRowId={(a) => a.id}
+                                mobilePrimary={(a) => a.name}
+                                columns={
+                                    [
+                                        { id: 'name', label: 'Name', render: (a) => a.name },
+                                        {
+                                            id: 'type',
+                                            label: 'Type',
+                                            render: (a) => (
+                                                <Chip size="small" label={a.type.replace(/_/g, ' ')} variant="outlined" />
+                                            ),
+                                        },
+                                        {
+                                            id: 'value',
+                                            label: 'Value',
+                                            align: 'right',
+                                            render: (a) => formatCurrency(a.currentValue),
+                                        },
+                                        {
+                                            id: 'history',
+                                            label: 'History',
+                                            render: (a) => <BucketSparkline points={data.assetHistories?.[a.id] ?? []} />,
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'dca',
+                                            label: '€/mo',
+                                            align: 'right',
+                                            render: (a) => formatCurrency(a.monthlyContribution),
+                                        },
+                                        {
+                                            id: 'return',
+                                            label: 'Expected return',
+                                            align: 'right',
+                                            render: (a) => formatPct(a.expectedAnnualReturn),
+                                            hideOnMobile: true,
+                                        },
+                                        {
+                                            id: 'range',
+                                            label: `${data.years}y range`,
+                                            align: 'right',
+                                            render: (a) => {
+                                                const projected = projectionAtHorizon(a, showPayoffForecast);
+                                                return (
+                                                    <>
                                                         {formatCurrency(projected.pessimistic)}
                                                         {' – '}
                                                         {formatCurrency(projected.optimistic)}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                                                    </>
+                                                );
+                                            },
+                                        },
+                                    ] as ResponsiveColumn<AssetProjectionSummary>[]
+                                }
+                            />
                         )}
-                    </Paper>
+                    </GlassSurface>
                 </>
             )}
         </Box>
