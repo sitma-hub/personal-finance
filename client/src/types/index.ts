@@ -130,6 +130,56 @@ export interface AssetValueHistory {
     created_at: string;
 }
 
+export type TransactionDirection = 'inflow' | 'outflow';
+
+export interface Transaction {
+    id: string;
+    user_id: string;
+    txn_date: string;
+    amount: number;
+    direction: TransactionDirection;
+    category: string;
+    account_id?: string | null;
+    description?: string;
+    notes?: string;
+    source: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TransactionFormData {
+    txn_date: string;
+    amount: number;
+    direction: TransactionDirection;
+    category: string;
+    account_id?: string | null;
+    description?: string;
+    notes?: string;
+}
+
+export interface TransactionFilters {
+    from?: string;
+    to?: string;
+    category?: string;
+    direction?: TransactionDirection;
+    account_id?: string;
+}
+
+export interface CategorySpendItem {
+    category: string;
+    direction: TransactionDirection;
+    total: number;
+    count: number;
+}
+
+export interface MonthlyActualSummary {
+    month: string;
+    actualInflow: number;
+    actualOutflow: number;
+    net: number;
+    byCategory: CategorySpendItem[];
+}
+
 export interface LiabilityBalanceHistory {
     id: string;
     liability_id: string;
@@ -137,6 +187,13 @@ export interface LiabilityBalanceHistory {
     as_of_date: string;
     notes?: string;
     created_at: string;
+}
+
+export interface WealthBuildingBreakdown {
+    assetContributions: number;
+    debtPrincipal: number;
+    specialRepayments: number;
+    total: number;
 }
 
 export interface DashboardSummary {
@@ -147,6 +204,8 @@ export interface DashboardSummary {
     monthlyExpenses: number;
     monthlySavings: number;
     savingsRate: number;
+    wealthBuilding: WealthBuildingBreakdown;
+    cashFlowSavingsRate: number;
     assetCount: number;
     liabilityCount: number;
     incomeStreamCount: number;
@@ -181,6 +240,54 @@ export interface ApiResponse<T> {
     success: boolean;
     data: T;
     error?: { message: string };
+}
+
+export type InsightSeverity = 'positive' | 'info' | 'warning' | 'critical';
+
+export interface InsightMetric {
+    label: string;
+    value: string;
+}
+
+export interface Insight {
+    id: string;
+    severity: InsightSeverity;
+    title: string;
+    detail: string;
+    metrics?: InsightMetric[];
+}
+
+export interface InsightsResponse {
+    generatedAt: string;
+    insights: Insight[];
+    metrics: Record<string, unknown>;
+}
+
+export type LlmProcessor = 'gpu' | 'cpu' | 'partial' | null;
+
+export interface LlmStatus {
+    enabled: boolean;
+    available: boolean;
+    model: string;
+    processor: LlmProcessor;
+    gpuPercent: number | null;
+}
+
+export interface LlmAnalysisResponse {
+    enabled: boolean;
+    model: string;
+    analysis: string;
+}
+
+export interface ChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+}
+
+export interface LlmChatResponse {
+    enabled: boolean;
+    model: string;
+    reply: string;
 }
 
 export interface AssetFormData {

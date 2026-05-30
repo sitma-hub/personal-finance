@@ -26,6 +26,13 @@ services:
       PORT: 5000
       DOCKER_UID: ${DOCKER_UID:-1000}
       DOCKER_GID: ${DOCKER_GID:-1000}
+      # Optional local LLM analysis (see the "llm" compose profile below).
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      # Context window for the LLM. Raised from Ollama's 2048 default so the full
+      # database record dump fits when answering follow-up questions.
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
     ports:
       - "5000:5000"
     depends_on:
@@ -54,10 +61,35 @@ services:
     networks:
       - pfsm-network
 
+  # Optional local LLM for AI analysis. Enable with:
+  #   LLM_ENABLED=true docker compose --profile llm up -d
+  # Then pull the model once:
+  #   docker compose --profile llm exec ollama ollama pull llama3.2:3b
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pfsm-ollama
+    profiles: ["llm"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - pfsm-network
+    # GPU acceleration (NVIDIA). Requires the NVIDIA Container Toolkit on the host.
+    # If you have no NVIDIA GPU, remove this `deploy` block to run Ollama on CPU.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
 volumes:
   postgres_data:
   backend_node_modules:
   frontend_node_modules:
+  ollama_data:
 
 networks:
   pfsm-network:

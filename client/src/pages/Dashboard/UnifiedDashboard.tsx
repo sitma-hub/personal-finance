@@ -39,7 +39,10 @@ import {
     getRecommendedMonth,
     normalizeSnapshotMonth,
 } from '../../utils/dateInput';
-import type { CheckInStatus, NetWorthProjectionsResponse } from '../../types';
+import type { CheckInStatus, NetWorthProjectionsResponse, MonthlyActualSummary, Insight } from '../../types';
+import { transactionService } from '../../services/transactionService';
+import { insightService } from '../../services/insightService';
+import { InsightCards } from '../../components/insights/InsightCards';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { CashFlowSankeyChart } from '../../components/charts/CashFlowSankeyChart';
 import { ForecastRangeChart } from '../../components/charts/ForecastRangeChart';
@@ -100,6 +103,8 @@ const UnifiedDashboard: React.FC = () => {
     const [forecastLoading, setForecastLoading] = useState(false);
     const [forecastError, setForecastError] = useState<string | null>(null);
     const [stepBreakdown, setStepBreakdown] = useState<NetWorthStepBreakdown | null>(null);
+    const [actualSummary, setActualSummary] = useState<MonthlyActualSummary | null>(null);
+    const [topInsights, setTopInsights] = useState<Insight[]>([]);
 
     const forecastYears = useMemo(() => {
         if (forecastPreset === 'custom') {
@@ -156,6 +161,40 @@ const UnifiedDashboard: React.FC = () => {
             cancelled = true;
         };
     }, [forecastYears, netWorthProjections]);
+
+    useEffect(() => {
+        let cancelled = false;
+        transactionService
+            .getMonthlySummary()
+            .then((res) => {
+                if (!cancelled) setActualSummary(res.data ?? null);
+            })
+            .catch(() => {
+                if (!cancelled) setActualSummary(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        insightService
+            .getInsights()
+            .then((res) => {
+                if (cancelled) return;
+                const actionable = (res.data?.insights ?? []).filter(
+                    (i) => i.severity === 'critical' || i.severity === 'warning'
+                );
+                setTopInsights(actionable.slice(0, 3));
+            })
+            .catch(() => {
+                if (!cancelled) setTopInsights([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [summary]);
 
     const checkInStatus = useMemo((): CheckInStatus | null => {
         if (loading) return null;
@@ -405,6 +444,61 @@ const UnifiedDashboard: React.FC = () => {
                             value={`${formatCurrency(plannedInvesting)}/mo`}
                             sx={{ height: '100%' }}
                         />
+                    </Grid>
+                </Grid>
+            )}
+
+            {topInsights.length > 0 && (
+                <Grid container spacing={3} sx={{ width: '100%', mb: 3 }}>
+                    <Grid item xs={12}>
+                        <GlassSurface sx={{ p: 2, width: '100%' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} mb={1}>
+                                <Typography variant="h6">{t('pages.dashboard.insights.title')}</Typography>
+                                <Link component={RouterLink} to="/insights" underline="hover" variant="body2">
+                                    {t('pages.dashboard.insights.viewAll')}
+                                </Link>
+                            </Box>
+                            <InsightCards insights={topInsights} showMetrics={false} />
+                        </GlassSurface>
+                    </Grid>
+                </Grid>
+            )}
+
+            {actualSummary && (actualSummary.actualInflow > 0 || actualSummary.actualOutflow > 0) && summary && (
+                <Grid container spacing={3} sx={{ width: '100%', mb: 3 }}>
+                    <Grid item xs={12}>
+                        <GlassSurface sx={{ p: 2, width: '100%' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} mb={1}>
+                                <Typography variant="h6">{t('pages.dashboard.actualVsPlanned.title')}</Typography>
+                                <Link component={RouterLink} to="/transactions" underline="hover" variant="body2">
+                                    {t('pages.dashboard.actualVsPlanned.manageLink')}
+                                </Link>
+                            </Box>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {t('pages.dashboard.actualVsPlanned.income')}
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        {t('pages.dashboard.actualVsPlanned.actualVsPlannedValue', {
+                                            actual: formatCurrency(actualSummary.actualInflow),
+                                            planned: formatCurrency(summary.monthlyIncome),
+                                        })}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {t('pages.dashboard.actualVsPlanned.spending')}
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        {t('pages.dashboard.actualVsPlanned.actualVsPlannedValue', {
+                                            actual: formatCurrency(actualSummary.actualOutflow),
+                                            planned: formatCurrency(summary.monthlyExpenses),
+                                        })}
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                        </GlassSurface>
                     </Grid>
                 </Grid>
             )}

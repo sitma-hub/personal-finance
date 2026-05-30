@@ -24,7 +24,9 @@ import {
     CreditCard as LiabilitiesIcon,
     TrendingUp as IncomeIcon,
     Receipt as ExpensesIcon,
+    ReceiptLong as TransactionsIcon,
     ShowChart as InvestmentsIcon,
+    Lightbulb as InsightsIcon,
     EventNote as CheckInIcon,
     Backup as BackupIcon,
     Translate as TranslateIcon,
@@ -48,7 +50,9 @@ const menuItems = [
     { key: 'nav.liabilities', icon: <LiabilitiesIcon />, path: '/liabilities' },
     { key: 'nav.income', icon: <IncomeIcon />, path: '/income' },
     { key: 'nav.expenses', icon: <ExpensesIcon />, path: '/expenses' },
+    { key: 'nav.transactions', icon: <TransactionsIcon />, path: '/transactions' },
     { key: 'nav.investments', icon: <InvestmentsIcon />, path: '/investments' },
+    { key: 'nav.insights', icon: <InsightsIcon />, path: '/insights' },
     { key: 'nav.backup', icon: <BackupIcon />, path: '/backup' },
 ] as const;
 

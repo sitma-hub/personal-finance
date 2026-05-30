@@ -11,7 +11,9 @@
     "liabilities": "Liabilities",
     "income": "Income",
     "expenses": "Expenses",
+    "transactions": "Transactions",
     "investments": "Investments",
+    "insights": "Insights",
     "backup": "Backup"
   },
   "common": {
@@ -60,6 +62,17 @@
         "subtitlePrefix": "Each income stream, expense category, and loan payment is shown separately. Edit data on",
         "subtitleMiddle": "and",
         "subtitleSuffix": "."
+      },
+      "actualVsPlanned": {
+        "title": "This month: actual vs planned",
+        "manageLink": "Manage transactions",
+        "income": "Income",
+        "spending": "Spending",
+        "actualVsPlannedValue": "{{actual}} actual / {{planned}} planned"
+      },
+      "insights": {
+        "title": "Insights & alerts",
+        "viewAll": "View all insights"
       },
       "netWorth": {
         "title": "Net worth over time",
@@ -244,6 +257,112 @@
         "Other": "Other"
       }
     },
+    "transactions": {
+      "title": "Transactions",
+      "subtitle": "Record actual income and spending events. These power the actual-vs-planned comparison and insights.",
+      "addButton": "Add transaction",
+      "confirmDelete": "Are you sure you want to delete this transaction?",
+      "kpi": {
+        "inflow": "Inflow this month",
+        "outflow": "Outflow this month",
+        "net": "Net this month"
+      },
+      "filters": {
+        "month": "Month",
+        "direction": "Direction",
+        "category": "Category",
+        "all": "All"
+      },
+      "direction": {
+        "inflow": "Inflow",
+        "outflow": "Outflow"
+      },
+      "table": {
+        "title": "Transactions",
+        "empty": "No transactions for the selected filters. Add one or import a CSV.",
+        "date": "Date",
+        "description": "Description",
+        "category": "Category",
+        "account": "Account",
+        "amount": "Amount"
+      },
+      "form": {
+        "addTitle": "Add transaction",
+        "editTitle": "Edit transaction",
+        "date": "Date",
+        "direction": "Direction",
+        "amount": "Amount (€)",
+        "category": "Category",
+        "account": "Account (optional)",
+        "noAccount": "None",
+        "description": "Description",
+        "notes": "Notes"
+      },
+      "snack": {
+        "created": "Transaction added",
+        "updated": "Transaction updated",
+        "deleted": "Transaction deleted"
+      },
+      "import": {
+        "button": "Import CSV",
+        "title": "Import transactions from CSV",
+        "chooseFile": "Choose CSV file",
+        "confirm": "Import",
+        "success": "Imported {{count}} transactions",
+        "preview": "{{count}} rows ready to import",
+        "mapping": {
+          "title": "Map columns ({{count}} rows found)",
+          "date": "Date column",
+          "amount": "Amount column",
+          "description": "Description column",
+          "category": "Category column",
+          "none": "(none)",
+          "directionStrategy": "Inflow/outflow",
+          "dirSign": "From amount sign (negative = outflow)",
+          "dirAllOut": "All outflow",
+          "dirAllIn": "All inflow",
+          "dirColumn": "From a column",
+          "directionColumn": "Direction column",
+          "defaultCategory": "Default category"
+        },
+        "errors": {
+          "empty": "The file appears to be empty or has no header row.",
+          "noValidRows": "No valid rows to import. Check your column mapping."
+        }
+      }
+    },
+    "insights": {
+      "title": "Insights",
+      "subtitle": "Automated, rule-based observations about your finances. Optionally generate a written analysis with a local AI model.",
+      "rulesTitle": "What we noticed",
+      "empty": "No insights yet. Add assets, liabilities, income, expenses, and transactions to get tailored observations.",
+      "ai": {
+        "title": "AI analysis",
+        "subtitle": "A local language model summarises the metrics above into plain-language analysis. Nothing leaves your machine.",
+        "generate": "Generate analysis",
+        "generating": "Analysing…",
+        "generatingHint": "This can take a while on CPU-only setups.",
+        "analysisPrompt": "Give me a concise overall analysis of my current financial situation: overall position, strengths, risks, and 2-4 concrete suggestions.",
+        "askPlaceholder": "Ask a follow-up question…",
+        "send": "Send",
+        "you": "You",
+        "thinking": "Thinking…",
+        "disabled": "Local AI analysis is disabled. Start the app with the LLM profile (docker compose --profile llm up) to enable it.",
+        "unavailable": "The local AI model is enabled but not reachable yet. Make sure the Ollama service is running and the model has been pulled.",
+        "error": "Failed to generate analysis.",
+        "disclaimer": "AI-generated analysis based on your data. Informational only — not financial advice.",
+        "processor": {
+          "gpu": "GPU",
+          "gpuTooltip": "The model is fully loaded in GPU VRAM — responses are accelerated.",
+          "partial": "GPU {{percent}}%",
+          "partialTooltip": "Only part of the model fits in VRAM; the rest runs on CPU.",
+          "cpu": "CPU",
+          "cpuTooltip": "The model is running on CPU. Responses will be slower. Check the GPU reservation in docker-compose.yml.",
+          "idle": "Idle",
+          "idleTooltip": "The model isn't loaded yet — it loads on your first request. Run an analysis to see GPU/CPU usage."
+        }
+      }
+    },
     "investments": {
       "title": "Investments",
       "help": {
@@ -389,7 +508,7 @@
       },
       "import": {
         "title": "Import",
-        "description": "Replaces all existing data with the contents of a backup file (version 1 or 2 JSON).",
+        "description": "Replaces all existing data with the contents of a backup file (version 1, 2, or 3 JSON).",
         "chooseFile": "Choose backup file"
       },
       "confirmImportReplaceAll": "This will replace ALL your data with the backup file. Continue?",

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useState } from 'react';
+import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import {
     Asset,
     Liability,
@@ -25,11 +26,14 @@ import { dashboardService } from '../services/dashboardService';
 import { snapshotService } from '../services/snapshotService';
 import { checkInService } from '../services/checkInService';
 import { projectionService } from '../services/projectionService';
+import { queryKeys } from '../lib/queryClient';
 import {
     buildAssetAllocation,
     buildDashboardSummary,
     buildNetWorthHistory,
 } from '../utils/dashboardDerived';
+
+const PROJECTION_YEARS = 10;
 
 interface FinancialState {
     assets: Asset[];
@@ -45,43 +49,6 @@ interface FinancialState {
     loading: boolean;
     projectionsLoading: boolean;
     error: string | null;
-}
-
-type Action =
-    | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'SET_PROJECTIONS_LOADING'; payload: boolean }
-    | { type: 'SET_ERROR'; payload: string | null }
-    | { type: 'SET_DATA'; payload: Partial<FinancialState> };
-
-const initialState: FinancialState = {
-    assets: [],
-    liabilities: [],
-    incomeStreams: [],
-    expenses: [],
-    snapshots: [],
-    summary: null,
-    allocation: [],
-    netWorthHistory: [],
-    netWorthProjections: null,
-    recentUpdates: [],
-    loading: true,
-    projectionsLoading: false,
-    error: null,
-};
-
-function reducer(state: FinancialState, action: Action): FinancialState {
-    switch (action.type) {
-        case 'SET_LOADING':
-            return { ...state, loading: action.payload };
-        case 'SET_PROJECTIONS_LOADING':
-            return { ...state, projectionsLoading: action.payload };
-        case 'SET_ERROR':
-            return { ...state, error: action.payload };
-        case 'SET_DATA':
-            return { ...state, ...action.payload };
-        default:
-            return state;
-    }
 }
 
 interface FinancialContextValue {
@@ -113,135 +80,124 @@ function asArray<T>(value: unknown): T[] {
 }
 
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [state, dispatch] = useReducer(reducer, initialState);
-    const hasLoadedRef = useRef(false);
+    const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
 
-    const loadSecondaryData = useCallback(async () => {
-        dispatch({ type: 'SET_PROJECTIONS_LOADING', payload: true });
-        const [updatesResult, projectionsResult] = await Promise.allSettled([
-            dashboardService.getRecentUpdates(),
-            projectionService.getNetWorthProjections(10),
-        ]);
+    const assetsQuery = useQuery({
+        queryKey: queryKeys.assets,
+        queryFn: async () => asArray<Asset>((await assetService.getAllAssets()).data),
+    });
+    const liabilitiesQuery = useQuery({
+        queryKey: queryKeys.liabilities,
+        queryFn: async () => asArray<Liability>((await liabilityService.getAllLiabilities()).data),
+    });
+    const incomeQuery = useQuery({
+        queryKey: queryKeys.income,
+        queryFn: async () => asArray<IncomeStream>((await incomeService.getAllIncomeStreams()).data),
+    });
+    const expensesQuery = useQuery({
+        queryKey: queryKeys.expenses,
+        queryFn: async () => asArray<Expense>((await expenseService.getAllExpenses()).data),
+    });
+    const snapshotsQuery = useQuery({
+        queryKey: queryKeys.snapshots,
+        queryFn: async () => asArray<NetWorthSnapshot>((await snapshotService.getAll()).data),
+    });
+    const recentUpdatesQuery = useQuery({
+        queryKey: queryKeys.recentUpdates,
+        queryFn: async () => asArray<RecentValueUpdate>((await dashboardService.getRecentUpdates()).data),
+    });
+    const projectionsQuery = useQuery({
+        queryKey: queryKeys.netWorthProjections(PROJECTION_YEARS),
+        queryFn: async () => (await projectionService.getNetWorthProjections(PROJECTION_YEARS)).data ?? null,
+    });
 
-        const recentUpdates = updatesResult.status === 'fulfilled'
-            ? asArray<RecentValueUpdate>(updatesResult.value.data)
-            : [];
-        const netWorthProjections = projectionsResult.status === 'fulfilled'
-            ? (projectionsResult.value.data ?? null)
-            : null;
+    const assets = useMemo(() => assetsQuery.data ?? [], [assetsQuery.data]);
+    const liabilities = useMemo(() => liabilitiesQuery.data ?? [], [liabilitiesQuery.data]);
+    const incomeStreams = useMemo(() => incomeQuery.data ?? [], [incomeQuery.data]);
+    const expenses = useMemo(() => expensesQuery.data ?? [], [expensesQuery.data]);
+    const snapshots = useMemo(() => snapshotsQuery.data ?? [], [snapshotsQuery.data]);
 
-        dispatch({
-            type: 'SET_DATA',
-            payload: { recentUpdates, netWorthProjections },
-        });
-        dispatch({ type: 'SET_PROJECTIONS_LOADING', payload: false });
-    }, []);
+    const primaryQueries = [assetsQuery, liabilitiesQuery, incomeQuery, expensesQuery, snapshotsQuery];
+    const primaryLoaded = primaryQueries.every((q) => q.isSuccess || q.isError);
+    const loading = !primaryLoaded;
+
+    const summary = useMemo(
+        () => (primaryLoaded ? buildDashboardSummary(assets, liabilities, incomeStreams, expenses, snapshots) : null),
+        [primaryLoaded, assets, liabilities, incomeStreams, expenses, snapshots]
+    );
+    const allocation = useMemo(() => buildAssetAllocation(assets), [assets]);
+    const netWorthHistory = useMemo(() => buildNetWorthHistory(snapshots), [snapshots]);
+
+    const queryError = useMemo(() => {
+        const failed = primaryQueries.find((q) => q.isError);
+        if (!failed) return null;
+        return failed.error instanceof Error ? failed.error.message : 'Failed to load financial data';
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [assetsQuery.error, liabilitiesQuery.error, incomeQuery.error, expensesQuery.error, snapshotsQuery.error]);
+
+    const invalidate = useCallback(
+        async (keys: QueryKey[]) => {
+            await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+        },
+        [queryClient]
+    );
 
     const refresh = useCallback(async () => {
-        const showBlockingLoader = !hasLoadedRef.current;
-        if (showBlockingLoader) {
-            dispatch({ type: 'SET_LOADING', payload: true });
-        }
-        dispatch({ type: 'SET_ERROR', payload: null });
+        setMutationError(null);
+        await queryClient.invalidateQueries();
+    }, [queryClient]);
 
-        try {
-            const results = await Promise.allSettled([
-                assetService.getAllAssets(),
-                liabilityService.getAllLiabilities(),
-                incomeService.getAllIncomeStreams(),
-                expenseService.getAllExpenses(),
-                snapshotService.getAll(),
-            ]);
-
-            const fulfilledData = <T,>(index: number): T | undefined => {
-                const result = results[index];
-                if (result?.status === 'fulfilled') {
-                    return result.value.data as T;
-                }
-                return undefined;
-            };
-
-            const assets = asArray<Asset>(fulfilledData(0));
-            const liabilities = asArray<Liability>(fulfilledData(1));
-            const incomeStreams = asArray<IncomeStream>(fulfilledData(2));
-            const expenses = asArray<Expense>(fulfilledData(3));
-            const snapshots = asArray<NetWorthSnapshot>(fulfilledData(4));
-
-            const summary = buildDashboardSummary(assets, liabilities, incomeStreams, expenses, snapshots);
-            const allocation = buildAssetAllocation(assets);
-            const netWorthHistory = buildNetWorthHistory(snapshots);
-
-            const rejected = results.filter((r) => r.status === 'rejected');
-            if (rejected.length > 0) {
-                const firstError = rejected[0]?.status === 'rejected' ? rejected[0].reason : null;
-                const message = firstError instanceof Error
-                    ? firstError.message
-                    : 'Failed to load financial data';
-                dispatch({
-                    type: 'SET_ERROR',
-                    payload: rejected.length === results.length
-                        ? message
-                        : `Some data failed to load (${rejected.length} of ${results.length} requests)`,
-                });
+    const runMutation = useCallback(
+        async (fn: () => Promise<void>, keys: QueryKey[]) => {
+            setMutationError(null);
+            try {
+                await fn();
+                await invalidate(keys);
+            } catch (err) {
+                setMutationError(err instanceof Error ? err.message : 'Operation failed');
+                throw err;
             }
+        },
+        [invalidate]
+    );
 
-            dispatch({
-                type: 'SET_DATA',
-                payload: {
-                    assets,
-                    liabilities,
-                    incomeStreams,
-                    expenses,
-                    snapshots,
-                    summary,
-                    allocation,
-                    netWorthHistory,
-                },
-            });
-
-            hasLoadedRef.current = true;
-            void loadSecondaryData();
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Failed to load financial data';
-            dispatch({ type: 'SET_ERROR', payload: message });
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    }, [loadSecondaryData]);
-
-    useEffect(() => {
-        refresh();
-    }, [refresh]);
-
-    const wrapMutation = async (fn: () => Promise<void>) => {
-        dispatch({ type: 'SET_ERROR', payload: null });
-        try {
-            await fn();
-            await refresh();
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Operation failed';
-            dispatch({ type: 'SET_ERROR', payload: message });
-            throw err;
-        }
+    const state: FinancialState = {
+        assets,
+        liabilities,
+        incomeStreams,
+        expenses,
+        snapshots,
+        summary,
+        allocation,
+        netWorthHistory,
+        netWorthProjections: projectionsQuery.data ?? null,
+        recentUpdates: recentUpdatesQuery.data ?? [],
+        loading,
+        projectionsLoading: projectionsQuery.isFetching,
+        error: mutationError ?? queryError,
     };
+
+    const { assets: aKey, liabilities: lKey, income: iKey, expenses: eKey, snapshots: sKey, recentUpdates: rKey } = queryKeys;
+    const projKey: QueryKey = ['netWorthProjections'];
 
     const value: FinancialContextValue = {
         state,
         refresh,
-        createAsset: (data) => wrapMutation(async () => { await assetService.createAsset(data); }),
-        updateAsset: (id, data) => wrapMutation(async () => { await assetService.updateAsset(id, data); }),
-        deleteAsset: (id) => wrapMutation(async () => { await assetService.deleteAsset(id); }),
-        createLiability: (data) => wrapMutation(async () => { await liabilityService.createLiability(data); }),
-        updateLiability: (id, data) => wrapMutation(async () => { await liabilityService.updateLiability(id, data); }),
-        deleteLiability: (id) => wrapMutation(async () => { await liabilityService.deleteLiability(id); }),
-        createIncome: (data) => wrapMutation(async () => { await incomeService.createIncomeStream(data); }),
-        updateIncome: (id, data) => wrapMutation(async () => { await incomeService.updateIncomeStream(id, data); }),
-        deleteIncome: (id) => wrapMutation(async () => { await incomeService.deleteIncomeStream(id); }),
-        createExpense: (data) => wrapMutation(async () => { await expenseService.createExpense(data); }),
-        updateExpense: (id, data) => wrapMutation(async () => { await expenseService.updateExpense(id, data); }),
-        deleteExpense: (id) => wrapMutation(async () => { await expenseService.deleteExpense(id); }),
-        saveSnapshot: (month, notes) => wrapMutation(async () => { await snapshotService.create(month, notes); }),
-        deleteSnapshot: (id) => wrapMutation(async () => { await snapshotService.delete(id); }),
+        createAsset: (data) => runMutation(async () => { await assetService.createAsset(data); }, [aKey, rKey, projKey]),
+        updateAsset: (id, data) => runMutation(async () => { await assetService.updateAsset(id, data); }, [aKey, rKey, projKey]),
+        deleteAsset: (id) => runMutation(async () => { await assetService.deleteAsset(id); }, [aKey, rKey, projKey]),
+        createLiability: (data) => runMutation(async () => { await liabilityService.createLiability(data); }, [lKey, rKey, projKey]),
+        updateLiability: (id, data) => runMutation(async () => { await liabilityService.updateLiability(id, data); }, [lKey, rKey, projKey]),
+        deleteLiability: (id) => runMutation(async () => { await liabilityService.deleteLiability(id); }, [lKey, rKey, projKey]),
+        createIncome: (data) => runMutation(async () => { await incomeService.createIncomeStream(data); }, [iKey, projKey]),
+        updateIncome: (id, data) => runMutation(async () => { await incomeService.updateIncomeStream(id, data); }, [iKey, projKey]),
+        deleteIncome: (id) => runMutation(async () => { await incomeService.deleteIncomeStream(id); }, [iKey, projKey]),
+        createExpense: (data) => runMutation(async () => { await expenseService.createExpense(data); }, [eKey]),
+        updateExpense: (id, data) => runMutation(async () => { await expenseService.updateExpense(id, data); }, [eKey]),
+        deleteExpense: (id) => runMutation(async () => { await expenseService.deleteExpense(id); }, [eKey]),
+        saveSnapshot: (month, notes) => runMutation(async () => { await snapshotService.create(month, notes); }, [sKey, rKey]),
+        deleteSnapshot: (id) => runMutation(async () => { await snapshotService.delete(id); }, [sKey, rKey]),
         getCheckInStatus: async () => {
             const res = await checkInService.getStatus();
             return res.data;
@@ -250,7 +206,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const res = await checkInService.getProposal(month);
             return res.data;
         },
-        applyCheckIn: (payload) => wrapMutation(async () => { await checkInService.apply(payload); }),
+        applyCheckIn: (payload) => runMutation(
+            async () => { await checkInService.apply(payload); },
+            [aKey, lKey, sKey, rKey, projKey]
+        ),
     };
 
     return (

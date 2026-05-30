@@ -110,6 +110,59 @@ export interface Expense {
     updated_at: Date;
 }
 
+export type TransactionDirection = 'inflow' | 'outflow';
+
+export interface Transaction {
+    id: string;
+    user_id: string;
+    txn_date: string;
+    amount: number;
+    direction: TransactionDirection;
+    category: string;
+    account_id?: string | null;
+    description?: string;
+    notes?: string;
+    source: string;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export interface CreateTransactionRequest {
+    txn_date: string;
+    amount: number;
+    direction: TransactionDirection;
+    category?: string;
+    account_id?: string | null;
+    description?: string;
+    notes?: string;
+    source?: string;
+}
+
+export interface UpdateTransactionRequest extends Partial<CreateTransactionRequest> {}
+
+export interface TransactionFilters {
+    from?: string;
+    to?: string;
+    category?: string;
+    direction?: TransactionDirection;
+    account_id?: string;
+}
+
+export interface CategorySpendItem {
+    category: string;
+    direction: TransactionDirection;
+    total: number;
+    count: number;
+}
+
+export interface MonthlyActualSummary {
+    month: string;
+    actualInflow: number;
+    actualOutflow: number;
+    net: number;
+    byCategory: CategorySpendItem[];
+}
+
 export interface AssetValueHistory {
     id: string;
     asset_id: string;
@@ -232,14 +285,25 @@ export interface NetWorthProjectionsResponse {
 
 export interface UpdateAssetRequest extends Partial<CreateAssetRequest> {}
 
+export interface WealthBuildingBreakdown {
+    assetContributions: number;
+    debtPrincipal: number;
+    specialRepayments: number;
+    total: number;
+}
+
 export interface DashboardSummary {
     totalAssets: number;
     totalLiabilities: number;
     netWorth: number;
     monthlyIncome: number;
     monthlyExpenses: number;
+    /** Cash-flow surplus: income − expenses (includes interest as expense). */
     monthlySavings: number;
+    /** Wealth-building savings rate (% of income): contributions + principal + special repayments. */
     savingsRate: number;
+    wealthBuilding: WealthBuildingBreakdown;
+    cashFlowSavingsRate: number;
     assetCount: number;
     liabilityCount: number;
     incomeStreamCount: number;
@@ -284,6 +348,7 @@ export interface BackupIncludes {
     asset_value_history: boolean;
     liability_balance_history: boolean;
     net_worth_snapshots: boolean;
+    transactions?: boolean;
     liability_features?: string[];
     asset_features?: string[];
 }
@@ -300,6 +365,93 @@ export interface BackupData {
     asset_value_history: AssetValueHistory[];
     liability_balance_history: LiabilityBalanceHistory[];
     net_worth_snapshots: NetWorthSnapshot[];
+    transactions?: Transaction[];
+}
+
+export type InsightSeverity = 'positive' | 'info' | 'warning' | 'critical';
+
+export interface InsightMetric {
+    label: string;
+    value: string;
+}
+
+export interface Insight {
+    id: string;
+    severity: InsightSeverity;
+    title: string;
+    detail: string;
+    metrics?: InsightMetric[];
+}
+
+export interface InsightActualContext {
+    month: string;
+    inflow: number;
+    outflow: number;
+    net: number;
+    /** (inflow - outflow) / inflow × 100 when inflow > 0 */
+    savingsRate: number | null;
+    plannedIncome: number;
+    plannedExpenses: number;
+    topCategory: { category: string; total: number } | null;
+    /** All inflow categories for this month (from transactions). */
+    inflowByCategory: { category: string; total: number }[];
+    /** All outflow categories for this month (from transactions). */
+    outflowByCategory: { category: string; total: number }[];
+}
+
+export interface InsightMetricsContext {
+    netWorth: number;
+    totalAssets: number;
+    totalLiabilities: number;
+    /** Planned monthly income from income streams (not bank transactions). */
+    monthlyIncome: number;
+    /** Planned monthly expenses = regularExpenses + totalDebtMonthlyPayments. */
+    monthlyExpenses: number;
+    /** Recurring budget expenses only (excludes debt payments). */
+    regularExpenses: number;
+    /** Sum of asset monthly_contribution fields. */
+    monthlyAssetContributions: number;
+    monthlySavings: number;
+    /** Wealth-building rate: (contributions + debt principal + special repayments) / income × 100. */
+    savingsRate: number;
+    wealthBuilding: WealthBuildingBreakdown;
+    /** Cash-flow rate: monthlySavings / monthlyIncome × 100. */
+    cashFlowSavingsRate: number;
+    liquidAssets: number;
+    emergencyRunwayMonths: number | null;
+    allocation: AssetAllocation[];
+    topAllocation: { type: string; percentage: number } | null;
+    highInterestDebts: { name: string; interestRate: number; balance: number }[];
+    totalDebtMonthlyPayments: number;
+    snapshotCount: number;
+    lastSnapshotMonth: string | null;
+    monthsSinceLastSnapshot: number | null;
+    netWorthChange: { absolute: number; percent: number | null; months: number } | null;
+    actual: InsightActualContext | null;
+}
+
+export interface InsightsResponse {
+    generatedAt: string;
+    insights: Insight[];
+    metrics: InsightMetricsContext;
+}
+
+/**
+ * The full set of raw records handed to the optional LLM layer so it can answer
+ * detailed, record-level follow-up questions (not just aggregates).
+ */
+export interface FinancialDatasets {
+    assets: Asset[];
+    liabilities: Liability[];
+    incomeStreams: IncomeStream[];
+    expenses: Expense[];
+    snapshots: NetWorthSnapshot[];
+    transactions: Transaction[];
+}
+
+export interface LlmFinanceContext {
+    metrics: InsightMetricsContext;
+    datasets: FinancialDatasets;
 }
 
 export interface CheckInStatus {

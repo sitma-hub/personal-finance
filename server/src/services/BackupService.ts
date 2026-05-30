@@ -1,9 +1,14 @@
 import pool from '../config/database';
 import { BackupData, BackupIncludes } from '../types';
 
-/** Current backup format (v2 adds explicit `includes` metadata; v1 still importable). */
-const BACKUP_VERSION = 2;
-const SUPPORTED_VERSIONS = [1, 2];
+/**
+ * Current backup format.
+ * - v2 adds explicit `includes` metadata
+ * - v3 adds the transactions ledger
+ * v1/v2 backups remain importable (transactions simply absent).
+ */
+const BACKUP_VERSION = 3;
+const SUPPORTED_VERSIONS = [1, 2, 3];
 
 const BACKUP_INCLUDES: BackupIncludes = {
   assets: true,
@@ -13,6 +18,7 @@ const BACKUP_INCLUDES: BackupIncludes = {
   asset_value_history: true,
   liability_balance_history: true,
   net_worth_snapshots: true,
+  transactions: true,
   liability_features: [
     'special_repayment',
     'prepayment_penalty',
@@ -72,7 +78,7 @@ function assetIdsSet(assets: BackupData['assets']): Set<string> {
 
 export class BackupService {
   async exportAll(): Promise<BackupData> {
-    const [assets, liabilities, income, expenses, assetHistory, liabilityHistory, snapshots] =
+    const [assets, liabilities, income, expenses, assetHistory, liabilityHistory, snapshots, transactions] =
       await Promise.all([
         pool.query('SELECT * FROM assets ORDER BY created_at'),
         pool.query('SELECT * FROM liabilities ORDER BY created_at'),
@@ -81,6 +87,7 @@ export class BackupService {
         pool.query('SELECT * FROM asset_value_history ORDER BY as_of_date, created_at'),
         pool.query('SELECT * FROM liability_balance_history ORDER BY as_of_date, created_at'),
         pool.query('SELECT * FROM net_worth_snapshots ORDER BY snapshot_month'),
+        pool.query('SELECT * FROM transactions ORDER BY txn_date, created_at'),
       ]);
 
     return {
@@ -94,6 +101,7 @@ export class BackupService {
       asset_value_history: assetHistory.rows,
       liability_balance_history: liabilityHistory.rows,
       net_worth_snapshots: snapshots.rows,
+      transactions: transactions.rows,
     };
   }
 
@@ -108,6 +116,7 @@ export class BackupService {
       await client.query('BEGIN');
 
       // Child tables first, then liabilities (FK → assets), then assets
+      await client.query('DELETE FROM transactions');
       await client.query('DELETE FROM asset_value_history');
       await client.query('DELETE FROM liability_balance_history');
       await client.query('DELETE FROM net_worth_snapshots');
@@ -305,6 +314,33 @@ export class BackupService {
         snapshotsImported += 1;
       }
 
+      let transactionsImported = 0;
+      for (const txn of data.transactions || []) {
+        const accountId =
+          txn.account_id && assetIds.has(txn.account_id) ? txn.account_id : null;
+        await client.query(
+          `INSERT INTO transactions (
+            id, user_id, txn_date, amount, direction, category, account_id,
+            description, notes, source, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [
+            txn.id,
+            userId,
+            txn.txn_date,
+            txn.amount,
+            txn.direction,
+            txn.category ?? 'Uncategorized',
+            accountId,
+            txn.description ?? null,
+            txn.notes ?? null,
+            txn.source ?? 'manual',
+            txn.created_at ?? new Date(),
+            txn.updated_at ?? new Date(),
+          ]
+        );
+        transactionsImported += 1;
+      }
+
       await client.query('COMMIT');
 
       return {
@@ -316,6 +352,7 @@ export class BackupService {
           asset_value_history: assetHistoryImported,
           liability_balance_history: liabilityHistoryImported,
           net_worth_snapshots: snapshotsImported,
+          transactions: transactionsImported,
         },
       };
     } catch (err) {

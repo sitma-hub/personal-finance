@@ -15,29 +15,33 @@ export function getLiabilityMonthlyRate(interestRate?: number | string | null): 
   return getLiabilityAnnualRateDecimal(interestRate) / 12;
 }
 
-/** Monthly cash outflow from a liability (payment + normalized special repayment). */
-export function getLiabilityMonthlyPayment(liability: Liability): number {
+/** Regular scheduled payment (excludes special repayments). */
+export function getLiabilityBaseMonthlyPayment(liability: Liability): number {
   const monthlyPayment = parseFloat(String(liability.monthly_payment || 0));
   const minimumPayment = parseFloat(String(liability.minimum_payment || 0));
-  let total = monthlyPayment || minimumPayment;
+  return monthlyPayment || minimumPayment;
+}
 
-  if (liability.special_repayment_enabled && liability.special_repayment_amount) {
-    const amount = parseFloat(String(liability.special_repayment_amount));
-    switch (liability.special_repayment_frequency) {
-      case 'quarterly':
-        total += amount / 3;
-        break;
-      case 'annual':
-        total += amount / 12;
-        break;
-      case 'monthly':
-      default:
-        total += amount;
-        break;
-    }
+/** Special repayment (Sonderzahlung) normalized to a monthly equivalent. */
+export function getLiabilitySpecialRepaymentMonthly(liability: Liability): number {
+  if (!liability.special_repayment_enabled || !liability.special_repayment_amount) {
+    return 0;
   }
+  const amount = parseFloat(String(liability.special_repayment_amount));
+  switch (liability.special_repayment_frequency) {
+    case 'quarterly':
+      return amount / 3;
+    case 'annual':
+      return amount / 12;
+    case 'monthly':
+    default:
+      return amount;
+  }
+}
 
-  return total;
+/** Monthly cash outflow from a liability (payment + normalized special repayment). */
+export function getLiabilityMonthlyPayment(liability: Liability): number {
+  return getLiabilityBaseMonthlyPayment(liability) + getLiabilitySpecialRepaymentMonthly(liability);
 }
 
 export function getTotalLiabilityMonthlyPayments(liabilities: Liability[]): number {

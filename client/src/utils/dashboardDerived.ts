@@ -11,6 +11,10 @@ import {
 import { getLiabilityMonthlyPayment } from './liabilityCashFlow';
 import { normalizeSnapshotMonth } from './dateInput';
 import { totalMonthlyIncome } from './monthlyAmounts';
+import {
+    computeWealthBuildingBreakdown,
+    computeWealthBuildingSavingsRate,
+} from './wealthBuilding';
 
 function monthlyExpenseTotal(expenses: Expense[], liabilities: Liability[]): number {
     const regular = expenses.reduce((sum, e) => sum + Number(e.monthly_amount), 0);
@@ -31,6 +35,9 @@ export function buildDashboardSummary(
     const monthlyIncome = totalMonthlyIncome(incomeStreams);
     const monthlyExpenses = monthlyExpenseTotal(expenses, liabilities);
     const monthlySavings = monthlyIncome - monthlyExpenses;
+    const wealthBuilding = computeWealthBuildingBreakdown(assets, liabilities);
+    const savingsRate = computeWealthBuildingSavingsRate(monthlyIncome, wealthBuilding);
+    const cashFlowSavingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0;
 
     return {
         totalAssets,
@@ -39,7 +46,9 @@ export function buildDashboardSummary(
         monthlyIncome,
         monthlyExpenses,
         monthlySavings,
-        savingsRate: monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0,
+        savingsRate,
+        wealthBuilding,
+        cashFlowSavingsRate,
         assetCount: assets.length,
         liabilityCount: liabilities.length,
         incomeStreamCount: incomeStreams.length,

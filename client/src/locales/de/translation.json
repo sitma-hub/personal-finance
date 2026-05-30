@@ -11,7 +11,9 @@
     "liabilities": "Schulden",
     "income": "Einnahmen",
     "expenses": "Ausgaben",
+    "transactions": "Transaktionen",
     "investments": "Investments",
+    "insights": "Einblicke",
     "backup": "Backup"
   },
   "common": {
@@ -69,6 +71,17 @@
         "subtitlePrefix": "Jede Einnahmequelle, Ausgabenkategorie und Kreditrate wird separat angezeigt. Daten bearbeiten unter",
         "subtitleMiddle": "und",
         "subtitleSuffix": "."
+      },
+      "actualVsPlanned": {
+        "title": "Diesen Monat: Ist vs. Plan",
+        "manageLink": "Transaktionen verwalten",
+        "income": "Einnahmen",
+        "spending": "Ausgaben",
+        "actualVsPlannedValue": "{{actual}} ist / {{planned}} geplant"
+      },
+      "insights": {
+        "title": "Einblicke & Hinweise",
+        "viewAll": "Alle Einblicke ansehen"
       },
       "allocation": {
         "title": "Asset-Allokation",
@@ -244,6 +257,112 @@
         "Other": "Sonstiges"
       }
     },
+    "transactions": {
+      "title": "Transaktionen",
+      "subtitle": "Erfasse tatsächliche Einnahmen und Ausgaben. Sie liefern den Soll-Ist-Vergleich und die Einblicke.",
+      "addButton": "Transaktion hinzufügen",
+      "confirmDelete": "Möchtest du diese Transaktion wirklich löschen?",
+      "kpi": {
+        "inflow": "Einnahmen diesen Monat",
+        "outflow": "Ausgaben diesen Monat",
+        "net": "Netto diesen Monat"
+      },
+      "filters": {
+        "month": "Monat",
+        "direction": "Richtung",
+        "category": "Kategorie",
+        "all": "Alle"
+      },
+      "direction": {
+        "inflow": "Einnahme",
+        "outflow": "Ausgabe"
+      },
+      "table": {
+        "title": "Transaktionen",
+        "empty": "Keine Transaktionen für die gewählten Filter. Füge eine hinzu oder importiere eine CSV.",
+        "date": "Datum",
+        "description": "Beschreibung",
+        "category": "Kategorie",
+        "account": "Konto",
+        "amount": "Betrag"
+      },
+      "form": {
+        "addTitle": "Transaktion hinzufügen",
+        "editTitle": "Transaktion bearbeiten",
+        "date": "Datum",
+        "direction": "Richtung",
+        "amount": "Betrag (€)",
+        "category": "Kategorie",
+        "account": "Konto (optional)",
+        "noAccount": "Keins",
+        "description": "Beschreibung",
+        "notes": "Notizen"
+      },
+      "snack": {
+        "created": "Transaktion hinzugefügt",
+        "updated": "Transaktion aktualisiert",
+        "deleted": "Transaktion gelöscht"
+      },
+      "import": {
+        "button": "CSV importieren",
+        "title": "Transaktionen aus CSV importieren",
+        "chooseFile": "CSV-Datei wählen",
+        "confirm": "Importieren",
+        "success": "{{count}} Transaktionen importiert",
+        "preview": "{{count}} Zeilen bereit zum Import",
+        "mapping": {
+          "title": "Spalten zuordnen ({{count}} Zeilen gefunden)",
+          "date": "Datumsspalte",
+          "amount": "Betragsspalte",
+          "description": "Beschreibungsspalte",
+          "category": "Kategoriespalte",
+          "none": "(keine)",
+          "directionStrategy": "Einnahme/Ausgabe",
+          "dirSign": "Anhand des Vorzeichens (negativ = Ausgabe)",
+          "dirAllOut": "Alles Ausgabe",
+          "dirAllIn": "Alles Einnahme",
+          "dirColumn": "Aus einer Spalte",
+          "directionColumn": "Richtungsspalte",
+          "defaultCategory": "Standardkategorie"
+        },
+        "errors": {
+          "empty": "Die Datei ist leer oder hat keine Kopfzeile.",
+          "noValidRows": "Keine gültigen Zeilen zum Importieren. Prüfe die Spaltenzuordnung."
+        }
+      }
+    },
+    "insights": {
+      "title": "Einblicke",
+      "subtitle": "Automatische, regelbasierte Beobachtungen zu deinen Finanzen. Optional kannst du mit einem lokalen KI-Modell eine schriftliche Analyse erzeugen.",
+      "rulesTitle": "Was uns aufgefallen ist",
+      "empty": "Noch keine Einblicke. Füge Vermögen, Schulden, Einnahmen, Ausgaben und Transaktionen hinzu, um maßgeschneiderte Beobachtungen zu erhalten.",
+      "ai": {
+        "title": "KI-Analyse",
+        "subtitle": "Ein lokales Sprachmodell fasst die obigen Kennzahlen in verständliche Analyse zusammen. Nichts verlässt deinen Rechner.",
+        "generate": "Analyse erzeugen",
+        "generating": "Analysiere…",
+        "generatingHint": "Auf reinen CPU-Setups kann das eine Weile dauern.",
+        "analysisPrompt": "Gib mir eine kompakte Gesamtanalyse meiner aktuellen Finanzlage: Gesamtsituation, Stärken, Risiken und 2-4 konkrete Vorschläge.",
+        "askPlaceholder": "Stelle eine Folgefrage…",
+        "send": "Senden",
+        "you": "Du",
+        "thinking": "Denke nach…",
+        "disabled": "Die lokale KI-Analyse ist deaktiviert. Starte die App mit dem LLM-Profil (docker compose --profile llm up), um sie zu aktivieren.",
+        "unavailable": "Das lokale KI-Modell ist aktiviert, aber noch nicht erreichbar. Stelle sicher, dass der Ollama-Dienst läuft und das Modell geladen wurde.",
+        "error": "Analyse konnte nicht erzeugt werden.",
+        "disclaimer": "KI-generierte Analyse auf Basis deiner Daten. Nur zur Information — keine Finanzberatung.",
+        "processor": {
+          "gpu": "GPU",
+          "gpuTooltip": "Das Modell liegt vollständig im GPU-VRAM — Antworten sind beschleunigt.",
+          "partial": "GPU {{percent}}%",
+          "partialTooltip": "Nur ein Teil des Modells passt ins VRAM; der Rest läuft auf der CPU.",
+          "cpu": "CPU",
+          "cpuTooltip": "Das Modell läuft auf der CPU. Antworten sind langsamer. Prüfe die GPU-Reservierung in docker-compose.yml.",
+          "idle": "Inaktiv",
+          "idleTooltip": "Das Modell ist noch nicht geladen — es lädt bei der ersten Anfrage. Starte eine Analyse, um die GPU/CPU-Nutzung zu sehen."
+        }
+      }
+    },
     "investments": {
       "title": "Investments",
       "help": {
@@ -389,7 +508,7 @@
       },
       "import": {
         "title": "Import",
-        "description": "Ersetzt alle vorhandenen Daten durch den Inhalt einer Backup-Datei (JSON Version 1 oder 2).",
+        "description": "Ersetzt alle vorhandenen Daten durch den Inhalt einer Backup-Datei (JSON Version 1, 2 oder 3).",
         "chooseFile": "Backup-Datei auswählen"
       },
       "confirmImportReplaceAll": "Dies ersetzt ALLE deine Daten durch die Backup-Datei. Fortfahren?",

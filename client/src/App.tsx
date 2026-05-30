@@ -7,6 +7,8 @@ import Assets from './pages/Assets/Assets';
 import Liabilities from './pages/Liabilities/Liabilities';
 import Income from './pages/Income/Income';
 import Expenses from './pages/Expenses/Expenses';
+import Transactions from './pages/Transactions/Transactions';
+import Insights from './pages/Insights/Insights';
 import Backup from './pages/Backup/Backup';
 import Investments from './pages/Investments/Investments';
 import MonthlyCheckIn from './pages/CheckIn/MonthlyCheckIn';
@@ -26,7 +28,9 @@ function App() {
                             <Route path="/liabilities" element={<Liabilities />} />
                             <Route path="/income" element={<Income />} />
                             <Route path="/expenses" element={<Expenses />} />
+                            <Route path="/transactions" element={<Transactions />} />
                             <Route path="/investments" element={<Investments />} />
+                            <Route path="/insights" element={<Insights />} />
                             <Route path="/backup" element={<Backup />} />
                         </Routes>
                     </Layout>

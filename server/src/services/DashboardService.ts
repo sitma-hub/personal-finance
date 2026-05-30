@@ -12,6 +12,10 @@ import {
   RecentValueUpdate
 } from '../types';
 import { getLiabilityMonthlyPayment, getTotalLiabilityMonthlyPayments } from '../utils/liabilityCashFlow';
+import {
+  computeWealthBuildingBreakdown,
+  computeWealthBuildingSavingsRate,
+} from '../utils/wealthBuilding';
 
 export class DashboardService {
   private assetService = new AssetService();
@@ -52,7 +56,9 @@ export class DashboardService {
 
     const monthlyExpenses = regularExpenses + liabilityPayments;
     const monthlySavings = monthlyIncome - monthlyExpenses;
-    const savingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0;
+    const wealthBuilding = computeWealthBuildingBreakdown(assets, liabilities);
+    const savingsRate = computeWealthBuildingSavingsRate(monthlyIncome, wealthBuilding);
+    const cashFlowSavingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0;
 
     return {
       totalAssets,
@@ -62,6 +68,8 @@ export class DashboardService {
       monthlyExpenses,
       monthlySavings,
       savingsRate,
+      wealthBuilding,
+      cashFlowSavingsRate,
       assetCount: assets.length,
       liabilityCount: liabilities.length,
       incomeStreamCount: incomeStreams.length,
