@@ -112,14 +112,23 @@ export interface Expense {
 
 export type TransactionDirection = 'inflow' | 'outflow';
 
+export type TransactionKind = 'spending' | 'income' | 'investment' | 'debt_payment' | 'transfer';
+
+/** Which planned liability line a debt_payment transaction matches. */
+export type DebtPlannedComponent = 'regular' | 'special';
+
 export interface Transaction {
     id: string;
     user_id: string;
     txn_date: string;
     amount: number;
     direction: TransactionDirection;
+    kind: TransactionKind;
     category: string;
     account_id?: string | null;
+    liability_id?: string | null;
+    expense_id?: string | null;
+    debt_planned_component?: DebtPlannedComponent | null;
     description?: string;
     notes?: string;
     source: string;
@@ -131,8 +140,12 @@ export interface CreateTransactionRequest {
     txn_date: string;
     amount: number;
     direction: TransactionDirection;
+    kind?: TransactionKind;
     category?: string;
     account_id?: string | null;
+    liability_id?: string | null;
+    expense_id?: string | null;
+    debt_planned_component?: DebtPlannedComponent | null;
     description?: string;
     notes?: string;
     source?: string;
@@ -145,6 +158,7 @@ export interface TransactionFilters {
     to?: string;
     category?: string;
     direction?: TransactionDirection;
+    kind?: TransactionKind;
     account_id?: string;
 }
 
@@ -159,6 +173,14 @@ export interface MonthlyActualSummary {
     month: string;
     actualInflow: number;
     actualOutflow: number;
+    actualIncome: number;
+    /** Spending + full debt payments; comparable to planned expenses. */
+    actualSpending: number;
+    /** Investment outflows only (debt principal is not split out of spending). */
+    actualSavingsInvestments: number;
+    /** Estimated split of debt_payment rows (informational; not used for plan comparison). */
+    debtInterest: number;
+    debtPrincipal: number;
     net: number;
     byCategory: CategorySpendItem[];
 }
@@ -387,6 +409,14 @@ export interface InsightActualContext {
     month: string;
     inflow: number;
     outflow: number;
+    /** Spending + full debt payments (excludes investments/transfers). */
+    spending: number;
+    /** Investment outflows — not counted in spending vs plan. */
+    savingsInvestments: number;
+    /** Estimated interest portion of debt_payment rows (informational). */
+    debtInterest: number;
+    /** Estimated principal portion of debt_payment rows (informational). */
+    debtPrincipal: number;
     net: number;
     /** (inflow - outflow) / inflow × 100 when inflow > 0 */
     savingsRate: number | null;

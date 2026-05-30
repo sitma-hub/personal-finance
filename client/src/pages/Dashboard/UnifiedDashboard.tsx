@@ -492,10 +492,17 @@ const UnifiedDashboard: React.FC = () => {
                                     </Typography>
                                     <Typography variant="body1">
                                         {t('pages.dashboard.actualVsPlanned.actualVsPlannedValue', {
-                                            actual: formatCurrency(actualSummary.actualOutflow),
+                                            actual: formatCurrency(actualSummary.actualSpending),
                                             planned: formatCurrency(summary.monthlyExpenses),
                                         })}
                                     </Typography>
+                                    {actualSummary.actualSavingsInvestments > 0 && (
+                                        <Typography variant="caption" color="text.secondary">
+                                            {t('pages.dashboard.actualVsPlanned.savingsExcluded', {
+                                                amount: formatCurrency(actualSummary.actualSavingsInvestments),
+                                            })}
+                                        </Typography>
+                                    )}
                                 </Grid>
                             </Grid>
                         </GlassSurface>

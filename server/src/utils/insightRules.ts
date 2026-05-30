@@ -139,22 +139,26 @@ const highInterestDebtRule: Rule = (ctx) => {
 };
 
 const actualVsPlannedRule: Rule = (ctx) => {
-  if (!ctx.actual || ctx.actual.outflow <= 0) return null;
-  const { outflow, plannedExpenses, month } = ctx.actual;
+  if (!ctx.actual || ctx.actual.spending <= 0) return null;
+  const { spending, savingsInvestments, plannedExpenses, month } = ctx.actual;
   if (plannedExpenses <= 0) return null;
 
-  const ratio = outflow / plannedExpenses;
+  const ratio = spending / plannedExpenses;
   const metrics = [
-    { label: 'Actual spending', value: fmtMoney(outflow) },
+    { label: 'Actual spending', value: fmtMoney(spending) },
     { label: 'Planned spending', value: fmtMoney(plannedExpenses) },
   ];
+  // Make the exclusion explicit so investments don't look like missing money.
+  if (savingsInvestments > 0) {
+    metrics.push({ label: 'Investments (excluded)', value: fmtMoney(savingsInvestments) });
+  }
 
   if (ratio > 1.1) {
     return {
       id: 'overspending-vs-plan',
       severity: 'warning',
       title: 'Spending above plan this month',
-      detail: `Recorded spending for ${month} is ${fmtMoney(outflow)}, about ${fmtPercent((ratio - 1) * 100)} over your planned ${fmtMoney(plannedExpenses)}.`,
+      detail: `Recorded spending for ${month} is ${fmtMoney(spending)}, about ${fmtPercent((ratio - 1) * 100)} over your planned ${fmtMoney(plannedExpenses)}. Debt payments count at full amount; investment transfers are excluded.`,
       metrics,
     };
   }
@@ -163,7 +167,7 @@ const actualVsPlannedRule: Rule = (ctx) => {
       id: 'underspending-vs-plan',
       severity: 'positive',
       title: 'Spending below plan this month',
-      detail: `Recorded spending for ${month} is ${fmtMoney(outflow)}, under your planned ${fmtMoney(plannedExpenses)}. Consider directing the difference to savings.`,
+      detail: `Recorded spending for ${month} is ${fmtMoney(spending)}, under your planned ${fmtMoney(plannedExpenses)}. Debt payments count at full amount; investment transfers are excluded.`,
       metrics,
     };
   }

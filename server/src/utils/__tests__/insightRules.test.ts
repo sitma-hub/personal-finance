@@ -113,6 +113,10 @@ describe('actual vs planned rule', () => {
           month: '2026-05',
           inflow: 4000,
           outflow: 3600,
+          spending: 3600,
+          savingsInvestments: 0,
+          debtInterest: 0,
+          debtPrincipal: 0,
           net: 400,
           savingsRate: 10,
           plannedIncome: 4000,
@@ -125,6 +129,36 @@ describe('actual vs planned rule', () => {
       'overspending-vs-plan'
     );
     expect(insight?.severity).toBe('warning');
+  });
+
+  it('excludes savings/investment outflow from the spending comparison', () => {
+    // Total outflow 4500 would look like overspending, but 1800 of it is
+    // investments/transfers, leaving 2700 spending — under the 3000 plan.
+    const ctx = baseContext({
+      actual: {
+        month: '2026-05',
+        inflow: 5000,
+        outflow: 4200,
+          spending: 2400,
+          savingsInvestments: 1800,
+          debtInterest: 0,
+          debtPrincipal: 0,
+          net: 800,
+        savingsRate: 16,
+        plannedIncome: 4000,
+        plannedExpenses: 3000,
+        topCategory: { category: 'Food', total: 800 },
+        inflowByCategory: [{ category: 'Salary', total: 5000 }],
+        outflowByCategory: [
+          { category: 'Food', total: 600 },
+          { category: 'Investment', total: 1800 },
+        ],
+      },
+    });
+    expect(findRule(ctx, 'overspending-vs-plan')).toBeUndefined();
+    const positive = findRule(ctx, 'underspending-vs-plan');
+    expect(positive?.severity).toBe('positive');
+    expect(positive?.metrics?.some((mt) => mt.label.includes('excluded'))).toBe(true);
   });
 });
 

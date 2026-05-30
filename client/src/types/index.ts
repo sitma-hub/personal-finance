@@ -132,14 +132,22 @@ export interface AssetValueHistory {
 
 export type TransactionDirection = 'inflow' | 'outflow';
 
+export type TransactionKind = 'spending' | 'income' | 'investment' | 'debt_payment' | 'transfer';
+
+export type DebtPlannedComponent = 'regular' | 'special';
+
 export interface Transaction {
     id: string;
     user_id: string;
     txn_date: string;
     amount: number;
     direction: TransactionDirection;
+    kind: TransactionKind;
     category: string;
     account_id?: string | null;
+    liability_id?: string | null;
+    expense_id?: string | null;
+    debt_planned_component?: DebtPlannedComponent | null;
     description?: string;
     notes?: string;
     source: string;
@@ -151,10 +159,16 @@ export interface TransactionFormData {
     txn_date: string;
     amount: number;
     direction: TransactionDirection;
+    kind: TransactionKind;
     category: string;
     account_id?: string | null;
+    liability_id?: string | null;
+    expense_id?: string | null;
+    debt_planned_component?: DebtPlannedComponent | null;
+    planned_outflow?: string;
     description?: string;
     notes?: string;
+    source?: string;
 }
 
 export interface TransactionFilters {
@@ -162,6 +176,7 @@ export interface TransactionFilters {
     to?: string;
     category?: string;
     direction?: TransactionDirection;
+    kind?: TransactionKind;
     account_id?: string;
 }
 
@@ -176,6 +191,12 @@ export interface MonthlyActualSummary {
     month: string;
     actualInflow: number;
     actualOutflow: number;
+    actualIncome: number;
+    /** Spending + full debt payments; comparable to planned expenses. */
+    actualSpending: number;
+    actualSavingsInvestments: number;
+    debtInterest: number;
+    debtPrincipal: number;
     net: number;
     byCategory: CategorySpendItem[];
 }

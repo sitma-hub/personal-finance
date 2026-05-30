@@ -13,6 +13,7 @@ function buildQuery(filters: TransactionFilters = {}): string {
     if (filters.to) params.set('to', filters.to);
     if (filters.category) params.set('category', filters.category);
     if (filters.direction) params.set('direction', filters.direction);
+    if (filters.kind) params.set('kind', filters.kind);
     if (filters.account_id) params.set('account_id', filters.account_id);
     const qs = params.toString();
     return qs ? `?${qs}` : '';

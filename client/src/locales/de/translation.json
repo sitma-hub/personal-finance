@@ -77,7 +77,8 @@
         "manageLink": "Transaktionen verwalten",
         "income": "Einnahmen",
         "spending": "Ausgaben",
-        "actualVsPlannedValue": "{{actual}} ist / {{planned}} geplant"
+        "actualVsPlannedValue": "{{actual}} ist / {{planned}} geplant",
+        "savingsExcluded": "Ohne {{amount}} für Investitionen, Tilgung & Übertragungen"
       },
       "insights": {
         "title": "Einblicke & Hinweise",
@@ -265,13 +266,23 @@
       "kpi": {
         "inflow": "Einnahmen diesen Monat",
         "outflow": "Ausgaben diesen Monat",
-        "net": "Netto diesen Monat"
+        "spending": "Konsumausgaben diesen Monat",
+        "net": "Netto diesen Monat",
+        "wealthBuildingExcluded": "Ohne {{amount}} Vermögensaufbau (Investitionen, Tilgung)"
       },
       "filters": {
         "month": "Monat",
         "direction": "Richtung",
+        "kind": "Art",
         "category": "Kategorie",
         "all": "Alle"
+      },
+      "kind": {
+        "spending": "Ausgabe",
+        "income": "Einnahme",
+        "investment": "Investition",
+        "debt_payment": "Schuldenzahlung",
+        "transfer": "Übertragung"
       },
       "direction": {
         "inflow": "Einnahme",
@@ -282,6 +293,7 @@
         "empty": "Keine Transaktionen für die gewählten Filter. Füge eine hinzu oder importiere eine CSV.",
         "date": "Datum",
         "description": "Beschreibung",
+        "kind": "Art",
         "category": "Kategorie",
         "account": "Konto",
         "amount": "Betrag"
@@ -291,10 +303,23 @@
         "editTitle": "Transaktion bearbeiten",
         "date": "Datum",
         "direction": "Richtung",
+        "kind": "Art",
         "amount": "Betrag (€)",
         "category": "Kategorie",
-        "account": "Konto (optional)",
+        "account": "Ziel-Asset (optional)",
         "noAccount": "Keins",
+        "liability": "Verknüpfte Schuld",
+        "selectLiability": "Schuld wählen…",
+        "plannedExpense": "Geplante Ausgabe (optional)",
+        "plannedExpenseDebtHint": "Bei Schuldentilgung: Position aus Verbindlichkeiten (Rate oder Sondertilgung) oder eine Ausgabe aus dem Budget wählen.",
+        "plannedOutflowGroupExpenses": "Lebenshaltungsausgaben",
+        "plannedOutflowGroupDebt": "Aus Verbindlichkeiten (wie unter Ausgaben → Schulden)",
+        "plannedDebtRegular": "{{name}} — monatliche Rate ({{amount}})",
+        "plannedDebtSpecial": "{{name}} — Sondertilgung ({{amount}} / {{frequency}})",
+        "plannedDebtEmpty": "Für diese Verbindlichkeit sind weder Rate noch Sondertilgung hinterlegt. Bitte unter Verbindlichkeiten pflegen oder eine Ausgabe oben wählen.",
+        "noPlannedExpense": "Keine",
+        "debtSplitHint": "Geschätzte Aufteilung: {{interest}} Zinsen (Ausgabe) + {{principal}} Tilgung (Vermögensaufbau)",
+        "debtLinkRequired": "Bitte die Schuld verknüpfen, damit Zinsen und Tilgung getrennt werden können.",
         "description": "Beschreibung",
         "notes": "Notizen"
       },

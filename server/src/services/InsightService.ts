@@ -112,6 +112,10 @@ export class InsightService {
           month: monthlyActual.month,
           inflow: monthlyActual.actualInflow,
           outflow: monthlyActual.actualOutflow,
+          spending: monthlyActual.actualSpending,
+          savingsInvestments: monthlyActual.actualSavingsInvestments,
+          debtInterest: monthlyActual.debtInterest,
+          debtPrincipal: monthlyActual.debtPrincipal,
           net: monthlyActual.net,
           savingsRate:
             monthlyActual.actualInflow > 0

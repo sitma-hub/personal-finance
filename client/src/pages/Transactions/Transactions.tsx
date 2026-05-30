@@ -20,6 +20,7 @@ import {
     Autocomplete,
     useMediaQuery,
     Snackbar,
+    ListSubheader,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -38,8 +39,15 @@ import {
     Transaction,
     TransactionFormData,
     TransactionDirection,
+    TransactionKind,
     MonthlyActualSummary,
 } from '../../types';
+import { defaultKindForDirection, splitDebtPayment } from '../../utils/transactionActuals';
+import {
+    buildPlannedOutflowOptions,
+    decodePlannedOutflow,
+    encodePlannedOutflow,
+} from '../../utils/transactionPlannedOutflow';
 import { transactionService } from '../../services/transactionService';
 import { useFinancial } from '../../contexts/FinancialContext';
 import { formatCurrency } from '../../utils/currency';
@@ -58,12 +66,25 @@ const DEFAULT_CATEGORIES = [
 
 const todayIso = (): string => new Date().toISOString().slice(0, 10);
 
+const TRANSACTION_KINDS: TransactionKind[] = [
+    'spending',
+    'income',
+    'investment',
+    'debt_payment',
+    'transfer',
+];
+
 const emptyForm = (): TransactionFormData => ({
     txn_date: todayIso(),
     amount: 0,
     direction: 'outflow',
+    kind: 'spending',
     category: '',
     account_id: '',
+    liability_id: '',
+    expense_id: '',
+    debt_planned_component: null,
+    planned_outflow: '',
     description: '',
     notes: '',
 });
@@ -75,7 +96,7 @@ const Transactions: React.FC = () => {
     const fullScreenDialog = useMediaQuery(theme.breakpoints.down('sm'));
     const { t } = useTranslation();
     const { state } = useFinancial();
-    const { assets } = state;
+    const { assets, liabilities, expenses } = state;
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [summary, setSummary] = useState<MonthlyActualSummary | null>(null);
@@ -86,14 +107,51 @@ const Transactions: React.FC = () => {
 
     const [monthFilter, setMonthFilter] = useState<string>(currentMonth());
     const [directionFilter, setDirectionFilter] = useState<'' | TransactionDirection>('');
+    const [kindFilter, setKindFilter] = useState<'' | TransactionKind>('');
     const [categoryFilter, setCategoryFilter] = useState<string>('');
 
     const [openDialog, setOpenDialog] = useState(false);
     const [editing, setEditing] = useState<Transaction | null>(null);
     const [importOpen, setImportOpen] = useState(false);
 
-    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    const { control, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
         useForm<TransactionFormData>({ defaultValues: emptyForm() });
+
+    const watchDirection = watch('direction');
+    const watchKind = watch('kind');
+    const watchAmount = watch('amount');
+    const watchLiabilityId = watch('liability_id');
+
+    const selectedLiability = useMemo(
+        () => liabilities.find((l) => l.id === watchLiabilityId) ?? null,
+        [liabilities, watchLiabilityId]
+    );
+
+    const debtSplit = useMemo(() => {
+        if (watchKind !== 'debt_payment') return null;
+        return splitDebtPayment(Math.abs(Number(watchAmount) || 0), selectedLiability);
+    }, [watchKind, watchAmount, selectedLiability]);
+
+    const plannedOutflowOptions = useMemo(
+        () =>
+            buildPlannedOutflowOptions(liabilities, expenses, {
+                includeExpenses: watchKind === 'spending' || watchKind === 'debt_payment',
+                includeDebt: watchKind === 'debt_payment',
+                liabilityId: watchKind === 'debt_payment' ? watchLiabilityId || undefined : undefined,
+                formatCurrency,
+                labels: {
+                    debtRegular: (name, amount) =>
+                        t('pages.transactions.form.plannedDebtRegular', { name, amount }),
+                    debtSpecial: (name, amount, frequency) =>
+                        t('pages.transactions.form.plannedDebtSpecial', {
+                            name,
+                            amount,
+                            frequency: t(`pages.liabilities.form.${frequency}`),
+                        }),
+                },
+            }),
+        [liabilities, expenses, watchKind, watchLiabilityId, t]
+    );
 
     const accountNameById = useMemo(() => {
         const map = new Map<string, string>();
@@ -124,6 +182,7 @@ const Transactions: React.FC = () => {
                     from: monthRange.from,
                     to: monthRange.to,
                     direction: directionFilter || undefined,
+                    kind: kindFilter || undefined,
                     category: categoryFilter || undefined,
                 }),
                 transactionService.getMonthlySummary(monthFilter),
@@ -137,7 +196,7 @@ const Transactions: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [monthRange.from, monthRange.to, monthFilter, directionFilter, categoryFilter]);
+    }, [monthRange.from, monthRange.to, monthFilter, directionFilter, kindFilter, categoryFilter]);
 
     useEffect(() => {
         void loadData();
@@ -155,8 +214,13 @@ const Transactions: React.FC = () => {
             txn_date: txn.txn_date?.slice(0, 10) || todayIso(),
             amount: Number(txn.amount),
             direction: txn.direction,
+            kind: txn.kind ?? defaultKindForDirection(txn.direction),
             category: txn.category,
             account_id: txn.account_id ?? '',
+            liability_id: txn.liability_id ?? '',
+            expense_id: txn.expense_id ?? '',
+            debt_planned_component: txn.debt_planned_component ?? null,
+            planned_outflow: encodePlannedOutflow(txn),
             description: txn.description ?? '',
             notes: txn.notes ?? '',
         });
@@ -169,11 +233,17 @@ const Transactions: React.FC = () => {
     };
 
     const onSubmit = async (data: TransactionFormData) => {
+        const planned = decodePlannedOutflow(data.planned_outflow ?? '');
         const payload: TransactionFormData = {
             ...data,
             amount: Math.abs(Number(data.amount)),
+            kind: data.kind ?? defaultKindForDirection(data.direction),
             account_id: data.account_id ? data.account_id : null,
+            liability_id: planned.liability_id ?? (data.liability_id ? data.liability_id : null),
+            expense_id: planned.expense_id,
+            debt_planned_component: planned.debt_planned_component,
         };
+        delete (payload as { planned_outflow?: string }).planned_outflow;
         try {
             if (editing) {
                 await transactionService.update(editing.id, payload);
@@ -243,8 +313,15 @@ const Transactions: React.FC = () => {
                 <Grid item xs={12} sm={4}>
                     <StatCard
                         icon={<OutflowIcon color="error" />}
-                        label={t('pages.transactions.kpi.outflow')}
-                        value={formatCurrency(summary?.actualOutflow ?? 0)}
+                        label={t('pages.transactions.kpi.spending')}
+                        value={formatCurrency(summary?.actualSpending ?? 0)}
+                        footer={
+                            summary && summary.actualSavingsInvestments > 0
+                                ? t('pages.transactions.kpi.wealthBuildingExcluded', {
+                                      amount: formatCurrency(summary.actualSavingsInvestments),
+                                  })
+                                : undefined
+                        }
                         sx={{ height: '100%' }}
                     />
                 </Grid>
@@ -260,7 +337,7 @@ const Transactions: React.FC = () => {
 
             <GlassSurface sx={{ p: 2, mb: 3 }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                         <TextField
                             fullWidth
                             size="small"
@@ -271,7 +348,7 @@ const Transactions: React.FC = () => {
                             InputLabelProps={{ shrink: true }}
                         />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                         <FormControl fullWidth size="small">
                             <InputLabel>{t('pages.transactions.filters.direction')}</InputLabel>
                             <Select
@@ -285,7 +362,24 @@ const Transactions: React.FC = () => {
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>{t('pages.transactions.filters.kind')}</InputLabel>
+                            <Select
+                                value={kindFilter}
+                                label={t('pages.transactions.filters.kind')}
+                                onChange={(e) => setKindFilter(e.target.value as '' | TransactionKind)}
+                            >
+                                <MenuItem value="">{t('pages.transactions.filters.all')}</MenuItem>
+                                {TRANSACTION_KINDS.map((k) => (
+                                    <MenuItem key={k} value={k}>
+                                        {t(`pages.transactions.kind.${k}`)}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
                         <FormControl fullWidth size="small">
                             <InputLabel>{t('pages.transactions.filters.category')}</InputLabel>
                             <Select
@@ -331,6 +425,17 @@ const Transactions: React.FC = () => {
                                     id: 'description',
                                     label: t('pages.transactions.table.description'),
                                     render: (r) => r.description || '—',
+                                },
+                                {
+                                    id: 'kind',
+                                    label: t('pages.transactions.table.kind'),
+                                    render: (r) => (
+                                        <Chip
+                                            label={t(`pages.transactions.kind.${r.kind ?? 'spending'}`)}
+                                            size="small"
+                                            color={r.kind === 'debt_payment' ? 'warning' : r.kind === 'investment' ? 'info' : 'default'}
+                                        />
+                                    ),
                                 },
                                 {
                                     id: 'category',
@@ -420,9 +525,41 @@ const Transactions: React.FC = () => {
                                     render={({ field }) => (
                                         <FormControl fullWidth>
                                             <InputLabel>{t('pages.transactions.form.direction')}</InputLabel>
-                                            <Select {...field} label={t('pages.transactions.form.direction')}>
+                                            <Select
+                                                {...field}
+                                                label={t('pages.transactions.form.direction')}
+                                                onChange={(e) => {
+                                                    const dir = e.target.value as TransactionDirection;
+                                                    field.onChange(dir);
+                                                    if (!editing) {
+                                                        setValue('kind', defaultKindForDirection(dir));
+                                                    }
+                                                }}
+                                            >
                                                 <MenuItem value="outflow">{t('pages.transactions.direction.outflow')}</MenuItem>
                                                 <MenuItem value="inflow">{t('pages.transactions.direction.inflow')}</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    )}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <Controller
+                                    name="kind"
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <FormControl fullWidth>
+                                            <InputLabel>{t('pages.transactions.form.kind')}</InputLabel>
+                                            <Select {...field} label={t('pages.transactions.form.kind')}>
+                                                {(watchDirection === 'inflow'
+                                                    ? (['income', 'transfer'] as TransactionKind[])
+                                                    : TRANSACTION_KINDS.filter((k) => k !== 'income')
+                                                ).map((k) => (
+                                                    <MenuItem key={k} value={k}>
+                                                        {t(`pages.transactions.kind.${k}`)}
+                                                    </MenuItem>
+                                                ))}
                                             </Select>
                                         </FormControl>
                                     )}
@@ -469,27 +606,130 @@ const Transactions: React.FC = () => {
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12}>
-                                <Controller
-                                    name="account_id"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <FormControl fullWidth>
-                                            <InputLabel>{t('pages.transactions.form.account')}</InputLabel>
-                                            <Select
-                                                {...field}
-                                                value={field.value ?? ''}
-                                                label={t('pages.transactions.form.account')}
-                                            >
-                                                <MenuItem value="">{t('pages.transactions.form.noAccount')}</MenuItem>
-                                                {assets.map((a) => (
-                                                    <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
+                            {watchKind === 'debt_payment' && (
+                                <Grid item xs={12}>
+                                    <Controller
+                                        name="liability_id"
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth error={!!errors.liability_id}>
+                                                <InputLabel>{t('pages.transactions.form.liability')}</InputLabel>
+                                                <Select
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    label={t('pages.transactions.form.liability')}
+                                                >
+                                                    <MenuItem value="">{t('pages.transactions.form.selectLiability')}</MenuItem>
+                                                    {liabilities.map((l) => (
+                                                        <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+                                    {debtSplit && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            {t('pages.transactions.form.debtSplitHint', {
+                                                interest: formatCurrency(debtSplit.interest),
+                                                principal: formatCurrency(debtSplit.principal),
+                                            })}
+                                        </Alert>
                                     )}
-                                />
-                            </Grid>
+                                    {!watchLiabilityId && (
+                                        <Alert severity="warning" sx={{ mt: 1 }}>
+                                            {t('pages.transactions.form.debtLinkRequired')}
+                                        </Alert>
+                                    )}
+                                </Grid>
+                            )}
+                            {watchKind === 'investment' && (
+                                <Grid item xs={12}>
+                                    <Controller
+                                        name="account_id"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth>
+                                                <InputLabel>{t('pages.transactions.form.account')}</InputLabel>
+                                                <Select
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    label={t('pages.transactions.form.account')}
+                                                >
+                                                    <MenuItem value="">{t('pages.transactions.form.noAccount')}</MenuItem>
+                                                    {assets.map((a) => (
+                                                        <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+                                </Grid>
+                            )}
+                            {(watchKind === 'spending' || watchKind === 'debt_payment') && (
+                                <Grid item xs={12}>
+                                    <Controller
+                                        name="planned_outflow"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth>
+                                                <InputLabel>{t('pages.transactions.form.plannedExpense')}</InputLabel>
+                                                <Select
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    label={t('pages.transactions.form.plannedExpense')}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        field.onChange(value);
+                                                        const decoded = decodePlannedOutflow(value);
+                                                        if (decoded.liability_id) {
+                                                            setValue('liability_id', decoded.liability_id);
+                                                        }
+                                                    }}
+                                                >
+                                                    <MenuItem value="">{t('pages.transactions.form.noPlannedExpense')}</MenuItem>
+                                                    {plannedOutflowOptions.some((o) => o.group === 'expense') && (
+                                                        <ListSubheader disableSticky>
+                                                            {t('pages.transactions.form.plannedOutflowGroupExpenses')}
+                                                        </ListSubheader>
+                                                    )}
+                                                    {plannedOutflowOptions
+                                                        .filter((o) => o.group === 'expense')
+                                                        .map((o) => (
+                                                            <MenuItem key={o.value} value={o.value}>
+                                                                {o.label}
+                                                                {o.sublabel ? ` (${o.sublabel})` : ''}
+                                                            </MenuItem>
+                                                        ))}
+                                                    {plannedOutflowOptions.some((o) => o.group === 'debt') && (
+                                                        <ListSubheader disableSticky>
+                                                            {t('pages.transactions.form.plannedOutflowGroupDebt')}
+                                                        </ListSubheader>
+                                                    )}
+                                                    {plannedOutflowOptions
+                                                        .filter((o) => o.group === 'debt')
+                                                        .map((o) => (
+                                                            <MenuItem key={o.value} value={o.value}>
+                                                                {o.label}
+                                                                {o.sublabel ? ` — ${o.sublabel}` : ''}
+                                                            </MenuItem>
+                                                        ))}
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+                                    {watchKind === 'debt_payment' && (
+                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                                            {t('pages.transactions.form.plannedExpenseDebtHint')}
+                                        </Typography>
+                                    )}
+                                    {watchKind === 'debt_payment' && plannedOutflowOptions.filter((o) => o.group === 'debt').length === 0 && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            {t('pages.transactions.form.plannedDebtEmpty')}
+                                        </Alert>
+                                    )}
+                                </Grid>
+                            )}
                             <Grid item xs={12}>
                                 <Controller
                                     name="description"
@@ -645,10 +885,14 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ open, onClose, onImported, 
                 txn_date: isoDate,
                 amount: Math.abs(num),
                 direction,
+                kind: defaultKindForDirection(direction),
                 category: ci >= 0 ? (row[ci]?.trim() || defaultCategory) : defaultCategory,
+                account_id: '',
+                liability_id: '',
+                expense_id: '',
                 description: dei >= 0 ? (row[dei]?.trim() || '') : '',
                 source: 'import',
-            } as TransactionFormData);
+            });
         }
         return result;
     };

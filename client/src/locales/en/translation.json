@@ -68,7 +68,8 @@
         "manageLink": "Manage transactions",
         "income": "Income",
         "spending": "Spending",
-        "actualVsPlannedValue": "{{actual}} actual / {{planned}} planned"
+        "actualVsPlannedValue": "{{actual}} actual / {{planned}} planned",
+        "savingsExcluded": "Excludes {{amount}} in investments, debt principal & transfers"
       },
       "insights": {
         "title": "Insights & alerts",
@@ -265,13 +266,23 @@
       "kpi": {
         "inflow": "Inflow this month",
         "outflow": "Outflow this month",
-        "net": "Net this month"
+        "spending": "Spending this month",
+        "net": "Net this month",
+        "wealthBuildingExcluded": "Excludes {{amount}} wealth-building (investments, debt principal)"
       },
       "filters": {
         "month": "Month",
         "direction": "Direction",
+        "kind": "Type",
         "category": "Category",
         "all": "All"
+      },
+      "kind": {
+        "spending": "Spending",
+        "income": "Income",
+        "investment": "Investment",
+        "debt_payment": "Debt payment",
+        "transfer": "Transfer"
       },
       "direction": {
         "inflow": "Inflow",
@@ -282,6 +293,7 @@
         "empty": "No transactions for the selected filters. Add one or import a CSV.",
         "date": "Date",
         "description": "Description",
+        "kind": "Type",
         "category": "Category",
         "account": "Account",
         "amount": "Amount"
@@ -291,10 +303,23 @@
         "editTitle": "Edit transaction",
         "date": "Date",
         "direction": "Direction",
+        "kind": "Type",
         "amount": "Amount (€)",
         "category": "Category",
-        "account": "Account (optional)",
+        "account": "Target asset (optional)",
         "noAccount": "None",
+        "liability": "Linked debt",
+        "selectLiability": "Select debt…",
+        "plannedExpense": "Match to planned expense (optional)",
+        "plannedExpenseDebtHint": "For debt payments, pick a line from Liabilities (monthly payment or special repayment) or a living expense below.",
+        "plannedOutflowGroupExpenses": "Living expenses",
+        "plannedOutflowGroupDebt": "From liabilities (Ausgaben → debt payments)",
+        "plannedDebtRegular": "{{name}} — monthly payment ({{amount}})",
+        "plannedDebtSpecial": "{{name}} — special repayment ({{amount}} / {{frequency}})",
+        "plannedDebtEmpty": "No liability payment or special repayment is configured. Set them under Liabilities, or pick a living expense above.",
+        "noPlannedExpense": "None",
+        "debtSplitHint": "Estimated split: {{interest}} interest (spending) + {{principal}} principal (wealth-building)",
+        "debtLinkRequired": "Link the debt so interest can be separated from principal.",
         "description": "Description",
         "notes": "Notes"
       },

@@ -1,19 +1,30 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { TransactionService } from '../services/TransactionService';
-import { TransactionDirection, TransactionFilters } from '../types';
+import { TransactionDirection, TransactionFilters, TransactionKind } from '../types';
+
+const TRANSACTION_KINDS: TransactionKind[] = [
+  'spending',
+  'income',
+  'investment',
+  'debt_payment',
+  'transfer',
+];
 
 const router = Router();
 const transactionService = new TransactionService();
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { from, to, category, direction, account_id } = req.query;
+  const { from, to, category, direction, kind, account_id } = req.query;
   const filters: TransactionFilters = {};
   if (typeof from === 'string') filters.from = from;
   if (typeof to === 'string') filters.to = to;
   if (typeof category === 'string') filters.category = category;
   if (direction === 'inflow' || direction === 'outflow') {
     filters.direction = direction as TransactionDirection;
+  }
+  if (typeof kind === 'string' && TRANSACTION_KINDS.includes(kind as TransactionKind)) {
+    filters.kind = kind as TransactionKind;
   }
   if (typeof account_id === 'string') filters.account_id = account_id;
 

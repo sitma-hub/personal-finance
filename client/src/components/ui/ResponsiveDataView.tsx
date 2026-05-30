@@ -166,7 +166,6 @@ export function ResponsiveDataView<Row>({
         <GlassSurface sx={{ p: 0 }}>
             <TableContainer
                 sx={{
-                    borderRadius: (t) => t.shape.borderRadius,
                     '& .MuiTableCell-head': {
                         backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.55 : 0.8),
                         backdropFilter: 'blur(10px)',

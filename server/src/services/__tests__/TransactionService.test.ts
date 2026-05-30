@@ -54,19 +54,23 @@ describe('TransactionService.getMonthlyActualSummary', () => {
     mockQuery.mockReset();
   });
 
-  it('aggregates inflow and outflow totals from grouped rows', async () => {
-    mockQuery.mockResolvedValue({
-      rows: [
-        { category: 'Salary', direction: 'inflow', total: 4000, count: 1 },
-        { category: 'Food', direction: 'outflow', total: 600, count: 12 },
-        { category: 'Rent', direction: 'outflow', total: 1200, count: 1 },
-      ],
-    });
+  it('aggregates totals by explicit transaction kind', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          { amount: 4000, direction: 'inflow', kind: 'income', category: 'Salary', liability_id: null },
+          { amount: 600, direction: 'outflow', kind: 'spending', category: 'Food', liability_id: null },
+          { amount: 1200, direction: 'outflow', kind: 'spending', category: 'Rent', liability_id: null },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
 
     const summary = await service.getMonthlyActualSummary('2026-05');
     expect(summary.month).toBe('2026-05');
     expect(summary.actualInflow).toBe(4000);
     expect(summary.actualOutflow).toBe(1800);
+    expect(summary.actualSpending).toBe(1800);
+    expect(summary.actualIncome).toBe(4000);
     expect(summary.net).toBe(2200);
     expect(summary.byCategory).toHaveLength(3);
   });

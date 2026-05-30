@@ -212,12 +212,12 @@ export class LlmService {
     const wb = m.wealthBuilding;
     lines.push(
       `Planned cash flow (budget/plan): income ${fmtMoney(m.monthlyIncome)}; ` +
-        `expenses ${fmtMoney(m.monthlyExpenses)} = regular ${fmtMoney(m.regularExpenses)} + debt payments ${fmtMoney(m.totalDebtMonthlyPayments)}; ` +
-        `cash-flow surplus ${fmtMoney(m.monthlySavings)} (${fmtPercent(m.cashFlowSavingsRate)})`
+      `expenses ${fmtMoney(m.monthlyExpenses)} = regular ${fmtMoney(m.regularExpenses)} + debt payments ${fmtMoney(m.totalDebtMonthlyPayments)}; ` +
+      `cash-flow surplus ${fmtMoney(m.monthlySavings)} (${fmtPercent(m.cashFlowSavingsRate)})`
     );
     lines.push(
       `Planned savings rate (wealth building): ${fmtPercent(m.savingsRate)} = ` +
-        `(${fmtMoney(wb.assetContributions)} investments + ${fmtMoney(wb.debtPrincipal)} debt principal + ${fmtMoney(wb.specialRepayments)} special repayments) / ${fmtMoney(m.monthlyIncome)}`
+      `(${fmtMoney(wb.assetContributions)} investments + ${fmtMoney(wb.debtPrincipal)} debt principal + ${fmtMoney(wb.specialRepayments)} special repayments) / ${fmtMoney(m.monthlyIncome)}`
     );
     lines.push(`Liquid assets: ${fmtMoney(m.liquidAssets)}${m.emergencyRunwayMonths != null ? `; emergency runway ${m.emergencyRunwayMonths.toFixed(1)} months` : ''}`);
     if (m.topAllocation) {
@@ -234,10 +234,14 @@ export class LlmService {
         m.actual.savingsRate != null ? fmtPercent(m.actual.savingsRate) : 'n/a';
       lines.push(
         `Actual cash flow from transactions (${m.actual.month}): inflow ${fmtMoney(m.actual.inflow)}; ` +
-          `outflow ${fmtMoney(m.actual.outflow)}; net ${fmtMoney(m.actual.net)} → actual savings rate ${actualRate}`
+        `outflow ${fmtMoney(m.actual.outflow)}; net ${fmtMoney(m.actual.net)} → actual savings rate ${actualRate}`
       );
       lines.push(
-        `Compare to plan for ${m.actual.month}: planned income ${fmtMoney(m.actual.plannedIncome)}; planned expenses ${fmtMoney(m.actual.plannedExpenses)}`
+        `Outflow split (${m.actual.month}, from transaction \`kind\`): spending ${fmtMoney(m.actual.spending)} ` +
+          `(full debt_payment amounts, same basis as planned expenses); investments ${fmtMoney(m.actual.savingsInvestments)}`
+      );
+      lines.push(
+        `Compare ONLY spending to plan for ${m.actual.month}: actual spending ${fmtMoney(m.actual.spending)} vs planned expenses ${fmtMoney(m.actual.plannedExpenses)} (planned income ${fmtMoney(m.actual.plannedIncome)})`
       );
       if (m.actual.topCategory) {
         lines.push(`Largest spending category this month: ${m.actual.topCategory.category} (${fmtMoney(m.actual.topCategory.total)})`);
@@ -264,12 +268,13 @@ export class LlmService {
     ];
 
     if (m.actual && m.actual.inflow > 0) {
-      const { month, inflow, outflow, net, savingsRate } = m.actual;
+      const { month, inflow, outflow, net, savingsRate, spending, savingsInvestments } = m.actual;
       const txRate = savingsRate != null ? fmtPercent(savingsRate) : 'n/a';
       lines.push(
-        `- **Transaction ledger** (${month}, ### Transactions only — supplementary): inflow ${fmtMoney(inflow)}, outflow ${fmtMoney(outflow)}, net ${fmtMoney(net)}, cash-flow rate ${txRate}`,
-        `  - Mention only as "what hit the bank this month" — it is NOT the app savings rate and cannot split Tilgung vs Zinsen.`,
-        `  - Compare to plan if useful; do not replace the wealth-building Sparquote above.`
+        `- **Transaction ledger** (${month}, classified by \`kind\`): inflow ${fmtMoney(inflow)}, outflow ${fmtMoney(outflow)}, net ${fmtMoney(net)}, cash-flow rate ${txRate}`,
+        `  - Actual spending ${fmtMoney(spending)} (kind=spending + full debt_payment) vs planned expenses ${fmtMoney(m.actual.plannedExpenses)}.`,
+        `  - Investment outflows ${fmtMoney(savingsInvestments)} (kind=investment only; excluded from spending vs plan).`,
+        `  - Link \`liability_id\` on debt_payment for matching; optional estimated split is UI-only.`
       );
     } else {
       lines.push(
@@ -304,8 +309,10 @@ export class LlmService {
       '| Net worth trend | Snapshots, Assets, Liabilities | |',
       '| What did I spend in May? / categories | Transactions | Filter by date & category |',
       '| Actual bank cash flow this month | Transactions | Optional comparison to plan |',
+      '| Actual spending vs planned | Transactions (`kind` field) | spending + full debt_payment (matches planned debt totals); optional expense/debt_planned links |',
       '',
       'Default: combine structured plan data (assets, liabilities, income, expenses) with transactions when both matter. Never ignore liabilities or assets for savings-rate questions.',
+      'Transaction kinds: spending, income, investment, debt_payment (link liability_id), transfer. Never infer kind from category text.',
     ];
   }
 
@@ -351,9 +358,9 @@ export class LlmService {
       hasSpecial = true;
       lines.push(
         `- ${l.name}: ${fmtMoney(special)}/month equivalent` +
-          (l.special_repayment_amount != null
-            ? ` (${fmtMoney(num(l.special_repayment_amount))} ${l.special_repayment_frequency ?? 'monthly'})`
-            : '')
+        (l.special_repayment_amount != null
+          ? ` (${fmtMoney(num(l.special_repayment_amount))} ${l.special_repayment_frequency ?? 'monthly'})`
+          : '')
       );
     });
     if (!hasSpecial) {
@@ -503,7 +510,7 @@ export class LlmService {
     d.snapshots.forEach((s: NetWorthSnapshot) => {
       out.push(
         `- ${toDateStr(s.snapshot_month, true)}: net worth ${fmtMoney(num(s.net_worth))} ` +
-          `(assets ${fmtMoney(num(s.total_assets))}, liabilities ${fmtMoney(num(s.total_liabilities))})`
+        `(assets ${fmtMoney(num(s.total_assets))}, liabilities ${fmtMoney(num(s.total_liabilities))})`
       );
     });
 
@@ -516,11 +523,20 @@ export class LlmService {
       '',
       `### Transactions${truncatedNote} — bank ledger only; optional for spend/income actuals, NOT for Sparquote`
     );
-    out.push('Format: date | direction | amount | category | description');
+    out.push('Format: date | direction | kind | amount | category | liability_id | account_id | description');
     txns.forEach((t: Transaction) => {
       const sign = t.direction === 'outflow' ? '-' : '+';
       const desc = t.description ? ` | ${t.description}` : '';
-      out.push(`- ${toDateStr(t.txn_date)} | ${t.direction} | ${sign}${fmtMoney2(num(t.amount))} | ${t.category}${desc}`);
+      const links = [
+        t.liability_id ? `liability=${t.liability_id}` : '',
+        t.account_id ? `account=${t.account_id}` : '',
+        t.expense_id ? `expense=${t.expense_id}` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      out.push(
+        `- ${toDateStr(t.txn_date)} | ${t.direction} | ${t.kind ?? 'spending'} | ${sign}${fmtMoney2(num(t.amount))} | ${t.category}${links ? ` | ${links}` : ''}${desc}`
+      );
     });
 
     return out;

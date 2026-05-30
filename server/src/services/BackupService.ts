@@ -5,10 +5,12 @@ import { BackupData, BackupIncludes } from '../types';
  * Current backup format.
  * - v2 adds explicit `includes` metadata
  * - v3 adds the transactions ledger
+ * - v4 adds transaction kind + liability/expense links
+ * - v5 adds debt_planned_component (regular payment vs Sonderzahlung)
  * v1/v2 backups remain importable (transactions simply absent).
  */
-const BACKUP_VERSION = 3;
-const SUPPORTED_VERSIONS = [1, 2, 3];
+const BACKUP_VERSION = 5;
+const SUPPORTED_VERSIONS = [1, 2, 3, 4, 5];
 
 const BACKUP_INCLUDES: BackupIncludes = {
   assets: true,
@@ -314,23 +316,41 @@ export class BackupService {
         snapshotsImported += 1;
       }
 
+      const expenseIds = new Set((data.expenses || []).map((e) => e.id));
+
       let transactionsImported = 0;
       for (const txn of data.transactions || []) {
         const accountId =
           txn.account_id && assetIds.has(txn.account_id) ? txn.account_id : null;
+        const liabilityId =
+          txn.liability_id && liabilityIds.has(txn.liability_id) ? txn.liability_id : null;
+        const expenseId =
+          txn.expense_id && expenseIds.has(txn.expense_id) ? txn.expense_id : null;
+        const debtPlanned =
+          txn.debt_planned_component === 'regular' || txn.debt_planned_component === 'special'
+            ? txn.debt_planned_component
+            : null;
+        const kind =
+          txn.kind ??
+          (txn.direction === 'inflow' ? 'income' : 'spending');
         await client.query(
           `INSERT INTO transactions (
-            id, user_id, txn_date, amount, direction, category, account_id,
+            id, user_id, txn_date, amount, direction, kind, category,
+            account_id, liability_id, expense_id, debt_planned_component,
             description, notes, source, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
             txn.id,
             userId,
             txn.txn_date,
             txn.amount,
             txn.direction,
+            kind,
             txn.category ?? 'Uncategorized',
             accountId,
+            liabilityId,
+            debtPlanned ? null : expenseId,
+            debtPlanned,
             txn.description ?? null,
             txn.notes ?? null,
             txn.source ?? 'manual',

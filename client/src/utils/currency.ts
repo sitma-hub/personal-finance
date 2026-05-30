@@ -1,5 +1,5 @@
 export const CURRENCY = 'EUR';
-export const CURRENCY_LOCALE = 'en-IE';
+export const CURRENCY_LOCALE = 'de-DE';
 
 export function formatCurrency(
     amount: number,
