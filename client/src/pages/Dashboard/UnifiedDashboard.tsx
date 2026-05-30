@@ -418,7 +418,7 @@ const UnifiedDashboard: React.FC = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             {t('pages.dashboard.cashFlow.subtitlePrefix')}{' '}
                             <Link component={RouterLink} to="/income" underline="hover">
-                                {t('pages.income.title')}
+                                {t('pages.income.title')}{' '}
                             </Link>
                             {t('pages.dashboard.cashFlow.subtitleMiddle')}{' '}
                             <Link component={RouterLink} to="/expenses" underline="hover">
