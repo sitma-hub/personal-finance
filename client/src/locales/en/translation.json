@@ -68,8 +68,7 @@
         "manageLink": "Manage transactions",
         "income": "Income",
         "spending": "Spending",
-        "actualVsPlannedValue": "{{actual}} actual / {{planned}} planned",
-        "savingsExcluded": "Excludes {{amount}} in investments, debt principal & transfers"
+        "actualVsPlannedValue": "{{actual}} actual / {{planned}} planned"
       },
       "insights": {
         "title": "Insights & alerts",
@@ -97,9 +96,22 @@
     },
     "assets": {
       "title": "Assets",
-      "kpi": { "totalAssets": "Total Assets", "count": "Count" },
-      "table": { "name": "Name", "type": "Type", "value": "Value", "asOf": "As of", "planPerMonth": "€/mo plan" },
-      "history": { "load": "Load value history", "empty": "No history yet", "title": "Value history" },
+      "kpi": {
+        "totalAssets": "Total Assets",
+        "count": "Count"
+      },
+      "table": {
+        "name": "Name",
+        "type": "Type",
+        "value": "Value",
+        "asOf": "As of",
+        "planPerMonth": "€/mo plan"
+      },
+      "history": {
+        "load": "Load value history",
+        "empty": "No history yet",
+        "title": "Value history"
+      },
       "form": {
         "addTitle": "Add Asset",
         "editTitle": "Edit Asset",
@@ -486,7 +498,9 @@
         "warningBeyond50y": "Payoff extends beyond 50 years for some scenarios; chart shows the first 600 months.",
         "interestToDate": "Interest to date: {{amount}}"
       },
-      "table": { "title": "All Liabilities" },
+      "table": {
+        "title": "All Liabilities"
+      },
       "form": {
         "addTitle": "Add New Liability",
         "editTitle": "Edit Liability",
@@ -547,7 +561,11 @@
     "checkIn": {
       "title": "Monthly check-in",
       "subtitle": "Review proposed values, adjust as needed, then confirm. The system suggests amounts based on your last snapshot or current records — you supervise every save.",
-      "steps": { "selectMonth": "Select month", "reviewValues": "Review values", "confirm": "Confirm" },
+      "steps": {
+        "selectMonth": "Select month",
+        "reviewValues": "Review values",
+        "confirm": "Confirm"
+      },
       "month": {
         "pickTitle": "Which month are you recording?",
         "orEnter": "Or enter month",
@@ -584,4 +602,3 @@
     }
   }
 }
-

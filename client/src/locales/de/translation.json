@@ -77,8 +77,7 @@
         "manageLink": "Transaktionen verwalten",
         "income": "Einnahmen",
         "spending": "Ausgaben",
-        "actualVsPlannedValue": "{{actual}} ist / {{planned}} geplant",
-        "savingsExcluded": "Ohne {{amount}} für Investitionen, Tilgung & Übertragungen"
+        "actualVsPlannedValue": "{{actual}} ist / {{planned}} geplant"
       },
       "insights": {
         "title": "Einblicke & Hinweise",
@@ -97,9 +96,22 @@
     },
     "assets": {
       "title": "Vermögen",
-      "kpi": { "totalAssets": "Gesamtvermögen", "count": "Anzahl" },
-      "table": { "name": "Name", "type": "Typ", "value": "Wert", "asOf": "Stand", "planPerMonth": "€/Monat Plan" },
-      "history": { "load": "Wertverlauf laden", "empty": "Noch kein Verlauf", "title": "Wertverlauf" },
+      "kpi": {
+        "totalAssets": "Gesamtvermögen",
+        "count": "Anzahl"
+      },
+      "table": {
+        "name": "Name",
+        "type": "Typ",
+        "value": "Wert",
+        "asOf": "Stand",
+        "planPerMonth": "€/Monat Plan"
+      },
+      "history": {
+        "load": "Wertverlauf laden",
+        "empty": "Noch kein Verlauf",
+        "title": "Wertverlauf"
+      },
       "form": {
         "addTitle": "Vermögen hinzufügen",
         "editTitle": "Vermögen bearbeiten",
@@ -486,7 +498,9 @@
         "warningBeyond50y": "Für einige Szenarien dauert die Tilgung länger als 50 Jahre; das Diagramm zeigt die ersten 600 Monate.",
         "interestToDate": "Zinsen bis heute: {{amount}}"
       },
-      "table": { "title": "Alle Schulden" },
+      "table": {
+        "title": "Alle Schulden"
+      },
       "form": {
         "addTitle": "Schuld hinzufügen",
         "editTitle": "Schuld bearbeiten",
@@ -547,7 +561,11 @@
     "checkIn": {
       "title": "Monatlicher Check-in",
       "subtitle": "Prüfe die vorgeschlagenen Werte, passe sie bei Bedarf an und bestätige anschließend. Das System schlägt Beträge anhand deines letzten Snapshots oder der aktuellen Werte vor — du gibst jede Speicherung frei.",
-      "steps": { "selectMonth": "Monat wählen", "reviewValues": "Werte prüfen", "confirm": "Bestätigen" },
+      "steps": {
+        "selectMonth": "Monat wählen",
+        "reviewValues": "Werte prüfen",
+        "confirm": "Bestätigen"
+      },
       "month": {
         "pickTitle": "Für welchen Monat möchtest du speichern?",
         "orEnter": "Oder Monat eingeben",
@@ -584,4 +602,3 @@
     }
   }
 }
-
