@@ -42,7 +42,7 @@ import {
 import type { CheckInStatus, NetWorthProjectionsResponse, MonthlyActualSummary, Insight } from '../../types';
 import { transactionService } from '../../services/transactionService';
 import { insightService } from '../../services/insightService';
-import { InsightCards } from '../../components/insights/InsightCards';
+import { InsightCards } from '../../components/insights';
 import { CategoryPieChart } from '../../components/charts/CategoryPieChart';
 import { CashFlowSankeyChart } from '../../components/charts/CashFlowSankeyChart';
 import { ForecastRangeChart } from '../../components/charts/ForecastRangeChart';

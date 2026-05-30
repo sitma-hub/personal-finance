@@ -53,8 +53,8 @@ export const AiAnalysisPanel: React.FC = () => {
     }, [refreshStatus]);
 
     useEffect(() => {
-        threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, busy]);
+        threadEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    }, [messages.length]);
 
     const enabled = status?.enabled && status?.available;
 
@@ -136,19 +136,36 @@ export const AiAnalysisPanel: React.FC = () => {
                     )}
 
                     {messages.length > 0 && (
-                        <Box sx={{ mb: 2, maxHeight: 480, overflowY: 'auto', pr: 1 }}>
-                            {messages.map((m, i) => (
-                                <MessageBubble key={i} message={m} youLabel={t('pages.insights.ai.you')} />
-                            ))}
-                            {busy && (
-                                <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
-                                    <CircularProgress size={16} />
-                                    <Typography variant="caption" color="text.secondary">
-                                        {t('pages.insights.ai.thinking')}
-                                    </Typography>
-                                </Box>
-                            )}
-                            <div ref={threadEndRef} />
+                        <Box sx={{ mb: 2 }}>
+                            <Box
+                                sx={{
+                                    maxHeight: 480,
+                                    overflowY: 'auto',
+                                    scrollbarGutter: 'stable',
+                                    pr: 0.5,
+                                }}
+                            >
+                                {messages.map((m, i) => (
+                                    <MessageBubble key={i} message={m} youLabel={t('pages.insights.ai.you')} />
+                                ))}
+                                <div ref={threadEndRef} />
+                            </Box>
+                            <Box
+                                aria-hidden={!busy}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    minHeight: 28,
+                                    pt: 1,
+                                    visibility: busy ? 'visible' : 'hidden',
+                                }}
+                            >
+                                <CircularProgress size={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                    {t('pages.insights.ai.thinking')}
+                                </Typography>
+                            </Box>
                         </Box>
                     )}
 
@@ -238,6 +255,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, youLabel }) => {
                 <Box
                     sx={{
                         maxWidth: '85%',
+                        width: 'fit-content',
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
                         px: 1.5,

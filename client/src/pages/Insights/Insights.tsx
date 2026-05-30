@@ -15,8 +15,7 @@ import { Insight } from '../../types';
 import { insightService } from '../../services/insightService';
 import { GlassSurface } from '../../components/ui/GlassSurface';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { InsightCards } from '../../components/insights/InsightCards';
-import { AiAnalysisPanel } from '../../components/insights/AiAnalysisPanel';
+import { AiAnalysisPanel, InsightCards } from '../../components/insights';
 
 const Insights: React.FC = () => {
     const { t } = useTranslation();
