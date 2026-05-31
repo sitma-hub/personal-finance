@@ -59,16 +59,29 @@ install_dependencies() {
   fi
 }
 
+enable_llm_when_ollama_present() {
+  # docker compose --profile llm starts ollama on the stack network; turn on LLM
+  # unless the user explicitly set LLM_ENABLED=false.
+  if [ "${LLM_ENABLED}" = "false" ]; then
+    return 0
+  fi
+  if getent hosts ollama >/dev/null 2>&1; then
+    export LLM_ENABLED=true
+  fi
+}
+
 # Second stage: already running as the app user (via su-exec).
 if [ "$1" = "__run__" ]; then
   shift
   cd /app
+  enable_llm_when_ollama_present
   install_dependencies
   exec "$@"
 fi
 
 if [ "$(id -u)" != "0" ]; then
   cd /app
+  enable_llm_when_ollama_present
   install_dependencies
   exec "$@"
 fi
