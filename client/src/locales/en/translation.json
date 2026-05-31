@@ -389,14 +389,14 @@
         "error": "Failed to generate analysis.",
         "disclaimer": "AI-generated analysis based on your data. Informational only — not financial advice.",
         "processor": {
-          "gpu": "GPU",
-          "gpuTooltip": "The model is fully loaded in GPU VRAM — responses are accelerated.",
+          "gpu": "NVIDIA",
+          "gpuTooltip": "Model fully on the NVIDIA GPU (Task Manager GPU 1). ~5 GB VRAM in use. During generation, watch the CUDA/Compute graph on GPU 1 — the top-level 0% is normal when idle.",
           "partial": "GPU {{percent}}%",
-          "partialTooltip": "Only part of the model fits in VRAM; the rest runs on CPU.",
+          "partialTooltip": "Only part of the model fits in VRAM; the rest runs on CPU. Lower OLLAMA_NUM_CTX or use a smaller model.",
           "cpu": "CPU",
-          "cpuTooltip": "The model is running on CPU. Responses will be slower. Check the GPU reservation in docker-compose.yml.",
+          "cpuTooltip": "Model running on CPU, not the NVIDIA GPU (GPU 1). Check docker-compose GPU settings and NVIDIA Container Toolkit.",
           "idle": "Idle",
-          "idleTooltip": "The model isn't loaded yet — it loads on your first request. Run an analysis to see GPU/CPU usage."
+          "idleTooltip": "Model not loaded yet — it loads on first request. Intel UHD (GPU 0) activity is normal; LLM work uses NVIDIA GPU 1."
         }
       }
     },

@@ -63,10 +63,22 @@ export interface ChatMessage {
 export class LlmService {
   private readonly enabled = process.env['LLM_ENABLED'] === 'true';
   private readonly baseUrl = process.env['OLLAMA_URL'] || 'http://ollama:11434';
-  private readonly model = process.env['OLLAMA_MODEL'] || 'llama3.2:3b';
+  private readonly model = process.env['OLLAMA_MODEL'] || 'qwen3:8b';
   // Larger context so the full record dump actually fits. Ollama defaults to
   // 2048, which would truncate the data; bump it (override via OLLAMA_NUM_CTX).
   private readonly numCtx = parseInt(process.env['OLLAMA_NUM_CTX'] || '8192', 10);
+  // Qwen3 hybrid "thinking" mode — off by default for faster responses.
+  private readonly think = process.env['OLLAMA_THINK'] === 'true';
+
+  /** Inference options tuned for full GPU offload (num_gpu=-1 lets Ollama fill VRAM). */
+  private ollamaOptions(): { temperature: number; num_ctx: number; num_gpu: number; num_thread: number } {
+    return {
+      temperature: 0.3,
+      num_ctx: this.numCtx,
+      num_gpu: -1,
+      num_thread: 1,
+    };
+  }
 
   isEnabled(): boolean {
     return this.enabled;
@@ -88,7 +100,7 @@ export class LlmService {
       }
       const body = (await res.json()) as { models?: { name?: string }[] };
       const names = (body.models ?? []).map((m) => m.name ?? '');
-      // Match exact or family (e.g. "llama3.2:3b" matches "llama3.2:3b" or "llama3.2:3b-instruct")
+      // Match exact or family (e.g. "qwen3:8b" matches "qwen3:8b" or "qwen3:8b-instruct")
       const available = names.some((n) => n === this.model || n.startsWith(this.model.split(':')[0] ?? this.model));
       const { processor, gpuPercent } = available
         ? await this.getRunningPlacement()
@@ -153,7 +165,8 @@ export class LlmService {
           model: this.model,
           prompt,
           stream: false,
-          options: { temperature: 0.3, num_ctx: this.numCtx },
+          think: this.think,
+          options: this.ollamaOptions(),
         }),
       },
       110000
@@ -164,7 +177,7 @@ export class LlmService {
     }
 
     const body = (await res.json()) as { response?: string };
-    const analysis = (body.response ?? '').trim();
+    const analysis = this.stripThinking((body.response ?? '').trim());
     return { enabled: true, model: this.model, analysis };
   }
 
@@ -191,7 +204,8 @@ export class LlmService {
           model: this.model,
           messages: [{ role: 'system', content: system }, ...messages],
           stream: false,
-          options: { temperature: 0.3, num_ctx: this.numCtx },
+          think: this.think,
+          options: this.ollamaOptions(),
         }),
       },
       110000
@@ -202,7 +216,7 @@ export class LlmService {
     }
 
     const body = (await res.json()) as { message?: { content?: string } };
-    const reply = (body.message?.content ?? '').trim();
+    const reply = this.stripThinking((body.message?.content ?? '').trim());
     return { enabled: true, model: this.model, reply };
   }
 
@@ -540,6 +554,11 @@ export class LlmService {
     });
 
     return out;
+  }
+
+  /** Remove Qwen3 chain-of-thought blocks that may leak into the response. */
+  private stripThinking(text: string): string {
+    return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   }
 
   private async fetchWithTimeout(

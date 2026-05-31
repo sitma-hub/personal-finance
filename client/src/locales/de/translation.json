@@ -389,14 +389,14 @@
         "error": "Analyse konnte nicht erzeugt werden.",
         "disclaimer": "KI-generierte Analyse auf Basis deiner Daten. Nur zur Information — keine Finanzberatung.",
         "processor": {
-          "gpu": "GPU",
-          "gpuTooltip": "Das Modell liegt vollständig im GPU-VRAM — Antworten sind beschleunigt.",
+          "gpu": "NVIDIA",
+          "gpuTooltip": "Modell vollständig auf der NVIDIA-GPU (Task-Manager GPU 1). ~5 GB VRAM belegt. Während der Generierung CUDA/Compute-Grafik auf GPU 1 beobachten — 0 % oben ist im Leerlauf normal.",
           "partial": "GPU {{percent}}%",
-          "partialTooltip": "Nur ein Teil des Modells passt ins VRAM; der Rest läuft auf der CPU.",
+          "partialTooltip": "Nur ein Teil des Modells passt ins VRAM; der Rest läuft auf der CPU. OLLAMA_NUM_CTX senken oder kleineres Modell wählen.",
           "cpu": "CPU",
-          "cpuTooltip": "Das Modell läuft auf der CPU. Antworten sind langsamer. Prüfe die GPU-Reservierung in docker-compose.yml.",
+          "cpuTooltip": "Modell läuft auf der CPU, nicht auf der NVIDIA-GPU (GPU 1). GPU-Einstellungen in docker-compose und NVIDIA Container Toolkit prüfen.",
           "idle": "Inaktiv",
-          "idleTooltip": "Das Modell ist noch nicht geladen — es lädt bei der ersten Anfrage. Starte eine Analyse, um die GPU/CPU-Nutzung zu sehen."
+          "idleTooltip": "Modell noch nicht geladen — lädt bei der ersten Anfrage. Intel UHD (GPU 0) ist normal; LLM nutzt NVIDIA GPU 1."
         }
       }
     },

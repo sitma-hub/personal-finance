@@ -9,7 +9,7 @@ A local-only app to track your net worth over time. Enter assets, liabilities, i
 - **Cash flow** from income and expenses on the dashboard
 - **Transactions ledger** for actual income/spending events, with category filtering and CSV import
 - **Insights** — rule-based observations (emergency-fund runway, savings rate, allocation concentration, high-interest debt, actual-vs-planned spending, net-worth trend)
-- **Optional local AI analysis** via Ollama — a small open-source model turns your metrics into a plain-language summary, entirely on-device
+- **Optional local AI analysis** via Ollama — Qwen3 8B turns your metrics into a plain-language summary, entirely on-device
 - **Investment forecasting** with monthly DCA and pessimistic / expected / optimistic return scenarios
 - **JSON backup/restore** for long-term data safety
 
@@ -93,19 +93,49 @@ Forecasts are deterministic illustrations, not predictions.
 
 ## Optional local AI analysis (Ollama)
 
-The Insights page can generate a written analysis of your finances using a **local** open-source model via [Ollama](https://ollama.com). Everything runs on your machine; no data leaves it. It's shipped as an optional Docker Compose profile, so the app runs fine without it.
+The Insights page can generate a written analysis of your finances using a **local** open-source model (Qwen3 8B by default) via [Ollama](https://ollama.com). Everything runs on your machine; no data leaves it.
 
-Enable it:
+### Recommended: Windows Ollama on NVIDIA GPU (hybrid laptops)
 
-```bash
-# Start the stack with the LLM profile and the feature flag
-LLM_ENABLED=true docker compose --profile llm up -d
+If Task Manager shows **GPU 0 (Intel UHD)** busy but **GPU 1 (NVIDIA)** at 0%, Docker Ollama inside WSL is likely using the NVIDIA card in a way Windows does not display. **Run Ollama natively on Windows** instead so GPU 1 is used and visible.
 
-# Pull the default small, CPU-friendly model once (~2 GB)
-docker compose --profile llm exec ollama ollama pull llama3.2:3b
+In **PowerShell** (Windows):
+
+```powershell
+cd \\wsl$\Ubuntu\home\petershofen\code\projects\react\personal-finance
+.\scripts\setup-ollama-windows.ps1
 ```
 
-Then open **Insights → AI analysis** and click *Generate analysis*. On CPU-only machines this can take a while. Configure a different model with `OLLAMA_MODEL` (and `OLLAMA_URL` if Ollama runs elsewhere). When the profile is off, the panel shows a setup hint instead.
+Or manually:
+
+1. Install [Ollama for Windows](https://ollama.com/download)
+2. **Settings → System → Display → Graphics** → add `ollama.exe` → **High performance** (NVIDIA RTX A1000)
+3. Pull the model: `ollama pull qwen3:8b`
+4. Stop Docker Ollama (frees port 11434): `docker compose --profile llm stop ollama`
+5. Ensure project root `.env` has:
+   ```env
+   LLM_ENABLED=true
+   OLLAMA_URL=http://host.docker.internal:11434
+   OLLAMA_NUM_CTX=4096
+   ```
+6. Restart backend: `docker compose up -d backend`
+
+Then open **Insights → AI analysis** and click *Generate analysis*. Watch **GPU 1** in Task Manager — use the **CUDA / Compute** graph (not 3D). GPU 0 (Intel) activity from the browser is normal.
+
+### Alternative: Docker Ollama (Linux / headless)
+
+```bash
+OLLAMA_URL=http://ollama:11434 LLM_ENABLED=true docker compose --profile llm up -d
+docker compose --profile llm exec ollama ollama pull qwen3:8b
+```
+
+Configure a different model with `OLLAMA_MODEL`: use `qwen3:14b` if you have ~12 GB+ VRAM, or `qwen3:4b` for a lighter setup. Set `OLLAMA_THINK=true` for deeper Qwen3 reasoning at the cost of speed.
+
+### GPU notes
+
+- **GPU 0** = Intel UHD (display, browser) — ignore for LLM
+- **GPU 1** = NVIDIA RTX A1000 — where Ollama should run
+- With 6 GB VRAM, keep `OLLAMA_NUM_CTX=4096` for full GPU offload with `qwen3:8b`
 
 ## Backup
 
@@ -130,5 +160,5 @@ cd client && npm test   # Vitest (currency, CSV import, dashboard-derived calcul
 
 - React 18 + Vite + Material UI + Chart.js + Nivo, data fetching via TanStack Query (React Query)
 - Express + TypeScript + PostgreSQL 15, raw SQL with a lightweight migration runner
-- Optional local LLM via Ollama (open-source, on-device)
+- Optional local LLM via Ollama (Qwen3 8B default, open-source, on-device)
 - Docker Compose for local dev only
