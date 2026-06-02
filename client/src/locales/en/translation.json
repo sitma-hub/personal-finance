@@ -439,7 +439,6 @@
     },
     "liabilities": {
       "title": "Liabilities",
-      "projectMonths": "Project +N months",
       "kpi": {
         "totalBalance": "Total Balance",
         "monthlyPayments": "Monthly Payments",

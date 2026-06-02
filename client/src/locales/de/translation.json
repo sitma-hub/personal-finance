@@ -439,7 +439,6 @@
     },
     "liabilities": {
       "title": "Schulden",
-      "projectMonths": "Projektion +N Monate",
       "kpi": {
         "totalBalance": "Gesamtsaldo",
         "monthlyPayments": "Monatliche Zahlungen",

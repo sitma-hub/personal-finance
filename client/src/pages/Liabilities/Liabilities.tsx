@@ -47,11 +47,7 @@ import {
     toMonthInputValue,
 } from '../../utils/dateInput';
 import { formatCurrency } from '../../utils/currency';
-import {
-    projectLiabilityBalanceAtMonths,
-    resolveLiabilityStartingBalance,
-    monthsFromAsOfTo,
-} from '../../utils/liabilityPayoffProjection';
+import { resolveLiabilityStartingBalance } from '../../utils/liabilityPayoffProjection';
 import {
     LiabilityPayoffCard,
     defaultPayoffScenarioState,
@@ -75,7 +71,6 @@ const Liabilities: React.FC = () => {
     const [formError, setFormError] = useState<string | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
-    const [projectionMonths, setProjectionMonths] = useState<number>(0);
     const [payoffScenarioByLiability, setPayoffScenarioByLiability] = useState<
         Record<string, LiabilityPayoffScenarioState>
     >({});
@@ -251,17 +246,6 @@ const Liabilities: React.FC = () => {
                     </Button>
                 }
             />
-
-            <Box display="flex" alignItems="center" gap={2} mb={2}>
-                <TextField
-                    label={t('pages.liabilities.projectMonths')}
-                    type="number"
-                    value={projectionMonths}
-                    onChange={(e) => setProjectionMonths(Math.max(0, Number(e.target.value)))}
-                    inputProps={{ min: 0 }}
-                    size="small"
-                />
-            </Box>
 
             {(error || formError) && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
@@ -476,17 +460,6 @@ const Liabilities: React.FC = () => {
                                             label: 'Balance Today',
                                             align: 'right',
                                             render: (l) => formatCurrency(Math.round(resolveLiabilityStartingBalance(l))),
-                                            hideOnMobile: true,
-                                        },
-                                        {
-                                            id: 'projected',
-                                            label: 'Projected (+N mo)',
-                                            align: 'right',
-                                            render: (l) => {
-                                                const monthsAhead = monthsFromAsOfTo(l) + Number(projectionMonths || 0);
-                                                const projected = projectLiabilityBalanceAtMonths(l, monthsAhead);
-                                                return formatCurrency(Math.round(projected));
-                                            },
                                             hideOnMobile: true,
                                         },
                                     ] as ResponsiveColumn<Liability>[]
